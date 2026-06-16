@@ -58,6 +58,7 @@ Type | When to Use | Example
 - `frontend/build-product-card`
 - `backend/optimize-database-queries`
 - `test/unit-tests-payment-service`
+
 ❌ **Bad Titles:**
 - `AddUserAuth` (missing type)
 - `feature/Add User Auth` (use kebab-case)
@@ -187,9 +188,13 @@ Examples: `test/add-unit-tests-auth`, `test/write-e2e-tests-checkout`
 ## Tips for Success
  
 🎯 **Be Specific** - The more detail, the better
+
 📋 **Use Checklists** - Easy to track progress
+
 🔍 **Check Examples** - EXAMPLE_ISSUES.md has real cases
+
 ❓ **Ask Questions** - Comment on the issue if unclear
+
 ✅ **Complete DoD** - Don't skip the Definition of Done
  
 ---
@@ -205,8 +210,11 @@ Examples: `test/add-unit-tests-auth`, `test/write-e2e-tests-checkout`
 ## Get Help
  
 📖 **Full Guide**: Read ISSUE_GUIDE.md
+
 📝 **Examples**: Check EXAMPLE_ISSUES.md
+
 ⚙️ **Setup**: See SETUP_INSTRUCTIONS.md
+
 ❓ **Questions**: Ask your team lead or mentor
  
 ---
