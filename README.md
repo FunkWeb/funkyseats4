@@ -1,14 +1,16 @@
 # FunkySeats v4
 
 FunkySeats er et bestillingssystem som lar kandidater reservere ledige seter på kontoret.
-V4 er bygget med PHP og JavaScript, Node.js og React.
+V4 er bygget med hovedsaklig Node.js og React.
 
 Funksjoner:
 
-Kandidater kan bla gjennom tilgjengelige seter og reservere dem for spesifikke datoer og tider.
+Kandidater kan bla gjennom tilgjengelige seter og reservere dem for spesifikke datoer og tider, men ikke lengere enn 7 dager frem i tid med mindre man avtaler det.
 
 Admin dashbord for å administrere setetilgjengelighet og reservasjoner.
+Seat map med drag and drop funksjonalitet for admin.
 
+Knapper/tabs for dato
 ----
 ### Mål
 
@@ -47,15 +49,15 @@ Admin dashbord for å administrere setetilgjengelighet og reservasjoner.
 - Naviger til prosjektmappen: ```cd funkyseats```
 - Installer avhengigheter: ```composer install```
 - Kopier ```.env.example``` filen til ```.env```: ```cp .env.example .env```
-- Generer applikasjonsnøkkel: ```php artisan key:generate```
+- Generer applikasjonsnøkkel: ```artisan key:generate```
 - Sett opp tilkoblingen til databasen i ```.env``` filen
-- Kjør migreringer for å opprette nødvendige databasetabeller: ```php artisan migrate```
+- Kjør migreringer for å opprette nødvendige databasetabeller: ```artisan migrate```
 
 ### Bruk
 
-- Start utviklingsserveren: ```php artisan serve```
+- Start utviklingsserveren: ```artisan serve```
 - Tilgang applikasjonen i nettleseren din: http://localhost:8000
-- For å fylle databasen med testdata, kjør: ```php artisan db:seed DemoSeeder```
+- For å fylle databasen med testdata, kjør: ```artisan db:seed DemoSeeder```
 
 ### Lisens
 
