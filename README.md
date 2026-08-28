@@ -44,16 +44,14 @@ Knapper/tabs for dato
 
 ----
 ### Installasjon
-
+```@@ -49,13 +49,10 @@ Knapper/tabs for dato```
+- npm install 
 - Klone repositoryet: ```git clone [https://github.com/FunkWeb/funkyseats4.git](https://github.com/FunkWeb/funkyseats4.git)```
 - Naviger til prosjektmappen: ```cd funkyseats```
 - Installer avhengigheter: ```composer install```
 - Kopier ```.env.example``` filen til ```.env```: ```cp .env.example .env```
 - Sett opp tilkoblingen til databasen i ```.env``` filen
 - Kjør migreringer for å opprette nødvendige databasetabeller: ```migrate```
-
-### Bruk
-- Tilgang applikasjonen i nettleseren din: http://localhost:8000
 
 ### Lisens
 
