@@ -49,13 +49,10 @@ Knapper/tabs for dato
 - Naviger til prosjektmappen: ```cd funkyseats```
 - Installer avhengigheter: ```composer install```
 - Kopier ```.env.example``` filen til ```.env```: ```cp .env.example .env```
-- Skaff applikasjonsnøkkel
 - Sett opp tilkoblingen til databasen i ```.env``` filen
 - Kjør migreringer for å opprette nødvendige databasetabeller: ```migrate```
 
 ### Bruk
-
-- Start utviklingsserveren: ```serve```
 - Tilgang applikasjonen i nettleseren din: http://localhost:8000
 
 ### Lisens
