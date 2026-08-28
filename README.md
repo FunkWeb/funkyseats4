@@ -49,15 +49,14 @@ Knapper/tabs for dato
 - Naviger til prosjektmappen: ```cd funkyseats```
 - Installer avhengigheter: ```composer install```
 - Kopier ```.env.example``` filen til ```.env```: ```cp .env.example .env```
-- Generer applikasjonsnøkkel: ```artisan key:generate```
+- Skaff applikasjonsnøkkel
 - Sett opp tilkoblingen til databasen i ```.env``` filen
-- Kjør migreringer for å opprette nødvendige databasetabeller: ```artisan migrate```
+- Kjør migreringer for å opprette nødvendige databasetabeller: ```migrate```
 
 ### Bruk
 
-- Start utviklingsserveren: ```artisan serve```
+- Start utviklingsserveren: ```serve```
 - Tilgang applikasjonen i nettleseren din: http://localhost:8000
-- For å fylle databasen med testdata, kjør: ```artisan db:seed DemoSeeder```
 
 ### Lisens
 
