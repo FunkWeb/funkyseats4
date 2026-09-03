@@ -10,6 +10,16 @@ Kandidater kan bla gjennom tilgjengelige seter og reservere dem for spesifikke d
 Admin dashbord for å administrere setetilgjengelighet og reservasjoner.
 Seat map med drag and drop funksjonalitet for admin.
 
+Tech Stack
+| Layer	| Technology |
+| --- | --- |
+| Frontend |	React + TypeScript, CSS |
+| Backend	| Node.js |
+| Database |	MySQL |
+| Auth	| Google OAuth |
+| Hosting |	Docker + GHCR |
+| CI/CD	| GitHub Actions |
+
 Knapper/tabs for dato
 ----
 ### Mål
