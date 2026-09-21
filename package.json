@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "tsx watch --env-file=../.env src/server.ts",
     "build": "tsc",
-    "start": "node dist/server.js"
+    "start": "node dist/server.js",
+    "test:migrations": "cd backend && npx tsx tests/migrations.test.ts"
   },
   "dependencies": {
     "mysql2": "^3.24.4"
