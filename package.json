@@ -1,19 +1,21 @@
 {
-  "name": "FunkySeats v4",
+  "name": "funkyseats",
   "version": "1.0.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch --env-file=../.env src/server.ts",
+    "dev": "tsx watch backend/server.ts",
     "build": "tsc",
     "start": "node dist/server.js"
   },
   "dependencies": {
+    "express": "^5.2.1",
     "mysql2": "^3.24.4"
   },
   "devDependencies": {
+    "@types/express": "^5.0.6",
     "@types/node": "^26.6.2",
-    "ts-node": "^10.9.2",
+    "tsx": "^4.23.15",
     "typescript": "^7.0.2"
   }
 }
