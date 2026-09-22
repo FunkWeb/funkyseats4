@@ -3,3 +3,9 @@ package-lock.json
 .next
 dist
 build
+
+.github/
+EXAMPLE_ISSUE.md
+ISSUE_GUIDE.md
+QUICK_REFERENCE.md
+README.md
