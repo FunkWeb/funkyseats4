@@ -1,7 +1,7 @@
-import express from "express";
+import express from 'express'
 
-export const app = express();
+export const app = express()
 
-app.get("/health", (_req, res) => {
-  res.json({ ok: true });
-});
+app.get('/health', (_req, res) => {
+  res.json({ ok: true })
+})
