@@ -17,7 +17,8 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "build:frontend": "vite build"
+    "build:frontend": "vite build",
+    "test:migrations": "tsx --env-file=.env backend/tests/migrations.test.ts"
   },
   "dependencies": {
     "express": "^5.2.1",
