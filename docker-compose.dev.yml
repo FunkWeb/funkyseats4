@@ -1,0 +1,35 @@
+x-mysql-env: &mysql-env
+  MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+  MYSQL_DATABASE: ${DB_NAME}
+  MYSQL_USER: ${DB_USER}
+  MYSQL_PASSWORD: ${DB_PASSWORD}
+
+x-mysql: &mysql
+  image: mysql:8.4
+  environment: *mysql-env
+  healthcheck:
+    test: ['CMD', 'mysqladmin', 'ping', '-h', '127.0.0.1', '-u', 'root', '-p${DB_ROOT_PASSWORD}']
+    interval: 2s
+    timeout: 5s
+    retries: 30
+
+services:
+  dev-db:
+    <<: *mysql
+    ports:
+      - '3306:3306'
+    volumes:
+      - dev-db-data:/var/lib/mysql
+
+  test-db:
+    <<: *mysql
+    environment:
+      <<: *mysql-env
+      MYSQL_DATABASE: ${DB_TEST_NAME}
+    ports:
+      - '3307:3306'
+    tmpfs:
+      - /var/lib/mysql
+
+volumes:
+  dev-db-data:
