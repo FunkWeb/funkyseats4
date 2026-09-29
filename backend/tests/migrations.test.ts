@@ -1,26 +1,26 @@
 import { readdirSync } from 'fs'
 import { join, resolve } from 'path'
 import { pathToFileURL } from 'url'
-import mysql, { Connection } from 'mysql2/promise'
+import { styleText } from 'util'
+import mysql, { Connection, ConnectionOptions } from 'mysql2/promise'
 
 interface Migration {
   up(conn: Connection): Promise<void>
 }
 
-const MIGRATIONS_DIR = resolve('backend/migrations')
-const TEST_DB = process.env.DB_TEST_NAME
-const DB_CONFIG = {
-  host: process.env.DB_TEST_HOST,
-  port: Number(process.env.DB_TEST_PORT),
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
+interface TestDbConfig {
+  database: string
+  server: ConnectionOptions
 }
-const DROP_TEST_DB = `DROP DATABASE IF EXISTS ${TEST_DB}`
 
-const PASS = '\x1b[92m✓\x1b[0m'
-const FAIL = '\x1b[91m✗\x1b[0m'
+const MIGRATIONS_DIR = resolve(import.meta.dirname, '../migrations')
+const TEST_DB_SUFFIX = '_test'
+const LABEL_WIDTH = 51
 
-const label = (filename: string) => `${filename} `.padEnd(51, '.')
+const PASS = styleText('green', '✓')
+const FAIL = styleText('red', '✗')
+
+const label = (filename: string) => `${filename} `.padEnd(LABEL_WIDTH, '.')
 
 const errorMessage = (error: unknown) => (error instanceof Error ? error.message : String(error))
 
@@ -29,8 +29,34 @@ const isObject = (value: unknown): value is object => typeof value === 'object' 
 const hasUp = (value: unknown): value is Migration =>
   isObject(value) && 'up' in value && typeof value.up === 'function'
 
-const unwrapDefault = (loaded: unknown): unknown =>
-  isObject(loaded) && 'default' in loaded ? (loaded.default ?? loaded) : loaded
+const defaultExport = (loaded: unknown): unknown =>
+  isObject(loaded) && 'default' in loaded ? loaded.default : undefined
+
+function requireEnv(name: string): string {
+  const value = process.env[name]
+  if (!value) {
+    throw new Error(`Missing env var ${name}`)
+  }
+  return value
+}
+
+function readConfig(): TestDbConfig {
+  const database = requireEnv('DB_TEST_NAME')
+  if (database === process.env.DB_NAME || !database.endsWith(TEST_DB_SUFFIX)) {
+    throw new Error(
+      `Refusing to drop "${database}": test database must end in ${TEST_DB_SUFFIX} and differ from DB_NAME`,
+    )
+  }
+  return {
+    database,
+    server: {
+      host: requireEnv('DB_TEST_HOST'),
+      port: Number(requireEnv('DB_TEST_PORT')),
+      user: requireEnv('DB_USER'),
+      password: requireEnv('DB_PASSWORD'),
+    },
+  }
+}
 
 function getMigrationFiles(): string[] {
   return readdirSync(MIGRATIONS_DIR)
@@ -40,14 +66,14 @@ function getMigrationFiles(): string[] {
 
 async function loadMigration(filename: string): Promise<Migration> {
   const loaded: unknown = await import(pathToFileURL(join(MIGRATIONS_DIR, filename)).href)
-  const candidate = unwrapDefault(loaded)
-  if (!hasUp(candidate)) {
+  const migration = [loaded, defaultExport(loaded)].find(hasUp)
+  if (!migration) {
     throw new Error(`${filename} does not export an up function`)
   }
-  return candidate
+  return migration
 }
 
-async function runUntilFailure(conn: Connection, files: string[]): Promise<number> {
+async function countPassing(conn: Connection, files: string[]): Promise<number> {
   for (const [index, filename] of files.entries()) {
     try {
       const migration = await loadMigration(filename)
@@ -61,31 +87,39 @@ async function runUntilFailure(conn: Connection, files: string[]): Promise<numbe
   return files.length
 }
 
-async function main(): Promise<void> {
-  const admin = await mysql.createConnection(DB_CONFIG)
+async function withTestDatabase<T>(
+  { database, server }: TestDbConfig,
+  run: (conn: Connection) => Promise<T>,
+): Promise<T> {
+  const admin = await mysql.createConnection(server)
+  const dropTestDb = `DROP DATABASE IF EXISTS ${mysql.escapeId(database)}`
   try {
-    await admin.query(DROP_TEST_DB)
-    await admin.query(`CREATE DATABASE ${TEST_DB}`)
-
-    const conn = await mysql.createConnection({ ...DB_CONFIG, database: TEST_DB })
+    await admin.query(dropTestDb)
+    await admin.query(`CREATE DATABASE ${mysql.escapeId(database)}`)
+    const conn = await mysql.createConnection({ ...server, database })
     try {
-      const files = getMigrationFiles()
-      const passed = await runUntilFailure(conn, files)
-      const failed = passed < files.length ? 1 : 0
-      const skipped = files.length - passed - failed
-
-      console.log(`\n${passed} passed, ${failed} failed, ${skipped} skipped`)
-      process.exitCode = failed
+      return await run(conn)
     } finally {
       await conn.end()
     }
   } finally {
-    await admin.query(DROP_TEST_DB)
+    await admin.query(dropTestDb)
     await admin.end()
   }
 }
 
+async function main(): Promise<void> {
+  const config = readConfig()
+  const files = getMigrationFiles()
+  const passed = await withTestDatabase(config, (conn) => countPassing(conn, files))
+  const failed = passed < files.length ? 1 : 0
+  const skipped = files.length - passed - failed
+
+  console.log(`\n${passed} passed, ${failed} failed, ${skipped} skipped`)
+  process.exitCode = failed
+}
+
 main().catch((error) => {
-  console.error(`${FAIL} Migration test aborted: ${errorMessage(error)}`)
+  console.error(`${FAIL} Migration check aborted: ${errorMessage(error)}`)
   process.exitCode = 1
 })
