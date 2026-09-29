@@ -7,7 +7,9 @@
     "node": ">=24"
   },
   "scripts": {
-    "dev": "tsc --noEmit && tsx watch backend/server.ts",
+    "dev": "tsx watch backend/server.ts & vite",
+    "dev:db-up": "docker compose -f docker-compose.dev.yml up -d --wait",
+    "dev:db-down": "docker compose -f docker-compose.dev.yml down",
     "build": "tsc",
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit",
