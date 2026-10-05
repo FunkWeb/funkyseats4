@@ -7,20 +7,22 @@ export const createConfig = (source: EnvSource) => {
     return value
   }
 
-  const optionalNumber = (name: string, fallback: number): number => {
+  const optionalPort = (name: string, fallback: number): number => {
     const raw = source[name]
     if (!raw) return fallback
 
     const value = Number(raw)
-    if (Number.isNaN(value)) throw new Error(`Environment variable ${name} must be a number`)
+    if (!Number.isInteger(value) || value < 1 || value > 65535) {
+      throw new Error(`Environment variable ${name} must be a port number`)
+    }
     return value
   }
 
   return {
-    port: optionalNumber('PORT', 3000),
+    port: optionalPort('PORT', 3000),
     db: {
       host: requireEnv('DB_HOST'),
-      port: optionalNumber('DB_PORT', 3306),
+      port: optionalPort('DB_PORT', 3306),
       user: requireEnv('DB_USER'),
       password: requireEnv('DB_PASSWORD'),
       database: requireEnv('DB_NAME'),
@@ -31,5 +33,3 @@ export const createConfig = (source: EnvSource) => {
     },
   } as const
 }
-
-export const config = createConfig(process.env)

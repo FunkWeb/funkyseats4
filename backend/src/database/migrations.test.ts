@@ -15,7 +15,7 @@ interface TestDbConfig {
 
 type Report = (filename: string, error?: unknown) => void
 
-const MIGRATIONS_DIR = resolve(import.meta.dirname, '../database/migrations')
+const MIGRATIONS_DIR = resolve(import.meta.dirname, './migrations')
 const TEST_DB_SUFFIX = '_test'
 const LABEL_WIDTH = 51
 const QUERY_METHODS = new Set<PropertyKey>(['query', 'execute'])
