@@ -18,7 +18,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "build:frontend": "vite build",
-    "test:migrations": "tsx --env-file=.env backend/tests/migrations.test.ts",
+    "test:migrations": "tsx --env-file=.env backend/src/database/migrations.test.ts",
     "test": "tsx --env-file-if-exists=.env --test \"backend/src/**/*.test.ts\""
   },
   "dependencies": {
