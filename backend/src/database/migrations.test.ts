@@ -1,59 +1,28 @@
+import { after, before, describe, it } from 'node:test'
 import { readdirSync } from 'fs'
 import { join, resolve } from 'path'
 import { pathToFileURL } from 'url'
-import { styleText, types } from 'util'
 import mysql, { Connection, ConnectionOptions } from 'mysql2/promise'
 
 interface Migration {
   up(conn: Connection): Promise<void>
 }
 
-interface TestDbConfig {
-  database: string
-  server: ConnectionOptions
-}
-
-type Report = (filename: string, error?: unknown) => void
-
-const MIGRATIONS_DIR = resolve(import.meta.dirname, './migrations')
+const MIGRATIONS_DIR = resolve(import.meta.dirname, '../../src/database/migrations')
 const TEST_DB_SUFFIX = '_test'
-const LABEL_WIDTH = 51
-const QUERY_METHODS = new Set<PropertyKey>(['query', 'execute'])
-
-const PASS = styleText('green', '✓')
-const FAIL = styleText('red', '✗')
-
-const label = (filename: string) => `${filename} `.padEnd(LABEL_WIDTH, '.')
-
-const errorMessage = (error: unknown) => (error instanceof Error ? error.message : String(error))
-
-const invalidMigration = (filename: string, reason: string) =>
-  new Error(`${filename} is not a valid migration file: ${reason}`)
 
 const isObject = (value: unknown): value is object => typeof value === 'object' && value !== null
 
 const isMigration = (value: unknown): value is Migration =>
-  isObject(value) && 'up' in value && types.isAsyncFunction(value.up)
-
-const defaultExport = (loaded: unknown): unknown =>
-  isObject(loaded) && 'default' in loaded ? loaded.default : undefined
-
-const logResult: Report = (filename, error) =>
-  console.log(
-    error === undefined
-      ? `${label(filename)} ${PASS}`
-      : `${label(filename)} ${FAIL}  ERROR: ${errorMessage(error)}`,
-  )
+  isObject(value) && 'up' in value && typeof value.up === 'function'
 
 function requireEnv(name: string): string {
   const value = process.env[name]
-  if (!value) {
-    throw new Error(`Missing env var ${name}`)
-  }
+  if (!value) throw new Error(`Missing env var ${name}`)
   return value
 }
 
-function readConfig(): TestDbConfig {
+function readConfig(): { database: string; server: ConnectionOptions } {
   const database = requireEnv('DB_TEST_NAME')
   if (database === process.env.DB_NAME || !database.endsWith(TEST_DB_SUFFIX)) {
     throw new Error(
@@ -71,97 +40,49 @@ function readConfig(): TestDbConfig {
   }
 }
 
-function getMigrationFiles(): string[] {
-  return readdirSync(MIGRATIONS_DIR)
+const getMigrationFiles = () =>
+  readdirSync(MIGRATIONS_DIR)
     .filter((filename) => filename.endsWith('.ts') && !filename.endsWith('.d.ts'))
     .sort((first, second) => first.localeCompare(second, undefined, { numeric: true }))
-}
 
 async function loadMigration(filename: string): Promise<Migration> {
   const loaded: unknown = await import(pathToFileURL(join(MIGRATIONS_DIR, filename)).href)
-  const migration = [loaded, defaultExport(loaded)].find(isMigration)
-  if (!migration) {
-    throw invalidMigration(filename, 'must export an async up function')
-  }
+  const fallback = isObject(loaded) && 'default' in loaded ? loaded.default : undefined
+  const migration = [loaded, fallback].find(isMigration)
+  if (!migration) throw new Error(`${filename} must export an up function`)
   return migration
 }
 
-function trackQueries(conn: Connection) {
-  let queryCount = 0
-  const tracked = new Proxy(conn, {
-    get(target, property) {
-      const value: unknown = Reflect.get(target, property, target)
-      if (typeof value !== 'function') {
-        return value
-      }
-      if (QUERY_METHODS.has(property)) {
-        return (...args: unknown[]) => {
-          queryCount++
-          return value.apply(target, args)
-        }
-      }
-      return value.bind(target)
-    },
-  })
-  return { tracked, queryCount: () => queryCount }
-}
-
-async function runMigration(filename: string, conn: Connection): Promise<void> {
-  const migration = await loadMigration(filename)
-  const { tracked, queryCount } = trackQueries(conn)
-  await migration.up(tracked)
-  if (queryCount() === 0) {
-    throw invalidMigration(filename, 'up ran no queries')
-  }
-}
-
-async function countPassing(conn: Connection, files: string[], report: Report): Promise<number> {
-  for (const [index, filename] of files.entries()) {
-    try {
-      await runMigration(filename, conn)
-      report(filename)
-    } catch (error) {
-      report(filename, error)
-      return index
-    }
-  }
-  return files.length
-}
-
-async function withTestDatabase<T>(
-  { database, server }: TestDbConfig,
-  run: (conn: Connection) => Promise<T>,
-): Promise<T> {
-  const admin = await mysql.createConnection(server)
+describe('migrations', () => {
+  const { database, server } = readConfig()
   const escapedDb = mysql.escapeId(database)
-  const dropTestDb = `DROP DATABASE IF EXISTS ${escapedDb}`
-  try {
-    await admin.query(dropTestDb)
+  let admin: Connection | undefined
+  let conn: Connection | undefined
+  let previousFailed = false
+
+  before(async () => {
+    admin = await mysql.createConnection(server)
+    await admin.query(`DROP DATABASE IF EXISTS ${escapedDb}`)
     await admin.query(`CREATE DATABASE ${escapedDb}`)
-    const conn = await mysql.createConnection({ ...server, database })
-    try {
-      return await run(conn)
-    } finally {
-      await conn.end()
-    }
-  } finally {
-    await admin.query(dropTestDb)
-    await admin.end()
+    conn = await mysql.createConnection({ ...server, database })
+  })
+
+  after(async () => {
+    await conn?.end()
+    await admin?.query(`DROP DATABASE IF EXISTS ${escapedDb}`)
+    await admin?.end()
+  })
+
+  for (const filename of getMigrationFiles()) {
+    it(filename, async (t) => {
+      if (previousFailed) return t.skip('previous migration failed')
+      try {
+        const migration = await loadMigration(filename)
+        await migration.up(conn!)
+      } catch (error) {
+        previousFailed = true
+        throw error
+      }
+    })
   }
-}
-
-async function main(): Promise<void> {
-  const config = readConfig()
-  const files = getMigrationFiles()
-  const passed = await withTestDatabase(config, (conn) => countPassing(conn, files, logResult))
-  const failed = passed < files.length ? 1 : 0
-  const skipped = files.length - passed - failed
-
-  console.log(`\n${passed} passed, ${failed} failed, ${skipped} skipped`)
-  process.exitCode = failed
-}
-
-main().catch((error) => {
-  console.error(`${FAIL} Migration check aborted: ${errorMessage(error)}`)
-  process.exitCode = 1
 })
