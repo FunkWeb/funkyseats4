@@ -21,7 +21,8 @@
     "test:integration": "tsx --env-file=.env --test \"backend/tests/integration/**/*.test.ts\"",
     "test": "tsx --env-file-if-exists=.env --test \"backend/src/**/*.test.ts\"",
     "migrate": "tsx --env-file=.env backend/src/database/migration-runner/migrationCli.ts",
-    "migrate:down": "tsx --env-file=.env backend/src/database/migration-runner/migrationCli.ts down"
+    "migrate:down": "tsx --env-file=.env backend/src/database/migration-runner/migrationCli.ts down",
+    "migrate:status": "tsx --env-file=.env backend/src/database/migration-runner/migrationCli.ts status"
   },
   "dependencies": {
     "express": "^5.2.1",

@@ -8,15 +8,38 @@ export const ensureMigrationsTable = (db: Connection) =>
       applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
     )`)
 
-const findApplied = async (db: Connection) => {
-  const [rows] = await db.query<RowDataPacket[]>('SELECT file_name FROM schema_migrations')
-  return new Set(rows.map((row) => row.file_name as string))
+export type MigrationState = 'applied' | 'pending' | 'missing'
+
+export interface MigrationStatus {
+  fileName: string
+  state: MigrationState
+  appliedAt?: Date
 }
 
-export const findPending = async (db: Connection) => {
-  const applied = await findApplied(db)
-  return (await listMigrationFiles()).filter((fileName) => !applied.has(fileName))
+const findApplied = async (db: Connection) => {
+  const [rows] = await db.query<RowDataPacket[]>(
+    'SELECT file_name, applied_at FROM schema_migrations',
+  )
+  return new Map(rows.map((row) => [row.file_name as string, row.applied_at as Date]))
 }
+
+const stateOf = (isApplied: boolean, hasFile: boolean): MigrationState => {
+  if (!isApplied) return 'pending'
+  return hasFile ? 'applied' : 'missing'
+}
+
+export const findStatus = async (db: Connection): Promise<MigrationStatus[]> => {
+  const applied = await findApplied(db)
+  const files = new Set(await listMigrationFiles())
+  return [...new Set([...files, ...applied.keys()])].sort().map((fileName) => ({
+    fileName,
+    state: stateOf(applied.has(fileName), files.has(fileName)),
+    appliedAt: applied.get(fileName),
+  }))
+}
+
+export const findPending = async (db: Connection) =>
+  (await findStatus(db)).filter(({ state }) => state === 'pending').map(({ fileName }) => fileName)
 
 export const findLastApplied = async (db: Connection) => {
   const [rows] = await db.query<RowDataPacket[]>(
