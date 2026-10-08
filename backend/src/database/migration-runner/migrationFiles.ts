@@ -23,8 +23,10 @@ const isMigration = (value: unknown): value is Migration =>
 const isMigrationFile = (fileName: string) =>
   fileName.endsWith('.ts') && !fileName.endsWith('.d.ts')
 
+export const byFileName = (a: string, b: string) => a.localeCompare(b, undefined, { numeric: true })
+
 export const listMigrationFiles = async () =>
-  (await readdir(MIGRATIONS_DIRECTORY)).filter(isMigrationFile).sort()
+  (await readdir(MIGRATIONS_DIRECTORY)).filter(isMigrationFile).sort(byFileName)
 
 export const loadMigration = async (fileName: string) => {
   const { default: migration } = await import(

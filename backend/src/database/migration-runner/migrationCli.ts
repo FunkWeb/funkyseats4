@@ -3,14 +3,19 @@ import { createDbConfig } from '../../config/createConfig.js'
 import {
   apply,
   ensureMigrationsTable,
+  fileNamesIn,
   findLastApplied,
-  findPending,
   findStatus,
   revert,
-} from './migrationRunner.js'
+  withMigrationLock,
+} from './index.js'
 
 const migrateUp = async (db: Connection) => {
-  const pending = await findPending(db)
+  const statuses = await findStatus(db)
+  for (const fileName of fileNamesIn(statuses, 'missing')) {
+    console.warn(`Warning: ${fileName} is recorded as applied but its file is missing`)
+  }
+  const pending = fileNamesIn(statuses, 'pending')
   for (const fileName of pending) {
     await apply(db, fileName)
     console.log(`Completed: ${fileName}`)
@@ -60,8 +65,10 @@ const main = async () => {
 
   const db = await createConnection(createDbConfig(process.env))
   try {
-    await ensureMigrationsTable(db)
-    await command(db)
+    await withMigrationLock(db, async () => {
+      await ensureMigrationsTable(db)
+      await command(db)
+    })
   } finally {
     await db.end()
   }

@@ -1,12 +1,20 @@
 import type { Connection, RowDataPacket } from 'mysql2/promise'
-import { listMigrationFiles, loadMigration, type Migration } from './migrationFiles.js'
+import { byFileName, listMigrationFiles, loadMigration, type Migration } from './migrationFiles.js'
 
-export const ensureMigrationsTable = (db: Connection) =>
-  db.query(`
-    CREATE TABLE IF NOT EXISTS schema_migrations (
-      file_name VARCHAR(255) PRIMARY KEY,
-      applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-    )`)
+const LOCK_NAME = 'schema_migrations'
+const LOCK_TIMEOUT_SECONDS = 10
+
+interface LockRow extends RowDataPacket {
+  acquired: number | null
+}
+
+interface FileNameRow extends RowDataPacket {
+  file_name: string
+}
+
+interface AppliedRow extends FileNameRow {
+  applied_at: Date
+}
 
 export type MigrationState = 'applied' | 'pending' | 'missing'
 
@@ -16,11 +24,29 @@ export interface MigrationStatus {
   appliedAt?: Date
 }
 
+export const withMigrationLock = async (db: Connection, run: () => Promise<void>) => {
+  const [[{ acquired }]] = await db.query<LockRow[]>('SELECT GET_LOCK(?, ?) AS acquired', [
+    LOCK_NAME,
+    LOCK_TIMEOUT_SECONDS,
+  ])
+  if (acquired !== 1) throw new Error('Another migration run holds the lock')
+  try {
+    await run()
+  } finally {
+    await db.query('SELECT RELEASE_LOCK(?)', [LOCK_NAME])
+  }
+}
+
+export const ensureMigrationsTable = (db: Connection) =>
+  db.query(`
+    CREATE TABLE IF NOT EXISTS schema_migrations (
+      file_name VARCHAR(255) PRIMARY KEY,
+      applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )`)
+
 const findApplied = async (db: Connection) => {
-  const [rows] = await db.query<RowDataPacket[]>(
-    'SELECT file_name, applied_at FROM schema_migrations',
-  )
-  return new Map(rows.map((row) => [row.file_name as string, row.applied_at as Date]))
+  const [rows] = await db.query<AppliedRow[]>('SELECT file_name, applied_at FROM schema_migrations')
+  return new Map(rows.map((row) => [row.file_name, row.applied_at]))
 }
 
 const stateOf = (isApplied: boolean, hasFile: boolean): MigrationState => {
@@ -31,24 +57,24 @@ const stateOf = (isApplied: boolean, hasFile: boolean): MigrationState => {
 export const findStatus = async (db: Connection): Promise<MigrationStatus[]> => {
   const applied = await findApplied(db)
   const files = new Set(await listMigrationFiles())
-  return [...new Set([...files, ...applied.keys()])].sort().map((fileName) => ({
+  return [...new Set([...files, ...applied.keys()])].sort(byFileName).map((fileName) => ({
     fileName,
     state: stateOf(applied.has(fileName), files.has(fileName)),
     appliedAt: applied.get(fileName),
   }))
 }
 
-export const findPending = async (db: Connection) =>
-  (await findStatus(db)).filter(({ state }) => state === 'pending').map(({ fileName }) => fileName)
+export const fileNamesIn = (statuses: MigrationStatus[], state: MigrationState) =>
+  statuses.filter((status) => status.state === state).map(({ fileName }) => fileName)
 
 export const findLastApplied = async (db: Connection) => {
-  const [rows] = await db.query<RowDataPacket[]>(
-    'SELECT file_name FROM schema_migrations ORDER BY file_name DESC LIMIT 1',
+  const [rows] = await db.query<FileNameRow[]>(
+    'SELECT file_name FROM schema_migrations ORDER BY applied_at DESC, file_name DESC LIMIT 1',
   )
-  return rows[0]?.file_name as string | undefined
+  return rows[0]?.file_name
 }
 
-const undo = async (
+const rollBackAndThrow = async (
   db: Connection,
   migration: Migration,
   fileName: string,
@@ -63,7 +89,7 @@ const undo = async (
       { cause: downError },
     )
   }
-  throw new Error(`${fileName} failed and was undone`, { cause: upError })
+  throw new Error(`${fileName} failed and was rolled back`, { cause: upError })
 }
 
 export const apply = async (db: Connection, fileName: string) => {
@@ -71,7 +97,7 @@ export const apply = async (db: Connection, fileName: string) => {
   try {
     await migration.up(db)
   } catch (upError) {
-    await undo(db, migration, fileName, upError)
+    await rollBackAndThrow(db, migration, fileName, upError)
   }
   await db.execute('INSERT INTO schema_migrations (file_name) VALUES (?)', [fileName])
 }

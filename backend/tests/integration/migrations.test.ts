@@ -1,6 +1,6 @@
 import { after, before, describe, it } from 'node:test'
 import mysql, { type Connection, type ConnectionOptions } from 'mysql2/promise'
-import { optionalPort, requireEnv } from '../../src/config/createConfig.js'
+import { readEnv } from '../../src/config/createConfig.js'
 import {
   apply,
   ensureMigrationsTable,
@@ -11,7 +11,8 @@ import {
 const TEST_DB_SUFFIX = '_test'
 
 const readConfig = (): { database: string; server: ConnectionOptions } => {
-  const database = requireEnv(process.env, 'DB_TEST_NAME')
+  const env = readEnv(process.env)
+  const database = env.required('DB_TEST_NAME')
   if (database === process.env.DB_NAME || !database.endsWith(TEST_DB_SUFFIX)) {
     throw new Error(
       `Refusing to drop "${database}": test database must end in ${TEST_DB_SUFFIX} and differ from DB_NAME`,
@@ -20,10 +21,10 @@ const readConfig = (): { database: string; server: ConnectionOptions } => {
   return {
     database,
     server: {
-      host: requireEnv(process.env, 'DB_TEST_HOST'),
-      port: optionalPort(process.env, 'DB_TEST_PORT', 3306),
-      user: requireEnv(process.env, 'DB_USER'),
-      password: requireEnv(process.env, 'DB_PASSWORD'),
+      host: env.required('DB_TEST_HOST'),
+      port: env.requiredPort('DB_TEST_PORT'),
+      user: env.required('DB_USER'),
+      password: env.required('DB_PASSWORD'),
     },
   }
 }
@@ -52,10 +53,11 @@ describe('migrations', () => {
   })
 
   for (const fileName of migrationFiles) {
-    it(`${fileName} applies, reverts and reapplies`, async (t) => {
+    it(`${fileName} applies, reverts idempotently and reapplies`, async (t) => {
       if (previousFailed) return t.skip('previous migration failed')
       try {
         await apply(conn!, fileName)
+        await revert(conn!, fileName)
         await revert(conn!, fileName)
         await apply(conn!, fileName)
       } catch (error) {
