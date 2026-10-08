@@ -4,7 +4,7 @@ import { pathToFileURL } from 'node:url'
 import { createConnection, type Connection, type RowDataPacket } from 'mysql2/promise'
 import type { Migration } from './migration.js'
 
-const MIGRATIONS_DIRECTORY = join(import.meta.dirname, "migrations");
+const MIGRATIONS_DIRECTORY = join(import.meta.dirname, 'migrations')
 
 const ensureMigrationsTable = (db: Connection) =>
   db.query(`
@@ -16,6 +16,13 @@ const ensureMigrationsTable = (db: Connection) =>
 const findApplied = async (db: Connection) => {
   const [rows] = await db.query<RowDataPacket[]>('SELECT file_name FROM schema_migrations')
   return new Set(rows.map((row) => row.file_name as string))
+}
+
+const findLastApplied = async (db: Connection) => {
+  const [rows] = await db.query<RowDataPacket[]>(
+    'SELECT file_name FROM schema_migrations ORDER BY file_name DESC LIMIT 1',
+  )
+  return rows[0]?.file_name as string | undefined
 }
 
 const findPending = async (applied: Set<string>) => {
@@ -56,22 +63,57 @@ const apply = async (db: Connection, fileName: string) => {
   await db.execute('INSERT INTO schema_migrations (file_name) VALUES (?)', [fileName])
 }
 
+const revert = async (db: Connection, fileName: string) => {
+  const migration = await loadMigration(fileName)
+  try {
+    await migration.down(db)
+  } catch (downError) {
+    throw new Error(`${fileName} down() failed; it is still recorded as applied`, {
+      cause: downError,
+    })
+  }
+  await db.execute('DELETE FROM schema_migrations WHERE file_name = ?', [fileName])
+}
+
+const migrateUp = async (db: Connection) => {
+  const pending = await findPending(await findApplied(db))
+  for (const fileName of pending) {
+    await apply(db, fileName)
+    console.log(`Completed: ${fileName}`)
+  }
+  if (pending.length === 0) console.log('Up to date')
+}
+
+const migrateDown = async (db: Connection) => {
+  const fileName = await findLastApplied(db)
+  if (!fileName) {
+    console.log('Nothing to roll back')
+    return
+  }
+  await revert(db, fileName)
+  console.log(`Rolled Back: ${fileName}`)
+}
+
+const commands = new Map([
+  ['up', migrateUp],
+  ['down', migrateDown],
+])
+
 const main = async () => {
+  const commandName = process.argv[2] ?? 'up'
+  const command = commands.get(commandName)
+  if (!command) throw new Error(`Unknown command "${commandName}". Use "up" or "down".`)
+
   const db = await createConnection({
-  host: process.env.DB_HOST,
-  port: Number(process.env.DB_PORT),
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-});
+    host: process.env.DB_HOST,
+    port: Number(process.env.DB_PORT),
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+  })
   try {
     await ensureMigrationsTable(db)
-    const pending = await findPending(await findApplied(db))
-    for (const fileName of pending) {
-      await apply(db, fileName)
-      console.log(`✔ ${fileName}`)
-    }
-    if (pending.length === 0) console.log('Up to date')
+    await command(db)
   } finally {
     await db.end()
   }
