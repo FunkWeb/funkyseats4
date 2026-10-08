@@ -20,8 +20,8 @@
     "build:frontend": "vite build",
     "test:integration": "tsx --env-file=.env --test \"backend/tests/integration/**/*.test.ts\"",
     "test": "tsx --env-file-if-exists=.env --test \"backend/src/**/*.test.ts\"",
-    "migrate": "tsx --env-file=.env backend/src/database/migrate.ts",
-    "migrate:down": "tsx --env-file=.env backend/src/database/migrate.ts down"
+    "migrate": "tsx --env-file=.env backend/src/database/migration-runner/migrationCli.ts",
+    "migrate:down": "tsx --env-file=.env backend/src/database/migration-runner/migrationCli.ts down"
   },
   "dependencies": {
     "express": "^5.2.1",
