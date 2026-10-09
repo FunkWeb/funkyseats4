@@ -1,18 +1,18 @@
-import type { Connection } from 'mysql2/promise'
-export async function up(conn: Connection): Promise<void> {
-  await conn.query(`
+import type { Migration } from '../migration-runner/index.js'
+
+export default {
+  up: async (db) => {
+    await db.query(`
         CREATE TABLE features (
-            id SERIAL PRIMARY KEY,
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
             name VARCHAR(255) NOT NULL,
             description TEXT,
             icon_path VARCHAR(255),
-            category VARCHAR(50) CHECK (category IN ('OS', 'SOFTWARE', 'HARDWARE', 'OTHER')) NOT NULL
-        )
+        category ENUM('OS', 'SOFTWARE', 'HARDWARE', 'OTHER') NOT NULL
+        
     `)
-}
-
-export async function down(conn: Connection): Promise<void> {
-  await conn.query(`
-        DROP TABLE features
-    `)
-}
+  },
+  down: async (db) => {
+    await db.query(`DROP TABLE IF EXISTS features`)
+  },
+} satisfies Migration
