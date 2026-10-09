@@ -5,7 +5,7 @@ export default {
     await db.query(`
         CREATE TABLE seats (
          id	            SERIAL PRIMARY KEY,
-         room_id	      BIGINT UNSIGNED NOT NULL FOREIGN KEY REFERENCES rooms(id) ON DELETE CASCADE,
+         room_id	      BIGINT UNSIGNED NOT NULL FOREIGN KEY,
          seat_number	  VARCHAR(10) NOT NULL UNIQUE,
          description	  TEXT,
          deleted_at	    TIMESTAMP,
