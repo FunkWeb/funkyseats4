@@ -1,5 +1,4 @@
-import type { Migration } from "../migration-runner/index.js"
-
+import type { Migration } from '../migration-runner/index.js'
 
 export default {
   up: async (db) => {
