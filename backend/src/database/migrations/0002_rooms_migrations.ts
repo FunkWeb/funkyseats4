@@ -11,7 +11,7 @@ export default {
         seat_map_path   VARCHAR(255),
         max_days_ahead  INT NOT NULL DEFAULT 7,
         deleted_at      TIMESTAMP NULL,
-        updated_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        updated_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
       )
     `)
