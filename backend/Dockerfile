@@ -6,7 +6,7 @@ COPY package*.json ./
 RUN npm ci
 
 COPY backend ./backend
-COPY tsconfig.json ./
+COPY tsconfig*.json ./
 RUN npm run build
 
 FROM node:24-alpine AS runtime
