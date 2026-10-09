@@ -1,4 +1,4 @@
-import type { Migration } from "../migration-runner/index.js"
+import type { Migration } from '../migration-runner/index.js'
 
 export default {
   up: async (db) => {
@@ -14,9 +14,9 @@ export default {
         updated_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         created_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
       )
-    `);
+    `)
   },
   down: async (db) => {
-    await db.query(`DROP TABLE IF EXISTS users`);
+    await db.query(`DROP TABLE IF EXISTS users`)
   },
-} satisfies Migration;
+} satisfies Migration
