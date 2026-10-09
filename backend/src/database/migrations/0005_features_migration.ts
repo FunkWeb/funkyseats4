@@ -9,6 +9,7 @@ export default {
             description TEXT,
             icon_path VARCHAR(255),
         category ENUM('OS', 'SOFTWARE', 'HARDWARE', 'OTHER') NOT NULL
+    )
         
     `)
   },
