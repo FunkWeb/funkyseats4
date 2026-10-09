@@ -18,7 +18,11 @@ const without = (key: RequiredKey) =>
 
 const ports = [
   { name: 'PORT', fallback: 3000, read: (config: ReturnType<typeof createConfig>) => config.port },
-  { name: 'DB_PORT', fallback: 3306, read: (config: ReturnType<typeof createConfig>) => config.db.port },
+  {
+    name: 'DB_PORT',
+    fallback: 3306,
+    read: (config: ReturnType<typeof createConfig>) => config.db.port,
+  },
 ] as const
 
 describe('createConfig', () => {
