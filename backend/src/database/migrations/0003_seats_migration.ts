@@ -4,14 +4,15 @@ export default {
   up: async (db) => {
     await db.query(`
         CREATE TABLE seats (
-         id	            SERIAL PRIMARY KEY,
-         room_id	      BIGINT UNSIGNED NOT NULL FOREIGN KEY,
-         seat_number	  VARCHAR(10) NOT NULL UNIQUE,
+         id	            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+         room_id	      INT UNSIGNED NOT NULL,
+         seat_number	  VARCHAR(10) NOT NULL,
          description	  TEXT,
-         deleted_at	    TIMESTAMP,
+         deleted_at	    TIMESTAMP NULL,
          updated_at	    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-         created_at	    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-
+         created_at	    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+         FOREIGN KEY (room_id) REFERENCES rooms(id),
+         UNIQUE (room_id, seat_number)
           )
     `)
   },
