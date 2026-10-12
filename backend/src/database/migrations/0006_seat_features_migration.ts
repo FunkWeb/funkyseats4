@@ -4,11 +4,11 @@ export default {
   up: async (db) => {
     await db.query(`
   CREATE TABLE seat_features (
-            SEAT_id BIGINT UNSIGNED NOT NULL,
-            FEATURE_id BIGINT UNSIGNED NOT NULL,
+            seat_id INT UNSIGNED NOT NULL,
+            feature_id INT UNSIGNED NOT NULL,
             PRIMARY KEY (SEAT_id, FEATURE_id),
-            FOREIGN KEY (SEAT_id) REFERENCES seats(id) ON DELETE CASCADE,
-            FOREIGN KEY (FEATURE_id) REFERENCES features(id) ON DELETE CASCADE
+            FOREIGN KEY (seat_id) REFERENCES seats(id) ON DELETE CASCADE,
+            FOREIGN KEY (feature_id) REFERENCES features(id) ON DELETE CASCADE
         )
       )
     `)
