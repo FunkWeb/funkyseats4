@@ -6,11 +6,10 @@ export default {
   CREATE TABLE seat_features (
             seat_id INT UNSIGNED NOT NULL,
             feature_id INT UNSIGNED NOT NULL,
-            PRIMARY KEY (SEAT_id, FEATURE_id),
+            PRIMARY KEY (seat_id, feature_id),
             FOREIGN KEY (seat_id) REFERENCES seats(id) ON DELETE CASCADE,
             FOREIGN KEY (feature_id) REFERENCES features(id) ON DELETE CASCADE
         )
-      )
     `)
   },
   down: async (db) => {
