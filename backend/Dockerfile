@@ -6,6 +6,7 @@ COPY package*.json ./
 RUN npm ci
 
 COPY backend ./backend
+COPY contracts ./contracts
 COPY tsconfig*.json ./
 RUN npm run build
 
@@ -24,4 +25,4 @@ COPY --from=build /app/dist ./dist
 
 USER node
 
-CMD ["node", "dist/server.js"]
+CMD ["node", "dist/backend/src/server.js"]

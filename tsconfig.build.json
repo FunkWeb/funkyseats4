@@ -1,8 +1,5 @@
 {
   "extends": "./tsconfig.json",
-  "compilerOptions": {
-    "rootDir": "backend/src"
-  },
-  "include": ["backend/src"],
+  "include": ["backend/src", "contracts"],
   "exclude": ["**/*.test.ts"]
 }
