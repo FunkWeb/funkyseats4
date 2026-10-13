@@ -1,6 +1,5 @@
 import type { ResultSetHeader, RowDataPacket, Pool } from 'mysql2/promise'
 import type { BookingDto, BookingStatus, CreateBookingRequest } from '../../../contracts/booking.js'
-import { pool } from '../database/connectionPool.js'
 
 interface BookingRow extends RowDataPacket {
   id: number
@@ -41,7 +40,7 @@ const toBookingDto = (row: BookingRow): BookingDto => ({
   createdAt: toTimestamp(row.createdAt),
 })
 
-export const createBookingsRepository = (db: Pool = pool) => {
+export const createBookingsRepository = (db: Pool) => {
   const findById = async (id: number): Promise<BookingDto | null> => {
     const [rows] = await db.execute<BookingRow[]>(
       `SELECT ${bookingColumns} FROM bookings WHERE id = ?`,
@@ -88,5 +87,4 @@ export const createBookingsRepository = (db: Pool = pool) => {
   return { create, findById, findByUserId, findBySeatAndDate, updateStatus }
 }
 
-export const { create, findById, findByUserId, findBySeatAndDate, updateStatus } =
-  createBookingsRepository()
+export type BookingsRepository = ReturnType<typeof createBookingsRepository>

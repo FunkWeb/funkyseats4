@@ -20,7 +20,6 @@ jobs:
     container: node:24
 
     env:
-      DB_HOST: test-db
       DB_NAME: funkyseats
       DB_USER: funkyseats
       DB_PASSWORD: ci_password
