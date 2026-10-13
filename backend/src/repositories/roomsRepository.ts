@@ -26,7 +26,6 @@ export interface Room {
   created_at: Date
 }
 
-
 type RoomRow = Room & RowDataPacket
 
 export interface RoomQueryExecutor {
@@ -41,12 +40,10 @@ const updateColumns = {
   max_days_ahead: 'max_days_ahead',
 } satisfies Record<keyof RoomInput, string>
 
-
 const isRoomInputKey = (key: string): key is keyof RoomInput => Object.hasOwn(updateColumns, key)
 
-export class RoomRepository  {
+export class RoomRepository {
   constructor(private readonly db: RoomQueryExecutor) {}
-
 
   async create(room: RoomInput): Promise<number> {
     const [result] = await this.db.query<ResultSetHeader>(
@@ -60,7 +57,7 @@ export class RoomRepository  {
         room.max_days_ahead ?? 7,
       ],
     )
-    
+
     return result.insertId
   }
 
