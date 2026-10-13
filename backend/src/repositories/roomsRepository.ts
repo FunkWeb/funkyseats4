@@ -1,80 +1,88 @@
-import type {
-  FieldPacket,
-  QueryResult,
-  QueryValues,
-  ResultSetHeader,
-  RowDataPacket,
-} from 'mysql2/promise'
+import type { Pool, ResultSetHeader, RowDataPacket } from 'mysql2/promise'
+import type { CreateRoomRequest, RoomDto, UpdateRoomRequest } from '../../../contracts/rooms.js'
 
-export interface RoomInput {
-  slug: string
-  name: string
-  description?: string | null
-  seat_map_path?: string | null
-  max_days_ahead?: number
-}
+export type RoomInput = CreateRoomRequest
+export type Room = RoomDto
 
-export interface Room {
+interface RoomRow extends RowDataPacket {
   id: number
   slug: string
   name: string
   description: string | null
-  seat_map_path: string | null
-  max_days_ahead: number
-  deleted_at: Date | null
-  updated_at: Date
-  created_at: Date
+  seatMapPath: string | null
+  maxDaysAhead: number
+  updatedAt: Date | string
+  createdAt: Date | string
 }
 
-type RoomRow = Room & RowDataPacket
-
-export interface RoomQueryExecutor {
-  query<T extends QueryResult>(sql: string, values?: QueryValues): Promise<[T, FieldPacket[]]>
-}
+const roomColumns = `
+  id,
+  slug,
+  name,
+  description,
+  seat_map_path AS seatMapPath,
+  max_days_ahead AS maxDaysAhead,
+  updated_at AS updatedAt,
+  created_at AS createdAt
+`
 
 const updateColumns = {
   slug: 'slug',
   name: 'name',
   description: 'description',
-  seat_map_path: 'seat_map_path',
-  max_days_ahead: 'max_days_ahead',
-} satisfies Record<keyof RoomInput, string>
+  seatMapPath: 'seat_map_path',
+  maxDaysAhead: 'max_days_ahead',
+} satisfies Record<keyof CreateRoomRequest, string>
 
-const isRoomInputKey = (key: string): key is keyof RoomInput => Object.hasOwn(updateColumns, key)
+const isRoomInputKey = (key: string): key is keyof CreateRoomRequest =>
+  Object.hasOwn(updateColumns, key)
 
-export class RoomRepository {
-  constructor(private readonly db: RoomQueryExecutor) {}
+const toTimestamp = (value: Date | string) =>
+  value instanceof Date ? value.toISOString() : new Date(value).toISOString()
 
-  async create(room: RoomInput): Promise<number> {
-    const [result] = await this.db.query<ResultSetHeader>(
+const toRoomDto = (row: RoomRow): RoomDto => ({
+  id: row.id,
+  slug: row.slug,
+  name: row.name,
+  description: row.description,
+  seatMapPath: row.seatMapPath,
+  maxDaysAhead: row.maxDaysAhead,
+  updatedAt: toTimestamp(row.updatedAt),
+  createdAt: toTimestamp(row.createdAt),
+})
+
+export const createRoomsRepository = (db: Pool) => {
+  const getById = async (id: number): Promise<RoomDto | null> => {
+    const [rows] = await db.execute<RoomRow[]>(
+      `SELECT ${roomColumns} FROM rooms WHERE id = ? AND deleted_at IS NULL`,
+      [id],
+    )
+    return rows[0] ? toRoomDto(rows[0]) : null
+  }
+
+  const create = async (room: CreateRoomRequest): Promise<number> => {
+    const [result] = await db.execute<ResultSetHeader>(
       `INSERT INTO rooms (slug, name, description, seat_map_path, max_days_ahead)
        VALUES (?, ?, ?, ?, ?)`,
       [
         room.slug,
         room.name,
         room.description ?? null,
-        room.seat_map_path ?? null,
-        room.max_days_ahead ?? 7,
+        room.seatMapPath ?? null,
+        room.maxDaysAhead ?? 7,
       ],
     )
-
     return result.insertId
   }
 
-  async getById(id: number): Promise<Room | null> {
-    const [rows] = await this.db.query<RoomRow[]>(
-      'SELECT * FROM rooms WHERE id = ? AND deleted_at IS NULL',
-      [id],
+  const getAll = async (): Promise<RoomDto[]> => {
+    const [rows] = await db.execute<RoomRow[]>(
+      `SELECT ${roomColumns} FROM rooms WHERE deleted_at IS NULL`,
     )
-    return rows[0] ?? null
+    return rows.map(toRoomDto)
   }
 
-  async getAll(): Promise<Room[]> {
-    const [rows] = await this.db.query<RoomRow[]>('SELECT * FROM rooms WHERE deleted_at IS NULL')
-    return rows
-  }
-
-  async update(id: number, data: Partial<RoomInput>): Promise<boolean> {
+  const update = async (id: number, data: UpdateRoomRequest): Promise<boolean> => {
     const fields: string[] = []
     const values: (string | number | null)[] = []
 
@@ -87,18 +95,22 @@ export class RoomRepository {
     if (fields.length === 0) return false
 
     values.push(id)
-    const [result] = await this.db.query<ResultSetHeader>(
+    const [result] = await db.execute<ResultSetHeader>(
       `UPDATE rooms SET ${fields.join(', ')} WHERE id = ? AND deleted_at IS NULL`,
       values,
     )
     return result.affectedRows > 0
   }
 
-  async delete(id: number): Promise<boolean> {
-    const [result] = await this.db.query<ResultSetHeader>(
+  const deleteRoom = async (id: number): Promise<boolean> => {
+    const [result] = await db.execute<ResultSetHeader>(
       'UPDATE rooms SET deleted_at = CURRENT_TIMESTAMP WHERE id = ? AND deleted_at IS NULL',
       [id],
     )
     return result.affectedRows > 0
   }
+
+  return { create, getById, getAll, update, delete: deleteRoom }
 }
+
+export type RoomsRepository = ReturnType<typeof createRoomsRepository>
