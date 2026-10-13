@@ -6,7 +6,7 @@ import {
   createFeaturesRepository,
   type FeaturesRepository,
 } from '../../src/repositories/featuresRepository.js'
-import { useMigratedTestDatabase } from './testDatabase.js'
+import { useMigratedTestDatabase } from '../testDatabase.js'
 
 const dock: CreateFeatureRequest = {
   name: 'Docking station',

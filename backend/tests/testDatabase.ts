@@ -1,12 +1,12 @@
 import { after, before } from 'node:test'
 import mysql, { type Connection, type ConnectionOptions, type Pool } from 'mysql2/promise'
-import { readEnv } from '../../src/config/createConfig.js'
-import { createPool } from '../../src/database/createPool.js'
+import { readEnv } from '../src/config/createConfig.js'
+import { createPool } from '../src/database/createPool.js'
 import {
   apply,
   ensureMigrationsTable,
   listMigrationFiles,
-} from '../../src/database/migration-runner/index.js'
+} from '../src/database/migration-runner/index.js'
 
 const TEST_DB_SUFFIX = '_test'
 

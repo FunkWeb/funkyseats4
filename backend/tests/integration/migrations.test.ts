@@ -6,7 +6,7 @@ import {
   listMigrationFiles,
   revert,
 } from '../../src/database/migration-runner/index.js'
-import { readTestDbConfig } from './testDatabase.js'
+import { readTestDbConfig } from '../testDatabase.js'
 
 const migrationFiles = await listMigrationFiles()
 

@@ -5,7 +5,7 @@ import {
   type NewUser,
   type UsersRepository,
 } from '../../src/repositories/usersRepository.js'
-import { useMigratedTestDatabase } from './testDatabase.js'
+import { useMigratedTestDatabase } from '../testDatabase.js'
 
 type StoredUser = NewUser & { id: number }
 
