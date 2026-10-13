@@ -1,39 +1,11 @@
-import { after, before, beforeEach, describe, it } from 'node:test'
+import { before, beforeEach, describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import mysql, { type Connection, type ConnectionOptions, type Pool } from 'mysql2/promise'
-import { createPool } from '../../src/database/createPool.js'
-import { readEnv } from '../../src/config/createConfig.js'
-import {
-  apply,
-  ensureMigrationsTable,
-  listMigrationFiles,
-} from '../../src/database/migration-runner/index.js'
 import {
   createUsersRepository,
   type NewUser,
   type UsersRepository,
 } from '../../src/repositories/usersRepository.js'
-
-const TEST_DB_SUFFIX = '_test'
-
-const readConfig = (): { database: string; server: ConnectionOptions } => {
-  const env = readEnv(process.env)
-  const database = env.required('DB_TEST_NAME')
-  if (database === process.env.DB_NAME || !database.endsWith(TEST_DB_SUFFIX)) {
-    throw new Error(
-      `Refusing to drop "${database}": test database must end in ${TEST_DB_SUFFIX} and differ from DB_NAME`,
-    )
-  }
-  return {
-    database,
-    server: {
-      host: env.required('DB_TEST_HOST'),
-      port: env.requiredPort('DB_TEST_PORT'),
-      user: env.required('DB_USER'),
-      password: env.required('DB_PASSWORD'),
-    },
-  }
-}
+import { useMigratedTestDatabase } from './testDatabase.js'
 
 type StoredUser = NewUser & { id: number }
 
@@ -56,10 +28,7 @@ const bob: NewUser = {
 const missing: StoredUser = { ...alice, id: 0, googleId: 'unknown', email: 'unknown@example.com' }
 
 describe('usersRepository', () => {
-  const { database, server } = readConfig()
-  const escapedDb = mysql.escapeId(database)
-  let admin: Connection | undefined
-  let pool: Pool | undefined
+  const db = useMigratedTestDatabase()
   let users: UsersRepository
 
   const store = async (user: NewUser): Promise<StoredUser> => ({
@@ -73,26 +42,12 @@ describe('usersRepository', () => {
     findByEmail: (user: StoredUser) => users.findByEmail(user.email),
   }
 
-  before(async () => {
-    admin = await mysql.createConnection(server)
-    await admin.query(`DROP DATABASE IF EXISTS ${escapedDb}`)
-    await admin.query(`CREATE DATABASE ${escapedDb}`)
-    const conn = await mysql.createConnection({ ...server, database })
-    await ensureMigrationsTable(conn)
-    for (const fileName of await listMigrationFiles()) await apply(conn, fileName)
-    await conn.end()
-    pool = createPool({ ...server, database })
-    users = createUsersRepository(pool)
-  })
-
-  after(async () => {
-    await pool?.end()
-    await admin?.query(`DROP DATABASE IF EXISTS ${escapedDb}`)
-    await admin?.end()
+  before(() => {
+    users = createUsersRepository(db())
   })
 
   beforeEach(async () => {
-    await pool!.query('DELETE FROM users')
+    await db().query('DELETE FROM users')
   })
 
   it('create stores the user with no login recorded', async () => {
