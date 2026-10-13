@@ -6,10 +6,7 @@
     "outDir": "dist",
     "strict": true,
     "skipLibCheck": true,
-    "types": ["node"],
-    "paths": {
-      "@contracts/*": ["./contracts/*"]
-    }
+    "types": ["node"]
   },
   "include": ["backend", "frontend", "contracts"]
 }

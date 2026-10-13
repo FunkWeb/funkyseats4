@@ -1,5 +1,5 @@
 import type { Pool, ResultSetHeader, RowDataPacket } from 'mysql2/promise'
-import type { UserRole } from '@contracts/user.js'
+import type { UserRole } from '../../../contracts/user.js'
 
 export interface User {
   id: number

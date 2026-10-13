@@ -1,6 +1,7 @@
 import { after, before, beforeEach, describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import mysql, { type Connection, type ConnectionOptions, type Pool } from 'mysql2/promise'
+import { createPool } from '../../src/database/connectionPool.js'
 import { readEnv } from '../../src/config/createConfig.js'
 import {
   apply,
@@ -80,7 +81,7 @@ describe('usersRepository', () => {
     await ensureMigrationsTable(conn)
     for (const fileName of await listMigrationFiles()) await apply(conn, fileName)
     await conn.end()
-    pool = mysql.createPool({ ...server, database, namedPlaceholders: true, timezone: 'Z' })
+    pool = createPool({ ...server, database })
     users = createUsersRepository(pool)
   })
 
