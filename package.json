@@ -11,7 +11,7 @@
     "dev:db-up": "docker compose -f docker-compose.dev.yml up --build -d --wait",
     "dev:db-down": "docker compose -f docker-compose.dev.yml down",
     "build": "tsc -p tsconfig.build.json",
-    "start": "node dist/server.js",
+    "start": "node dist/backend/src/server.js",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
