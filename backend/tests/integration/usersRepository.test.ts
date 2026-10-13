@@ -1,7 +1,7 @@
 import { after, before, beforeEach, describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import mysql, { type Connection, type ConnectionOptions, type Pool } from 'mysql2/promise'
-import { createPool } from '../../src/database/connectionPool.js'
+import { createPool } from '../../src/database/createPool.js'
 import { readEnv } from '../../src/config/createConfig.js'
 import {
   apply,
