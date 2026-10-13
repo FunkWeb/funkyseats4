@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 import type { FieldPacket, QueryResult, QueryValues } from 'mysql2/promise'
-import { RoomRepository, type RoomQueryExecutor } from './roomsRepository.js'
+import { RoomRepository, type RoomQueryExecutor } from '../../src/repositories/roomsRepository.js'
 
 const createRepository = (responses: unknown[] = []) => {
   const calls: { sql: string; values?: QueryValues }[] = []
