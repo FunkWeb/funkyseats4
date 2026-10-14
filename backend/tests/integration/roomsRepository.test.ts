@@ -18,7 +18,7 @@ const createRepository = (responses: unknown[] = []) => {
 }
 
 describe('RoomRepository', () => {
-  it('creates a room and applies optional-field defaults', async () => {
+  it('creates a room and lets the database apply optional-field defaults', async () => {
     const { repository, calls } = createRepository([{ insertId: 42 }])
 
     const id = await repository.create({ slug: 'room-a', name: 'Room A' })
@@ -26,9 +26,23 @@ describe('RoomRepository', () => {
     assert.equal(id, 42)
     assert.deepEqual(calls, [
       {
+        sql: `INSERT INTO rooms (slug, name, description, seat_map_path)
+       VALUES (?, ?, ?, ?)`,
+        values: ['room-a', 'Room A', null, null],
+      },
+    ])
+  })
+
+  it('inserts maxDaysAhead when explicitly provided', async () => {
+    const { repository, calls } = createRepository([{ insertId: 42 }])
+
+    await repository.create({ slug: 'room-a', name: 'Room A', maxDaysAhead: 14 })
+
+    assert.deepEqual(calls, [
+      {
         sql: `INSERT INTO rooms (slug, name, description, seat_map_path, max_days_ahead)
        VALUES (?, ?, ?, ?, ?)`,
-        values: ['room-a', 'Room A', null, null, 7],
+        values: ['room-a', 'Room A', null, null, 14],
       },
     ])
   })
@@ -76,30 +90,25 @@ describe('RoomRepository', () => {
     const { repository, calls } = createRepository([rooms])
 
     assert.deepEqual(await repository.getAll(), rooms)
-    assert.ok(calls[0].sql.includes('FROM rooms WHERE deleted_at IS NULL'))
+    assert.ok(calls[0].sql.includes('FROM rooms WHERE deleted_at IS NULL ORDER BY name'))
   })
 
-  it('updates allowed room fields and ignores unknown field names', async () => {
+  it('updates a room using the provided assignment and parameters', async () => {
     const { repository, calls } = createRepository([{ affectedRows: 1 }])
-    const data = Object.assign(
-      { name: 'Updated room', maxDaysAhead: 14 },
-      { 'name = ?; DROP TABLE rooms; --': 'unsafe' },
-    )
 
-    assert.equal(await repository.update(42, data), true)
+    assert.equal(
+      await repository.update(42, 'name = :name, max_days_ahead = :maxDaysAhead', {
+        name: 'Updated room',
+        maxDaysAhead: 14,
+      }),
+      true,
+    )
     assert.deepEqual(calls, [
       {
-        sql: 'UPDATE rooms SET name = ?, max_days_ahead = ? WHERE id = ? AND deleted_at IS NULL',
-        values: ['Updated room', 14, 42],
+        sql: 'UPDATE rooms SET name = :name, max_days_ahead = :maxDaysAhead WHERE id = :id AND deleted_at IS NULL',
+        values: { name: 'Updated room', maxDaysAhead: 14, id: 42 },
       },
     ])
-  })
-
-  it('does not query when there are no recognized update fields', async () => {
-    const { repository, calls } = createRepository()
-
-    assert.equal(await repository.update(42, {}), false)
-    assert.equal(calls.length, 0)
   })
 
   it('soft-deletes an active room', async () => {
