@@ -1,5 +1,6 @@
 import type { Pool, ResultSetHeader, RowDataPacket } from 'mysql2/promise'
 import type { RoomDto } from '../../../contracts/rooms.js'
+import type { QueryParams } from '../database/queryParams.js'
 
 export type Room = RoomDto
 
@@ -11,9 +12,6 @@ type RoomRow = Omit<Room, 'updatedAt' | 'createdAt'> &
 
 export type NewRoom = Pick<Room, 'slug' | 'name'> &
   Partial<Pick<Room, 'description' | 'seatMapPath' | 'maxDaysAhead'>>
-
-type ExecuteValues = NonNullable<Parameters<Pool['execute']>[1]>
-type QueryParams = Record<string, ExecuteValues>
 
 const roomColumns = `
   id,
@@ -41,12 +39,17 @@ const toRoomDto = (row: RoomRow): Room => ({
 })
 
 export const createRoomsRepository = (db: Pool) => {
-  const getById = async (id: number): Promise<Room | null> => {
+  const selectActiveRooms = async (clause: string, params: QueryParams = {}): Promise<Room[]> => {
     const [rows] = await db.execute<RoomRow[]>(
-      `SELECT ${roomColumns} FROM rooms WHERE id = ? AND deleted_at IS NULL`,
-      [id],
+      `SELECT ${roomColumns} FROM rooms WHERE deleted_at IS NULL ${clause}`,
+      params,
     )
-    return rows[0] ? toRoomDto(rows[0]) : null
+    return rows.map(toRoomDto)
+  }
+
+  const getById = async (id: number): Promise<Room | null> => {
+    const [room] = await selectActiveRooms('AND id = :id', { id })
+    return room ?? null
   }
 
   const create = async (room: NewRoom): Promise<number> => {
@@ -70,12 +73,7 @@ export const createRoomsRepository = (db: Pool) => {
     return result.insertId
   }
 
-  const getAll = async (): Promise<Room[]> => {
-    const [rows] = await db.execute<RoomRow[]>(
-      `SELECT ${roomColumns} FROM rooms WHERE deleted_at IS NULL ORDER BY name`,
-    )
-    return rows.map(toRoomDto)
-  }
+  const getAll = () => selectActiveRooms('ORDER BY name')
 
   const update = async (id: number, assignment: string, params: QueryParams = {}) => {
     const [result] = await db.execute<ResultSetHeader>(

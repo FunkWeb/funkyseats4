@@ -68,7 +68,7 @@ describe('RoomRepository', () => {
     assert.equal(await repository.getById(99), null)
     assert.deepEqual(
       calls.map(({ values }) => values),
-      [[42], [99]],
+      [{ id: 42 }, { id: 99 }],
     )
     assert.ok(calls.every(({ sql }) => sql.includes('deleted_at IS NULL')))
     assert.ok(calls.every(({ sql }) => sql.includes('seat_map_path AS seatMapPath')))
