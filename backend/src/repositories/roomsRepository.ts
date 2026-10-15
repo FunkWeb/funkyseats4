@@ -13,15 +13,6 @@ type Room = {
   createdAt: Date
 }
 
-type RoomDto = {
-  id: number
-  slug: string
-  name: string
-  description: string | null
-  seatMapUrl: string | null
-  maxDaysAhead: number
-}
-
 type RoomRow = Omit<Room, 'deletedAt' | 'updatedAt' | 'createdAt'> &
   RowDataPacket & {
     updatedAt: Date | string
