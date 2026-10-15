@@ -33,64 +33,64 @@ const readConfig = (): { database: string; server: ConnectionOptions } => {
 }
 
 describe('seatsRepository', () => {
-  let admin: mysql.Connection | undefined;
-  let pool: Pool | undefined;
+  let admin: mysql.Connection | undefined
+  let pool: Pool | undefined
 
   const testSeatInput: CreateSeatInput = {
     room_id: 1,
     seat_number: '10',
     description: 'Test seat',
-  };
+  }
 
   before(async () => {
-    const { database, server } = readConfig();
-    const escapedDb = mysql.escapeId(database);
+    const { database, server } = readConfig()
+    const escapedDb = mysql.escapeId(database)
 
-    admin = await mysql.createConnection(server);
-    await admin.query(`DROP DATABASE IF EXISTS ${escapedDb}`);
-    await admin.query(`CREATE DATABASE ${escapedDb}`);
-    const conn = await mysql.createConnection({ ...server, database });
-    await ensureMigrationsTable(conn);
+    admin = await mysql.createConnection(server)
+    await admin.query(`DROP DATABASE IF EXISTS ${escapedDb}`)
+    await admin.query(`CREATE DATABASE ${escapedDb}`)
+    const conn = await mysql.createConnection({ ...server, database })
+    await ensureMigrationsTable(conn)
     for (const fileName of await listMigrationFiles()) {
-      await apply(conn, fileName);
+      await apply(conn, fileName)
     }
-    await conn.end();
-    pool = createPool({ ...server, database });
-  });
+    await conn.end()
+    pool = createPool({ ...server, database })
+  })
 
   after(async () => {
-    const { database } = readConfig();
-    const escapedDb = mysql.escapeId(database);
-    await pool?.end();
-    await admin?.query(`DROP DATABASE IF EXISTS ${escapedDb}`);
-    await admin?.end();
-  });
+    const { database } = readConfig()
+    const escapedDb = mysql.escapeId(database)
+    await pool?.end()
+    await admin?.query(`DROP DATABASE IF EXISTS ${escapedDb}`)
+    await admin?.end()
+  })
 
   beforeEach(async () => {
-    await pool?.query('DELETE FROM seats');
-  });
+    await pool?.query('DELETE FROM seats')
+  })
 
   it('finds a seat by room ID', async () => {
-    const created = await seatsRepository.create(testSeatInput);
-    const seats = await seatsRepository.findByRoomId(testSeatInput.room_id);
-    assert.strictEqual(seats.length, 1);
-    assert.deepStrictEqual(seats[0], created);
-  });
+    const created = await seatsRepository.create(testSeatInput)
+    const seats = await seatsRepository.findByRoomId(testSeatInput.room_id)
+    assert.strictEqual(seats.length, 1)
+    assert.deepStrictEqual(seats[0], created)
+  })
 
   it('updates a seat', async () => {
-    const created = await seatsRepository.create(testSeatInput);
+    const created = await seatsRepository.create(testSeatInput)
     const updatedSeat = await seatsRepository.update(created.id, {
       seat_number: '99',
-    });
-    assert.strictEqual(updatedSeat?.seat_number, '99');
-  });
+    })
+    assert.strictEqual(updatedSeat?.seat_number, '99')
+  })
 
   it('soft deletes a seat', async () => {
-    const created = await seatsRepository.create(testSeatInput);
-    const success = await seatsRepository.softDelete(created.id);
-    assert.equal(success, true);
+    const created = await seatsRepository.create(testSeatInput)
+    const success = await seatsRepository.softDelete(created.id)
+    assert.equal(success, true)
 
-    const found = await seatsRepository.findById(created.id);
-    assert.equal(found, null);
-  });
-});
+    const found = await seatsRepository.findById(created.id)
+    assert.equal(found, null)
+  })
+})
