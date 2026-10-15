@@ -1,10 +1,28 @@
 import type { Pool, ResultSetHeader, RowDataPacket } from 'mysql2/promise'
-import type { RoomDto } from '../../../contracts/rooms.js'
 import type { QueryParams } from '../database/queryParams.js'
 
-export type Room = RoomDto
+type Room = {
+  id: number
+  slug: string
+  name: string
+  description: string | null
+  seatMapPath: string | null
+  maxDaysAhead: number
+  deletedAt: Date | null
+  updatedAt: Date
+  createdAt: Date
+}
 
-type RoomRow = Omit<Room, 'updatedAt' | 'createdAt'> &
+type RoomDto = {
+  id: number
+  slug: string
+  name: string
+  description: string | null
+  seatMapUrl: string | null
+  maxDaysAhead: number
+}
+
+type RoomRow = Omit<Room, 'deletedAt' | 'updatedAt' | 'createdAt'> &
   RowDataPacket & {
     updatedAt: Date | string
     createdAt: Date | string
@@ -24,18 +42,18 @@ const roomColumns = `
   created_at AS createdAt
 `
 
-const toTimestamp = (value: Date | string) =>
-  value instanceof Date ? value.toISOString() : new Date(value).toISOString()
+const toDate = (value: Date | string) => (value instanceof Date ? value : new Date(value))
 
-const toRoomDto = (row: RoomRow): Room => ({
+const toRoom = (row: RoomRow): Room => ({
   id: row.id,
   slug: row.slug,
   name: row.name,
   description: row.description,
   seatMapPath: row.seatMapPath,
   maxDaysAhead: row.maxDaysAhead,
-  updatedAt: toTimestamp(row.updatedAt),
-  createdAt: toTimestamp(row.createdAt),
+  deletedAt: null,
+  updatedAt: toDate(row.updatedAt),
+  createdAt: toDate(row.createdAt),
 })
 
 export const createRoomsRepository = (db: Pool) => {
@@ -44,10 +62,10 @@ export const createRoomsRepository = (db: Pool) => {
       `SELECT ${roomColumns} FROM rooms WHERE deleted_at IS NULL ${clause}`,
       params,
     )
-    return rows.map(toRoomDto)
+    return rows.map(toRoom)
   }
 
-  const getById = async (id: number): Promise<Room | null> => {
+  const findById = async (id: number): Promise<Room | null> => {
     const [room] = await selectActiveRooms('AND id = :id', { id })
     return room ?? null
   }
@@ -73,7 +91,7 @@ export const createRoomsRepository = (db: Pool) => {
     return result.insertId
   }
 
-  const getAll = () => selectActiveRooms('ORDER BY name')
+  const findAll = () => selectActiveRooms('ORDER BY name')
 
   const update = async (id: number, assignment: string, params: QueryParams = {}) => {
     const [result] = await db.execute<ResultSetHeader>(
@@ -91,7 +109,7 @@ export const createRoomsRepository = (db: Pool) => {
     return result.affectedRows > 0
   }
 
-  return { create, getById, getAll, update, delete: deleteRoom }
+  return { create, findById, findAll, update, delete: deleteRoom }
 }
 
 export type RoomsRepository = ReturnType<typeof createRoomsRepository>

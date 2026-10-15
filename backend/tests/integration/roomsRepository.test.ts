@@ -1,125 +1,106 @@
+import { before, beforeEach, describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import { describe, it } from 'node:test'
-import type { FieldPacket, Pool, QueryResult, QueryValues } from 'mysql2/promise'
-import { createRoomsRepository } from '../../src/repositories/roomsRepository.js'
+import {
+  createRoomsRepository,
+  type NewRoom,
+  type RoomsRepository,
+} from '../../src/repositories/roomsRepository.js'
+import { useMigratedTestDatabase } from '../testDatabase.js'
 
-const createRepository = (responses: unknown[] = []) => {
-  const calls: { sql: string; values?: QueryValues }[] = []
-  const db = {
-    async execute<T extends QueryResult>(sql: string, values?: QueryValues) {
-      calls.push({ sql, values })
-      const response = responses.shift()
-      if (response === undefined) throw new Error('No mock database response configured')
-      return [response as T, [] as FieldPacket[]]
-    },
-  } as Pool
-
-  return { repository: createRoomsRepository(db), calls }
+const room: NewRoom = {
+  slug: 'room-a',
+  name: 'Room A',
 }
 
-describe('RoomRepository', () => {
-  it('creates a room and lets the database apply optional-field defaults', async () => {
-    const { repository, calls } = createRepository([{ insertId: 42 }])
+describe('roomsRepository', () => {
+  const db = useMigratedTestDatabase()
+  let rooms: RoomsRepository
 
-    const id = await repository.create({ slug: 'room-a', name: 'Room A' })
+  const store = async (newRoom: NewRoom) => {
+    const id = await rooms.create(newRoom)
+    const stored = await rooms.findById(id)
+    if (!stored) throw new Error('Created room was not found')
+    return stored
+  }
 
-    assert.equal(id, 42)
-    assert.deepEqual(calls, [
-      {
-        sql: `INSERT INTO rooms (slug, name, description, seat_map_path)
-       VALUES (?, ?, ?, ?)`,
-        values: ['room-a', 'Room A', null, null],
-      },
-    ])
+  before(() => {
+    rooms = createRoomsRepository(db())
   })
 
-  it('inserts maxDaysAhead when explicitly provided', async () => {
-    const { repository, calls } = createRepository([{ insertId: 42 }])
-
-    await repository.create({ slug: 'room-a', name: 'Room A', maxDaysAhead: 14 })
-
-    assert.deepEqual(calls, [
-      {
-        sql: `INSERT INTO rooms (slug, name, description, seat_map_path, max_days_ahead)
-       VALUES (?, ?, ?, ?, ?)`,
-        values: ['room-a', 'Room A', null, null, 14],
-      },
-    ])
+  beforeEach(async () => {
+    for (const table of ['bookings', 'seat_features', 'seats', 'rooms']) {
+      await db().query(`DELETE FROM ${table}`)
+    }
   })
 
-  it('returns an active room by id or null when none exists', async () => {
-    const room = {
-      id: 42,
-      slug: 'room-a',
-      name: 'Room A',
+  it('create uses database defaults for optional fields', async () => {
+    const stored = await store(room)
+
+    assert.partialDeepStrictEqual(stored, {
+      ...room,
       description: null,
       seatMapPath: null,
       maxDaysAhead: 7,
-      updatedAt: new Date('2026-01-02T03:04:05.000Z'),
-      createdAt: new Date('2026-01-01T03:04:05.000Z'),
-    }
-    const { repository, calls } = createRepository([[room], []])
-
-    assert.deepEqual(await repository.getById(42), {
-      ...room,
-      updatedAt: '2026-01-02T03:04:05.000Z',
-      createdAt: '2026-01-01T03:04:05.000Z',
+      deletedAt: null,
     })
-    assert.equal(await repository.getById(99), null)
+    assert.ok(stored.updatedAt instanceof Date)
+    assert.ok(stored.createdAt instanceof Date)
+  })
+
+  it('create stores optional fields when provided', async () => {
+    const stored = await store({
+      ...room,
+      description: 'Main room',
+      seatMapPath: '/maps/room-a.svg',
+      maxDaysAhead: 14,
+    })
+
+    assert.partialDeepStrictEqual(stored, {
+      ...room,
+      description: 'Main room',
+      seatMapPath: '/maps/room-a.svg',
+      maxDaysAhead: 14,
+    })
+  })
+
+  it('findById returns null when no active room matches', async () => {
+    assert.equal(await rooms.findById(0), null)
+  })
+
+  it('findAll returns active rooms ordered by name', async () => {
+    await store({ slug: 'room-b', name: 'Room B' })
+    await store({ slug: 'room-a', name: 'Room A' })
+    const deleted = await store({ slug: 'room-c', name: 'Room C' })
+    await rooms.delete(deleted.id)
+
     assert.deepEqual(
-      calls.map(({ values }) => values),
-      [{ id: 42 }, { id: 99 }],
+      (await rooms.findAll()).map(({ name }) => name),
+      ['Room A', 'Room B'],
     )
-    assert.ok(calls.every(({ sql }) => sql.includes('deleted_at IS NULL')))
-    assert.ok(calls.every(({ sql }) => sql.includes('seat_map_path AS seatMapPath')))
   })
 
-  it('returns only active rooms', async () => {
-    const rooms = [
-      {
-        id: 42,
-        slug: 'room-a',
-        name: 'Room A',
-        description: null,
-        seatMapPath: null,
-        maxDaysAhead: 7,
-        updatedAt: '2026-01-02T03:04:05.000Z',
-        createdAt: '2026-01-01T03:04:05.000Z',
-      },
-    ]
-    const { repository, calls } = createRepository([rooms])
-
-    assert.deepEqual(await repository.getAll(), rooms)
-    assert.ok(calls[0].sql.includes('FROM rooms WHERE deleted_at IS NULL ORDER BY name'))
-  })
-
-  it('updates a room using the provided assignment and parameters', async () => {
-    const { repository, calls } = createRepository([{ affectedRows: 1 }])
+  it('update changes an active room', async () => {
+    const stored = await store(room)
 
     assert.equal(
-      await repository.update(42, 'name = :name, max_days_ahead = :maxDaysAhead', {
+      await rooms.update(stored.id, 'name = :name, max_days_ahead = :maxDaysAhead', {
         name: 'Updated room',
         maxDaysAhead: 14,
       }),
       true,
     )
-    assert.deepEqual(calls, [
-      {
-        sql: 'UPDATE rooms SET name = :name, max_days_ahead = :maxDaysAhead WHERE id = :id AND deleted_at IS NULL',
-        values: { name: 'Updated room', maxDaysAhead: 14, id: 42 },
-      },
-    ])
+    assert.partialDeepStrictEqual(await rooms.findById(stored.id), {
+      name: 'Updated room',
+      maxDaysAhead: 14,
+    })
+    assert.equal(await rooms.update(0, 'name = :name', { name: 'Missing room' }), false)
   })
 
-  it('soft-deletes an active room', async () => {
-    const { repository, calls } = createRepository([{ affectedRows: 1 }])
+  it('delete soft-deletes an active room', async () => {
+    const stored = await store(room)
 
-    assert.equal(await repository.delete(42), true)
-    assert.deepEqual(calls, [
-      {
-        sql: 'UPDATE rooms SET deleted_at = CURRENT_TIMESTAMP WHERE id = ? AND deleted_at IS NULL',
-        values: [42],
-      },
-    ])
+    assert.equal(await rooms.delete(stored.id), true)
+    assert.equal(await rooms.findById(stored.id), null)
+    assert.equal(await rooms.delete(stored.id), false)
   })
 })
