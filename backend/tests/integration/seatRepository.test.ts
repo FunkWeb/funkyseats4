@@ -1,96 +1,150 @@
-import { after, before, beforeEach, describe, it } from 'node:test'
+import { before, beforeEach, describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import mysql, { type ConnectionOptions, type Pool } from 'mysql2/promise'
-import { createPool } from '../../src/database/createPool.js'
-import { readEnv } from '../../src/config/createConfig.js'
-import {
-  apply,
-  ensureMigrationsTable,
-  listMigrationFiles,
-} from '../../src/database/migration-runner/index.js'
-import type { CreateSeatInput } from '../../contracts/seat.js'
+import type { ResultSetHeader } from 'mysql2/promise'
+import { seatsRepository, type SeatsRepository } from '../../src/repositories/seatsRepository.js'
+import type { CreateSeatInput, UpdateSeatInput } from '../../contracts/seat.js'
+import { useMigratedTestDatabase } from '../testDatabase.js'
 
-const TEST_DB_SUFFIX = '_test'
-
-const readConfig = (): { database: string; server: ConnectionOptions } => {
-  const env = readEnv(process.env)
-  const database = env.required('DB_TEST_NAME')
-  if (database === process.env.DB_NAME || !database.endsWith(TEST_DB_SUFFIX)) {
-    throw new Error(
-      `Refusing to drop "${database}": test database must end in ${TEST_DB_SUFFIX} and differ from DB_NAME`,
-    )
-  }
-  return {
-    database,
-    server: {
-      host: env.required('DB_HOST'),
-      port: parseInt(env.required('DB_PORT')),
-      user: env.required('DB_USER'),
-      password: env.required('DB_PASSWORD'),
-    },
-  }
-}
+type StoredSeat = CreateSeatInput & { id: number }
 
 describe('seatsRepository', () => {
-  let admin: mysql.Connection | undefined
-  let pool: Pool | undefined
-  let seatsRepository: typeof import('../../src/repositories/seatsRepository.js').seatsRepository
+  const db = useMigratedTestDatabase()
+  let seats: SeatsRepository
+  let roomId: number
+  let otherRoomId: number
 
-  const testSeatInput: CreateSeatInput = {
-    room_id: 1,
-    seat_number: '10',
-    description: 'Test seat',
+  const createRoom = async (name: string): Promise<number> => {
+    const [result] = await db().execute<ResultSetHeader>(
+      'INSERT INTO rooms (name) VALUES (:name)',
+      { name },
+    )
+    return result.insertId
   }
 
-  before(async () => {
-    const { database, server } = readConfig()
-    const escapedDb = mysql.escapeId(database)
-
-    admin = await mysql.createConnection(server)
-    await admin.query(`DROP DATABASE IF EXISTS ${escapedDb}`)
-    await admin.query(`CREATE DATABASE ${escapedDb}`)
-    const conn = await mysql.createConnection({ ...server, database })
-    await ensureMigrationsTable(conn)
-    for (const fileName of await listMigrationFiles()) {
-      await apply(conn, fileName)
-    }
-    await conn.end()
-    pool = createPool({ ...server, database })
-
-    const mod = await import('../../src/repositories/seatsRepository.js')
-    seatsRepository = mod.seatsRepository
+  const newSeat = (overrides: Partial<CreateSeatInput> = {}): CreateSeatInput => ({
+    roomId,
+    seatNumber: 'A1',
+    description: null,
+    ...overrides,
   })
 
-  after(async () => {
-    await pool?.end()
-    await admin?.end()
+  const store = async (seat: CreateSeatInput): Promise<StoredSeat> => ({
+    ...seat,
+    id: await seats.create(seat),
+  })
+
+  before(() => {
+    seats = seatsRepository(db())
   })
 
   beforeEach(async () => {
-    await pool?.query('DELETE FROM seats')
+    await db().query('DELETE FROM seats')
+    await db().query('DELETE FROM rooms')
+    roomId = await createRoom('Room 1')
+    otherRoomId = await createRoom('Room 2')
   })
 
-  it('finds a seat by room ID', async () => {
-    const created = await seatsRepository.create(testSeatInput)
-    const seats = await seatsRepository.findByRoomId(testSeatInput.room_id)
-    assert.strictEqual(seats.length, 1)
-    assert.deepStrictEqual(seats[0], created)
+  it('create stores the seat as active with timestamps', async () => {
+    const stored = await store(newSeat({ description: 'By the window' }))
+    const found = await seats.findById(stored.id)
+    assert.partialDeepStrictEqual(found, { ...stored, deletedAt: null })
+    assert.ok(found?.createdAt)
+    assert.ok(found?.updatedAt)
   })
 
-  it('updates a seat', async () => {
-    const created = await seatsRepository.create(testSeatInput)
-    const updatedSeat = await seatsRepository.update(created.id, {
-      seat_number: '99',
+  it('create rejects an unknown room', async () => {
+    await assert.rejects(seats.create(newSeat({ roomId: 0 })), {
+      code: 'ER_NO_REFERENCED_ROW_2',
     })
-    assert.strictEqual(updatedSeat?.seat_number, '99')
   })
 
-  it('soft deletes a seat', async () => {
-    const created = await seatsRepository.create(testSeatInput)
-    const success = await seatsRepository.softDelete(created.id)
-    assert.equal(success, true)
+  it('findById returns the matching seat', async () => {
+    const stored = await store(newSeat())
+    await store(newSeat({ seatNumber: 'A2' }))
+    assert.partialDeepStrictEqual(await seats.findById(stored.id), stored)
+  })
 
-    const found = await seatsRepository.findById(created.id)
-    assert.equal(found, null)
+  it('findById returns undefined when nothing matches', async () => {
+    await store(newSeat())
+    assert.equal(await seats.findById(0), undefined)
+  })
+
+  it('findByRoomId returns only that room’s seats ordered by seat number', async () => {
+    await store(newSeat({ seatNumber: 'B1' }))
+    await store(newSeat({ seatNumber: 'A1' }))
+    await store(newSeat({ roomId: otherRoomId, seatNumber: 'C1' }))
+    const found = await seats.findByRoomId(roomId)
+    assert.deepEqual(
+      found.map(({ seatNumber }) => seatNumber),
+      ['A1', 'B1'],
+    )
+  })
+
+  it('findByRoomId returns an empty list for a room without seats', async () => {
+    await store(newSeat())
+    assert.deepEqual(await seats.findByRoomId(otherRoomId), [])
+  })
+
+  it('findAll returns every seat ordered by room', async () => {
+    await store(newSeat({ roomId: otherRoomId, seatNumber: 'B1' }))
+    await store(newSeat({ roomId, seatNumber: 'A1' }))
+    const all = await seats.findAll()
+    assert.deepEqual(
+      all.map((seat) => seat.roomId),
+      [roomId, otherRoomId],
+    )
+  })
+
+  const fieldUpdates: Array<[field: string, changes: () => UpdateSeatInput]> = [
+    ['seatNumber', () => ({ seatNumber: 'Z9' })],
+    ['description', () => ({ description: 'Near the window' })],
+    ['roomId', () => ({ roomId: otherRoomId })],
+  ]
+
+  for (const [field, changes] of fieldUpdates) {
+    it(`update changes ${field} and leaves the rest untouched`, async () => {
+      const stored = await store(newSeat({ description: 'Original' }))
+      const input = changes()
+      assert.equal(await seats.update(stored.id, input), true)
+      assert.partialDeepStrictEqual(await seats.findById(stored.id), {
+        ...stored,
+        ...input,
+      })
+    })
+  }
+
+  it('update can clear the description', async () => {
+    const stored = await store(newSeat({ description: 'Original' }))
+    assert.equal(await seats.update(stored.id, { description: null }), true)
+    assert.equal((await seats.findById(stored.id))?.description, null)
+  })
+
+  it('update can change several fields at once', async () => {
+    const stored = await store(newSeat())
+    assert.equal(await seats.update(stored.id, { seatNumber: 'B2', description: 'Corner' }), true)
+    assert.partialDeepStrictEqual(await seats.findById(stored.id), {
+      ...stored,
+      seatNumber: 'B2',
+      description: 'Corner',
+    })
+  })
+
+  it('update returns false when there is nothing to update', async () => {
+    const stored = await store(newSeat())
+    assert.equal(await seats.update(stored.id, {}), false)
+  })
+
+  it('update returns false for an unknown id', async () => {
+    assert.equal(await seats.update(0, { seatNumber: 'Z9' }), false)
+  })
+
+  it('delete removes the seat', async () => {
+    const stored = await store(newSeat())
+    assert.equal(await seats.delete(stored.id), true)
+    assert.equal(await seats.findById(stored.id), undefined)
+  })
+
+  it('delete returns false for an unknown id', async () => {
+    assert.equal(await seats.delete(0), false)
   })
 })
