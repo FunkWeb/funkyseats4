@@ -7,10 +7,9 @@ import {
   apply,
   ensureMigrationsTable,
   listMigrationFiles,
-  revert,
 } from '../../src/database/migration-runner/index.js'
 import { seatsRepository } from '../../src/repositories/seatsRepository.js'
-import type { Seat, CreateSeatInput } from '../../contracts/seat.js'
+import type { CreateSeatInput } from '../../contracts/seat.js'
 
 const TEST_DB_SUFFIX = '_test'
 
