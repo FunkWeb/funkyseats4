@@ -62,10 +62,7 @@ describe('seatsRepository', () => {
   })
 
   after(async () => {
-    const { database } = readConfig()
-    const escapedDb = mysql.escapeId(database)
     await pool?.end()
-    await admin?.query(`DROP DATABASE IF EXISTS ${escapedDb}`)
     await admin?.end()
   })
 
