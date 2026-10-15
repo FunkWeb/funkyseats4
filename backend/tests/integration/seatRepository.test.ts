@@ -8,7 +8,6 @@ import {
   ensureMigrationsTable,
   listMigrationFiles,
 } from '../../src/database/migration-runner/index.js'
-import { seatsRepository } from '../../src/repositories/seatsRepository.js'
 import type { CreateSeatInput } from '../../contracts/seat.js'
 
 const TEST_DB_SUFFIX = '_test'
@@ -35,6 +34,7 @@ const readConfig = (): { database: string; server: ConnectionOptions } => {
 describe('seatsRepository', () => {
   let admin: mysql.Connection | undefined
   let pool: Pool | undefined
+  let seatsRepository: typeof import('../../src/repositories/seatsRepository.js').seatsRepository
 
   const testSeatInput: CreateSeatInput = {
     room_id: 1,
@@ -56,6 +56,9 @@ describe('seatsRepository', () => {
     }
     await conn.end()
     pool = createPool({ ...server, database })
+
+    const mod = await import('../../src/repositories/seatsRepository.js')
+    seatsRepository = mod.seatsRepository
   })
 
   after(async () => {
