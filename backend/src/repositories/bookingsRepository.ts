@@ -41,12 +41,20 @@ const toBookingDto = (row: BookingRow): BookingDto => ({
 })
 
 export const createBookingsRepository = (db: Pool) => {
-  const findById = async (id: number): Promise<BookingDto | null> => {
+  const selectBookings = async (
+    clause: string,
+    values: (number | string)[],
+  ): Promise<BookingDto[]> => {
     const [rows] = await db.execute<BookingRow[]>(
-      `SELECT ${bookingColumns} FROM bookings WHERE id = ?`,
-      [id],
+      `SELECT ${bookingColumns} FROM bookings ${clause}`,
+      values,
     )
-    return rows[0] ? toBookingDto(rows[0]) : null
+    return rows.map(toBookingDto)
+  }
+
+  const findById = async (id: number): Promise<BookingDto | null> => {
+    const [booking] = await selectBookings('WHERE id = ?', [id])
+    return booking ?? null
   }
 
   const create = async (booking: CreateBookingRequest): Promise<BookingDto> => {
@@ -60,24 +68,11 @@ export const createBookingsRepository = (db: Pool) => {
     return createdBooking
   }
 
-  const findByUserId = async (userId: number): Promise<BookingDto[]> => {
-    const [rows] = await db.execute<BookingRow[]>(
-      `SELECT ${bookingColumns} FROM bookings WHERE user_id = ? ORDER BY id`,
-      [userId],
-    )
-    return rows.map(toBookingDto)
-  }
+  const findByUserId = (userId: number): Promise<BookingDto[]> =>
+    selectBookings('WHERE user_id = ? ORDER BY id', [userId])
 
-  const findBySeatAndDate = async (seatId: number, date: string): Promise<BookingDto[]> => {
-    const [rows] = await db.execute<BookingRow[]>(
-      `SELECT ${bookingColumns}
-       FROM bookings
-       WHERE seat_id = ? AND booking_date = ?
-       ORDER BY id`,
-      [seatId, date],
-    )
-    return rows.map(toBookingDto)
-  }
+  const findBySeatAndDate = (seatId: number, date: string): Promise<BookingDto[]> =>
+    selectBookings('WHERE seat_id = ? AND booking_date = ? ORDER BY id', [seatId, date])
 
   const updateStatus = async (id: number, status: BookingStatus): Promise<BookingDto | null> => {
     await db.execute<ResultSetHeader>('UPDATE bookings SET status = ? WHERE id = ?', [status, id])
