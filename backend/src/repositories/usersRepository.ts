@@ -1,5 +1,6 @@
 import type { Pool, ResultSetHeader, RowDataPacket } from 'mysql2/promise'
 import type { UserRole } from '../../../contracts/user.js'
+import type { QueryParams } from '../database/queryParams.js'
 
 export interface User {
   id: number
@@ -16,10 +17,6 @@ export interface User {
 export type NewUser = Pick<User, 'googleId' | 'name' | 'email' | 'avatarPath' | 'role'>
 
 type UserRow = User & RowDataPacket
-
-type ExecuteValues = NonNullable<Parameters<Pool['execute']>[1]>
-
-type QueryParams = Record<string, ExecuteValues>
 
 const SELECT_USER = `
   SELECT
