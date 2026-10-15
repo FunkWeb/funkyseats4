@@ -3,35 +3,32 @@ import type { Seat, CreateSeatInput, UpdateSeatInput } from '../../contracts/sea
 import type { QueryParams } from '../database/queryParams.js'
 
 type SeatRow = Seat & RowDataPacket
+type SeatField = keyof UpdateSeatInput
 
 const SELECT_SEAT = `
   SELECT
     id,
     room_id         AS roomId,
-    label,
-    x,
-    y,
-    status,
-    type,
+    seat_number     AS seatNumber,
+    description,
+    deleted_at      AS deletedAt,
     updated_at      AS updatedAt,
     created_at      AS createdAt
   FROM seats`
 
+const COLUMNS = {
+  roomId: 'room_id',
+  seatNumber: 'seat_number',
+  description: 'description',
+} as const satisfies Record<SeatField, string>
+
 export const seatsRepository = (db: Pool) => {
-  const selectSeats = async (clause: string = '', params: QueryParams = {}): Promise<Seat[]> => {
+  const selectSeats = async (clause: string, params: QueryParams = {}): Promise<Seat[]> => {
     const [rows] = await db.execute<SeatRow[]>(`${SELECT_SEAT} ${clause}`, params)
     return rows
   }
 
-  const findOneBy = async (
-    column: 'id' | 'room_id' | 'label',
-    value: string | number,
-  ): Promise<Seat | undefined> => {
-    const [seat] = await selectSeats(`WHERE ${column} = :value`, { value })
-    return seat
-  }
-
-  const updateOne = async (id: number, assignment: string, params: QueryParams = {}) => {
+  const updateOne = async (id: number, assignment: string, params: QueryParams) => {
     const [result] = await db.execute<ResultSetHeader>(
       `UPDATE seats SET ${assignment} WHERE id = :id`,
       { ...params, id },
@@ -40,35 +37,32 @@ export const seatsRepository = (db: Pool) => {
   }
 
   return {
-    findAll: () => selectSeats('ORDER BY room_id'),
-    findById: (id: number) => findOneBy('id', id),
+    findAll: () => selectSeats('ORDER BY room_id, seat_number'),
+    findById: async (id: number): Promise<Seat | undefined> => {
+      const [seat] = await selectSeats('WHERE id = :id', { id })
+      return seat
+    },
     findByRoomId: (roomId: number) =>
-      selectSeats('WHERE room_id = :roomId ORDER BY label', { roomId }),
+      selectSeats('WHERE room_id = :roomId ORDER BY seat_number', { roomId }),
 
     create: async (seat: CreateSeatInput): Promise<number> => {
       const [result] = await db.execute<ResultSetHeader>(
-        `INSERT INTO seats (room_id, label, x, y, status, type)
-         VALUES (:roomId, :label, :x, :y, :status, :type)`,
-        seat as unknown as QueryParams,
+        `INSERT INTO seats (room_id, seat_number, description)
+         VALUES (:roomId, :seatNumber, :description)`,
+        seat,
       )
       return result.insertId
     },
 
     update: async (id: number, input: UpdateSeatInput): Promise<boolean> => {
-      const updates: string[] = []
-      const params: QueryParams = { id }
+      const fields = (Object.keys(COLUMNS) as SeatField[]).filter(
+        (field) => input[field] !== undefined,
+      )
+      if (fields.length === 0) return false
 
-      const updateOne = async (id: number, assignment: string, params: QueryParams = {}) => {
-        const [result] = await db.execute<ResultSetHeader>(
-          `UPDATE users SET ${assignment} WHERE id = :id`,
-          { ...params, id },
-        )
-        return result.affectedRows === 1
-      }
-
-      if (updates.length === 0) return false
-
-      return updateOne(id, updates.join(', '), params)
+      const assignment = fields.map((field) => `${COLUMNS[field]} = :${field}`).join(', ')
+      const params = Object.fromEntries(fields.map((field) => [field, input[field]])) as QueryParams
+      return updateOne(id, assignment, params)
     },
 
     delete: async (id: number): Promise<boolean> => {

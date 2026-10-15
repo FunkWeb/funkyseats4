@@ -13,10 +13,10 @@ describe('seatsRepository', () => {
   let roomId: number
   let otherRoomId: number
 
-  const createRoom = async (name: string): Promise<number> => {
+  const createRoom = async (slug: string, name: string): Promise<number> => {
     const [result] = await db().execute<ResultSetHeader>(
-      'INSERT INTO rooms (name) VALUES (:name)',
-      { name },
+      'INSERT INTO rooms (slug, name) VALUES (:slug, :name)',
+      { slug, name },
     )
     return result.insertId
   }
@@ -40,8 +40,8 @@ describe('seatsRepository', () => {
   beforeEach(async () => {
     await db().query('DELETE FROM seats')
     await db().query('DELETE FROM rooms')
-    roomId = await createRoom('Room 1')
-    otherRoomId = await createRoom('Room 2')
+    roomId = await createRoom('room-1', 'Room 1')
+    otherRoomId = await createRoom('room-2', 'Room 2')
   })
 
   it('create stores the seat as active with timestamps', async () => {
