@@ -31,9 +31,9 @@ export const seatsRepository = (db: Pool) => {
     return rows
   }
 
-  const updateOne = async (id: number, assignment: string, params: QueryParams) => {
+  const updateOne = async (id: number, assignment: string, params: QueryParams = {}) => {
     const [result] = await db.execute<ResultSetHeader>(
-      `UPDATE seats SET ${assignment} WHERE id = :id`,
+      `UPDATE seats SET ${assignment} WHERE id = :id AND deleted_at IS NULL`,
       { ...params, id },
     )
     return result.affectedRows === 1
@@ -68,10 +68,7 @@ export const seatsRepository = (db: Pool) => {
       return updateOne(id, assignment, params)
     },
 
-    delete: async (id: number): Promise<boolean> => {
-      const [result] = await db.execute<ResultSetHeader>('DELETE FROM seats WHERE id = :id', { id })
-      return result.affectedRows === 1
-    },
+    delete: (id: number): Promise<boolean> => updateOne(id, 'deleted_at = CURRENT_TIMESTAMP'),
   }
 }
 
