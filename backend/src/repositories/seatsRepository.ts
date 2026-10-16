@@ -24,7 +24,10 @@ const COLUMNS = {
 
 export const seatsRepository = (db: Pool) => {
   const selectSeats = async (clause: string, params: QueryParams = {}): Promise<Seat[]> => {
-    const [rows] = await db.execute<SeatRow[]>(`${SELECT_SEAT} ${clause}`, params)
+    const [rows] = await db.execute<SeatRow[]>(
+      `${SELECT_SEAT} WHERE deleted_at IS NULL ${clause}`,
+      params,
+    )
     return rows
   }
 
@@ -39,11 +42,11 @@ export const seatsRepository = (db: Pool) => {
   return {
     findAll: () => selectSeats('ORDER BY room_id, seat_number'),
     findById: async (id: number): Promise<Seat | undefined> => {
-      const [seat] = await selectSeats('WHERE id = :id', { id })
+      const [seat] = await selectSeats('AND id = :id', { id })
       return seat
     },
     findByRoomId: (roomId: number) =>
-      selectSeats('WHERE room_id = :roomId ORDER BY seat_number', { roomId }),
+      selectSeats('AND room_id = :roomId ORDER BY seat_number', { roomId }),
 
     create: async (seat: CreateSeatInput): Promise<number> => {
       const [result] = await db.execute<ResultSetHeader>(
