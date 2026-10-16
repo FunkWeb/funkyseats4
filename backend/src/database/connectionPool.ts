@@ -1,9 +1,4 @@
-import mysql from 'mysql2/promise'
 import { config } from '../config/index.js'
+import { createPool } from './createPool.js'
 
-export const pool = mysql.createPool({
-  ...config.db,
-  waitForConnections: true,
-  namedPlaceholders: true,
-  timezone: 'Z',
-})
+export const pool = createPool(config.db)

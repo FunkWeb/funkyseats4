@@ -2,11 +2,11 @@
   "compilerOptions": {
     "target": "ES2022",
     "module": "NodeNext",
-    "rootDir": "backend",
+    "rootDir": ".",
     "outDir": "dist",
     "strict": true,
     "skipLibCheck": true,
     "types": ["node"]
   },
-  "include": ["backend"]
+  "include": ["backend", "frontend", "contracts"]
 }
