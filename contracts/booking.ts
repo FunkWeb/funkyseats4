@@ -9,8 +9,6 @@ export interface BookingDto {
   status: BookingStatus
   bookingDate: string
   timePeriod: TimePeriod
-  updatedAt: string
-  createdAt: string
 }
 
 export type CreateBookingRequest = Pick<

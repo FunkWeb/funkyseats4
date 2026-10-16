@@ -1,81 +1,64 @@
-import type { ResultSetHeader, RowDataPacket, Pool } from 'mysql2/promise'
+import type { Pool, ResultSetHeader, RowDataPacket } from 'mysql2/promise'
 import type { BookingDto, BookingStatus, CreateBookingRequest } from '../../../contracts/booking.js'
+import type { QueryParams } from '../database/queryParams.js'
 
-interface BookingRow extends RowDataPacket {
-  id: number
-  seatId: number
-  userId: number
-  status: BookingStatus
-  bookingDate: Date | string
-  timePeriod: BookingDto['timePeriod']
-  updatedAt: Date | string
-  createdAt: Date | string
+export interface Booking extends BookingDto {
+  updatedAt: Date
+  createdAt: Date
 }
+
+type BookingRow = Booking & RowDataPacket
 
 const bookingColumns = `
   id,
   seat_id AS seatId,
   user_id AS userId,
   status,
-  booking_date AS bookingDate,
+  DATE_FORMAT(booking_date, '%Y-%m-%d') AS bookingDate,
   time_period AS timePeriod,
   updated_at AS updatedAt,
   created_at AS createdAt
 `
 
-const toDateOnly = (value: Date | string) =>
-  value instanceof Date ? value.toISOString().slice(0, 10) : value.slice(0, 10)
-
-const toTimestamp = (value: Date | string) =>
-  value instanceof Date ? value.toISOString() : new Date(value).toISOString()
-
-const toBookingDto = (row: BookingRow): BookingDto => ({
-  id: row.id,
-  seatId: row.seatId,
-  userId: row.userId,
-  status: row.status,
-  bookingDate: toDateOnly(row.bookingDate),
-  timePeriod: row.timePeriod,
-  updatedAt: toTimestamp(row.updatedAt),
-  createdAt: toTimestamp(row.createdAt),
-})
-
 export const createBookingsRepository = (db: Pool) => {
-  const selectBookings = async (
-    clause: string,
-    values: (number | string)[],
-  ): Promise<BookingDto[]> => {
+  const selectBookings = async (clause: string, params: QueryParams): Promise<Booking[]> => {
     const [rows] = await db.execute<BookingRow[]>(
       `SELECT ${bookingColumns} FROM bookings ${clause}`,
-      values,
+      params,
     )
-    return rows.map(toBookingDto)
+    return rows
   }
 
-  const findById = async (id: number): Promise<BookingDto | null> => {
-    const [booking] = await selectBookings('WHERE id = ?', [id])
+  const findById = async (id: number): Promise<Booking | null> => {
+    const [booking] = await selectBookings('WHERE id = :id', { id })
     return booking ?? null
   }
 
-  const create = async (booking: CreateBookingRequest): Promise<BookingDto> => {
+  const create = async (booking: CreateBookingRequest): Promise<Booking> => {
     const [result] = await db.execute<ResultSetHeader>(
       `INSERT INTO bookings (seat_id, user_id, status, booking_date, time_period)
-       VALUES (?, ?, 'ACTIVE', ?, ?)`,
-      [booking.seatId, booking.userId, booking.bookingDate, booking.timePeriod],
+       VALUES (:seatId, :userId, 'ACTIVE', :bookingDate, :timePeriod)`,
+      booking,
     )
     const createdBooking = await findById(result.insertId)
     if (!createdBooking) throw new Error(`Booking ${result.insertId} was not found after creation`)
     return createdBooking
   }
 
-  const findByUserId = (userId: number): Promise<BookingDto[]> =>
-    selectBookings('WHERE user_id = ? ORDER BY id', [userId])
+  const findByUserId = (userId: number): Promise<Booking[]> =>
+    selectBookings('WHERE user_id = :userId ORDER BY id', { userId })
 
-  const findBySeatAndDate = (seatId: number, date: string): Promise<BookingDto[]> =>
-    selectBookings('WHERE seat_id = ? AND booking_date = ? ORDER BY id', [seatId, date])
+  const findBySeatAndDate = (seatId: number, date: string): Promise<Booking[]> =>
+    selectBookings('WHERE seat_id = :seatId AND booking_date = :date ORDER BY id', {
+      seatId,
+      date,
+    })
 
-  const updateStatus = async (id: number, status: BookingStatus): Promise<BookingDto | null> => {
-    await db.execute<ResultSetHeader>('UPDATE bookings SET status = ? WHERE id = ?', [status, id])
+  const updateStatus = async (id: number, status: BookingStatus): Promise<Booking | null> => {
+    await db.execute<ResultSetHeader>('UPDATE bookings SET status = :status WHERE id = :id', {
+      status,
+      id,
+    })
     return findById(id)
   }
 

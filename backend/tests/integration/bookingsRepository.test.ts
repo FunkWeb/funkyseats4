@@ -1,9 +1,10 @@
 import { before, beforeEach, describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import type { ResultSetHeader } from 'mysql2/promise'
-import type { BookingDto, CreateBookingRequest } from '../../../contracts/booking.js'
+import type { CreateBookingRequest } from '../../../contracts/booking.js'
 import {
   createBookingsRepository,
+  type Booking,
   type BookingsRepository,
 } from '../../src/repositories/bookingsRepository.js'
 import { useMigratedTestDatabase } from '../testDatabase.js'
@@ -45,7 +46,7 @@ describe('bookingsRepository', () => {
     ...overrides,
   })
 
-  const book = (overrides?: Partial<CreateBookingRequest>): Promise<BookingDto> =>
+  const book = (overrides?: Partial<CreateBookingRequest>): Promise<Booking> =>
     bookings.create(request(overrides))
 
   before(() => {
