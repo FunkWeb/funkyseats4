@@ -1,8 +1,11 @@
 import { NotFoundError } from '../errors/appErrors.js'
 
-export const findOrThrow = async <T>(lookup: Promise<T | undefined>, resource: string) => {
+export const findOrThrow = async <T>(
+  lookup: Promise<T | null | undefined>,
+  resource: string,
+): Promise<T> => {
   const found = await lookup
-  if (found === undefined) throw new NotFoundError(resource)
+  if (found === null || found === undefined) throw new NotFoundError(resource)
   return found
 }
 
