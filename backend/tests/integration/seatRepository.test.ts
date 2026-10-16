@@ -2,7 +2,7 @@ import { before, beforeEach, describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import type { ResultSetHeader } from 'mysql2/promise'
 import { seatsRepository, type SeatsRepository } from '../../src/repositories/seatsRepository.js'
-import type { CreateSeatInput, UpdateSeatInput } from '../../contracts/seat.js'
+import type { CreateSeatInput, UpdateSeatInput } from '../../../contracts/seat.js'
 import { useMigratedTestDatabase } from '../testDatabase.js'
 
 type StoredSeat = CreateSeatInput & { id: number }

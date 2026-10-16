@@ -1,5 +1,5 @@
 import type { Pool, ResultSetHeader, RowDataPacket } from 'mysql2/promise'
-import type { Seat, CreateSeatInput, UpdateSeatInput } from '../../contracts/seat.js'
+import type { Seat, CreateSeatInput, UpdateSeatInput } from '../../../contracts/seat.js'
 import type { QueryParams } from '../database/queryParams.js'
 
 type SeatRow = Seat & RowDataPacket
