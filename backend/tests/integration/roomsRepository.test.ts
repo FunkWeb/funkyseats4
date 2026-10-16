@@ -6,6 +6,7 @@ import {
   type RoomsRepository,
 } from '../../src/repositories/roomsRepository.js'
 import { useMigratedTestDatabase } from '../testDatabase.js'
+import { createFixtures } from '../testFixtures.js'
 
 const room: NewRoom = {
   slug: 'room-a',
@@ -28,9 +29,7 @@ describe('roomsRepository', () => {
   })
 
   beforeEach(async () => {
-    for (const table of ['bookings', 'seat_features', 'seats', 'rooms']) {
-      await db().query(`DELETE FROM ${table}`)
-    }
+    await createFixtures(db()).reset()
   })
 
   it('create uses database defaults for optional fields', async () => {

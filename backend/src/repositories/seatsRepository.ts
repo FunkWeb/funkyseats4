@@ -24,13 +24,16 @@ const COLUMNS = {
 
 export const seatsRepository = (db: Pool) => {
   const selectSeats = async (clause: string, params: QueryParams = {}): Promise<Seat[]> => {
-    const [rows] = await db.execute<SeatRow[]>(`${SELECT_SEAT} ${clause}`, params)
+    const [rows] = await db.execute<SeatRow[]>(
+      `${SELECT_SEAT} WHERE deleted_at IS NULL ${clause}`,
+      params,
+    )
     return rows
   }
 
-  const updateOne = async (id: number, assignment: string, params: QueryParams) => {
+  const updateOne = async (id: number, assignment: string, params: QueryParams = {}) => {
     const [result] = await db.execute<ResultSetHeader>(
-      `UPDATE seats SET ${assignment} WHERE id = :id`,
+      `UPDATE seats SET ${assignment} WHERE id = :id AND deleted_at IS NULL`,
       { ...params, id },
     )
     return result.affectedRows === 1
@@ -39,11 +42,11 @@ export const seatsRepository = (db: Pool) => {
   return {
     findAll: () => selectSeats('ORDER BY room_id, seat_number'),
     findById: async (id: number): Promise<Seat | undefined> => {
-      const [seat] = await selectSeats('WHERE id = :id', { id })
+      const [seat] = await selectSeats('AND id = :id', { id })
       return seat
     },
     findByRoomId: (roomId: number) =>
-      selectSeats('WHERE room_id = :roomId ORDER BY seat_number', { roomId }),
+      selectSeats('AND room_id = :roomId ORDER BY seat_number', { roomId }),
 
     create: async (seat: CreateSeatInput): Promise<number> => {
       const [result] = await db.execute<ResultSetHeader>(
@@ -65,10 +68,7 @@ export const seatsRepository = (db: Pool) => {
       return updateOne(id, assignment, params)
     },
 
-    delete: async (id: number): Promise<boolean> => {
-      const [result] = await db.execute<ResultSetHeader>('DELETE FROM seats WHERE id = :id', { id })
-      return result.affectedRows === 1
-    },
+    delete: (id: number): Promise<boolean> => updateOne(id, 'deleted_at = CURRENT_TIMESTAMP'),
   }
 }
 

@@ -1,12 +1,12 @@
 import { before, beforeEach, describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import type { ResultSetHeader } from 'mysql2/promise'
 import type { CreateFeatureRequest, FeatureDto } from '../../../contracts/feature.js'
 import {
   createFeaturesRepository,
   type FeaturesRepository,
 } from '../../src/repositories/featuresRepository.js'
 import { useMigratedTestDatabase } from '../testDatabase.js'
+import { createFixtures, type Fixtures } from '../testFixtures.js'
 
 const dock: CreateFeatureRequest = {
   name: 'Docking station',
@@ -26,37 +26,25 @@ const UNKNOWN_ID = 0
 
 describe('featuresRepository', () => {
   const db = useMigratedTestDatabase()
+  let fixtures: Fixtures
   let features: FeaturesRepository
   let roomId: number
-
-  const insert = async (sql: string, params: Record<string, string | number>) => {
-    const [result] = await db().execute<ResultSetHeader>(sql, params)
-    return result.insertId
-  }
 
   const store = async (feature: CreateFeatureRequest): Promise<FeatureDto> => ({
     ...feature,
     id: await features.create(feature),
   })
 
-  const storeSeat = (seatNumber: string) =>
-    insert('INSERT INTO seats (room_id, seat_number) VALUES (:roomId, :seatNumber)', {
-      roomId,
-      seatNumber,
-    })
+  const storeSeat = (seatNumber: string) => fixtures.storeSeat(roomId, seatNumber)
 
   before(() => {
+    fixtures = createFixtures(db())
     features = createFeaturesRepository(db())
   })
 
   beforeEach(async () => {
-    for (const table of ['seat_features', 'features', 'seats', 'rooms']) {
-      await db().query(`DELETE FROM ${table}`)
-    }
-    roomId = await insert('INSERT INTO rooms (slug, name) VALUES (:slug, :name)', {
-      slug: 'room-a',
-      name: 'Room A',
-    })
+    await fixtures.reset()
+    roomId = await fixtures.storeRoom('room-a')
   })
 
   it('goes through the create > attach > find > detach lifecycle', async () => {

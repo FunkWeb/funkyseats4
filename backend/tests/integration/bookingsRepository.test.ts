@@ -1,6 +1,5 @@
 import { before, beforeEach, describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import type { ResultSetHeader } from 'mysql2/promise'
 import type { CreateBookingRequest } from '../../../contracts/booking.js'
 import {
   createBookingsRepository,
@@ -8,6 +7,7 @@ import {
   type BookingsRepository,
 } from '../../src/repositories/bookingsRepository.js'
 import { useMigratedTestDatabase } from '../testDatabase.js'
+import { createFixtures, type Fixtures } from '../testFixtures.js'
 
 const UNKNOWN_ID = 0
 const DATE = '2030-01-02'
@@ -15,28 +15,12 @@ const OTHER_DATE = '2030-01-03'
 
 describe('bookingsRepository', () => {
   const db = useMigratedTestDatabase()
+  let fixtures: Fixtures
   let bookings: BookingsRepository
   let alice: number
   let bob: number
   let seatA: number
   let seatB: number
-
-  const insert = async (sql: string, params: Record<string, string | number>) => {
-    const [result] = await db().execute<ResultSetHeader>(sql, params)
-    return result.insertId
-  }
-
-  const storeUser = (name: string) =>
-    insert(
-      `INSERT INTO users (google_id, name, email, role) VALUES (:googleId, :name, :email, 'CANDIDATE')`,
-      { googleId: `google-${name}`, name, email: `${name}@example.com` },
-    )
-
-  const storeSeat = (roomId: number, seatNumber: string) =>
-    insert('INSERT INTO seats (room_id, seat_number) VALUES (:roomId, :seatNumber)', {
-      roomId,
-      seatNumber,
-    })
 
   const request = (overrides: Partial<CreateBookingRequest> = {}): CreateBookingRequest => ({
     seatId: seatA,
@@ -50,19 +34,12 @@ describe('bookingsRepository', () => {
     bookings.create(request(overrides))
 
   before(() => {
+    fixtures = createFixtures(db())
     bookings = createBookingsRepository(db())
   })
 
   beforeEach(async () => {
-    for (const table of ['bookings', 'seat_features', 'seats', 'rooms', 'users']) {
-      await db().query(`DELETE FROM ${table}`)
-    }
-    const roomId = await insert('INSERT INTO rooms (slug, name) VALUES (:slug, :name)', {
-      slug: 'room-a',
-      name: 'Room A',
-    })
-    ;[alice, bob] = [await storeUser('alice'), await storeUser('bob')]
-    ;[seatA, seatB] = [await storeSeat(roomId, 'A1'), await storeSeat(roomId, 'A2')]
+    ;({ alice, bob, seatA, seatB } = await fixtures.seedFreshOffice())
   })
 
   it('create returns an ACTIVE booking matching the request', async () => {
