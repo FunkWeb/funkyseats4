@@ -1,12 +1,14 @@
-import type { Pool, ResultSetHeader } from 'mysql2/promise'
+import type { Pool } from 'mysql2/promise'
 import { createRoomsRepository } from '../src/repositories/roomsRepository.js'
+import { seatsRepository } from '../src/repositories/seatsRepository.js'
 import { createUsersRepository } from '../src/repositories/usersRepository.js'
 
-const TABLES_CHILDREN_FIRST = ['bookings', 'seat_features', 'seats', 'rooms', 'users']
+const TABLES_CHILDREN_FIRST = ['bookings', 'seat_features', 'features', 'seats', 'rooms', 'users']
 
 export const createFixtures = (db: Pool) => {
   const users = createUsersRepository(db)
   const rooms = createRoomsRepository(db)
+  const seats = seatsRepository(db)
 
   const reset = async () => {
     for (const table of TABLES_CHILDREN_FIRST) await db.query(`DELETE FROM ${table}`)
@@ -24,13 +26,8 @@ export const createFixtures = (db: Pool) => {
   const storeRoom = (slug: string, maxDaysAhead?: number) =>
     rooms.create({ slug, name: slug, maxDaysAhead })
 
-  const storeSeat = async (roomId: number, seatNumber: string) => {
-    const [result] = await db.execute<ResultSetHeader>(
-      'INSERT INTO seats (room_id, seat_number) VALUES (:roomId, :seatNumber)',
-      { roomId, seatNumber },
-    )
-    return result.insertId
-  }
+  const storeSeat = (roomId: number, seatNumber: string) =>
+    seats.create({ roomId, seatNumber, description: null })
 
   const seedFreshOffice = async (maxDaysAhead?: number) => {
     await reset()
@@ -44,7 +41,7 @@ export const createFixtures = (db: Pool) => {
     }
   }
 
-  return { storeRoom, deleteRoom: rooms.delete, storeSeat, seedFreshOffice }
+  return { reset, storeRoom, deleteRoom: rooms.delete, storeSeat, seedFreshOffice }
 }
 
 export type Fixtures = ReturnType<typeof createFixtures>

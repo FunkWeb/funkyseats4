@@ -1,6 +1,5 @@
 import { before, beforeEach, describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import type { Pool, RowDataPacket } from 'mysql2/promise'
 import type { BookingStatus, TimePeriod } from '../../../contracts/booking.js'
 import {
   type AppError,
@@ -14,6 +13,7 @@ import {
   type BookingsRepository,
 } from '../../src/repositories/bookingsRepository.js'
 import { createRoomsRepository } from '../../src/repositories/roomsRepository.js'
+import { seatsRepository } from '../../src/repositories/seatsRepository.js'
 import {
   createBookingsService,
   type BookingsService,
@@ -26,18 +26,6 @@ import { createFixtures, type Fixtures } from '../testFixtures.js'
 const TODAY = '2030-01-02'
 const MAX_DAYS_AHEAD = 3
 const UNKNOWN_ID = 0
-
-type SeatRow = RowDataPacket & { roomId: number }
-
-const createSeatLookup = (db: Pool) => ({
-  findById: async (id: number) => {
-    const [[seat]] = await db.execute<SeatRow[]>(
-      'SELECT room_id AS roomId FROM seats WHERE id = :id',
-      { id },
-    )
-    return seat
-  },
-})
 
 const windowCases: [string, string, boolean][] = [
   ['yesterday', addDays(TODAY, -1), false],
@@ -96,7 +84,7 @@ describe('bookingsService', () => {
     bookings = createBookingsRepository(db())
     service = createBookingsService({
       bookings,
-      seats: createSeatLookup(db()),
+      seats: seatsRepository(db()),
       rooms: createRoomsRepository(db()),
       today: () => TODAY,
     })

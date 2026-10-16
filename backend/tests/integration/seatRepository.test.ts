@@ -1,25 +1,18 @@
 import { before, beforeEach, describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import type { ResultSetHeader } from 'mysql2/promise'
 import { seatsRepository, type SeatsRepository } from '../../src/repositories/seatsRepository.js'
 import type { CreateSeatInput, UpdateSeatInput } from '../../../contracts/seat.js'
 import { useMigratedTestDatabase } from '../testDatabase.js'
+import { createFixtures, type Fixtures } from '../testFixtures.js'
 
 type StoredSeat = CreateSeatInput & { id: number }
 
 describe('seatsRepository', () => {
   const db = useMigratedTestDatabase()
+  let fixtures: Fixtures
   let seats: SeatsRepository
   let roomId: number
   let otherRoomId: number
-
-  const createRoom = async (slug: string, name: string): Promise<number> => {
-    const [result] = await db().execute<ResultSetHeader>(
-      'INSERT INTO rooms (slug, name) VALUES (:slug, :name)',
-      { slug, name },
-    )
-    return result.insertId
-  }
 
   const newSeat = (overrides: Partial<CreateSeatInput> = {}): CreateSeatInput => ({
     roomId,
@@ -34,14 +27,14 @@ describe('seatsRepository', () => {
   })
 
   before(() => {
+    fixtures = createFixtures(db())
     seats = seatsRepository(db())
   })
 
   beforeEach(async () => {
-    await db().query('DELETE FROM seats')
-    await db().query('DELETE FROM rooms')
-    roomId = await createRoom('room-1', 'Room 1')
-    otherRoomId = await createRoom('room-2', 'Room 2')
+    await fixtures.reset()
+    roomId = await fixtures.storeRoom('room-1')
+    otherRoomId = await fixtures.storeRoom('room-2')
   })
 
   it('create stores the seat as active with timestamps', async () => {

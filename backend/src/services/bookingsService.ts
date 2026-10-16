@@ -2,6 +2,7 @@ import type { BookingDto, CreateBookingRequest, TimePeriod } from '../../../cont
 import { ConflictError, ForbiddenError, ValidationError } from '../errors/appErrors.js'
 import type { BookingsRepository } from '../repositories/bookingsRepository.js'
 import type { RoomsRepository } from '../repositories/roomsRepository.js'
+import type { SeatsRepository } from '../repositories/seatsRepository.js'
 import { addDays, findOrThrow, todayInOffice } from './common.js'
 
 export type NewBooking = Omit<CreateBookingRequest, 'userId'>
@@ -11,9 +12,7 @@ export interface BookingsServiceDeps {
     BookingsRepository,
     'findById' | 'findByUserId' | 'findBySeatAndDate' | 'create' | 'updateStatus'
   >
-  seats: {
-    findById: (id: number) => Promise<{ roomId: number } | null | undefined>
-  }
+  seats: Pick<SeatsRepository, 'findById'>
   rooms: Pick<RoomsRepository, 'findById'>
   today?: () => string
 }
