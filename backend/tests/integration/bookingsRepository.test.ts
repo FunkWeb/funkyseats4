@@ -1,121 +1,123 @@
+import { before, beforeEach, describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import { randomUUID } from 'node:crypto'
-import { after, before, describe, it } from 'node:test'
-import mysql, {
-  type Connection,
-  type ConnectionOptions,
-  type Pool,
-  type ResultSetHeader,
-} from 'mysql2/promise'
-import type { CreateBookingRequest } from '../../../contracts/booking.js'
-import { readEnv } from '../../src/config/createConfig.js'
+import type { ResultSetHeader } from 'mysql2/promise'
+import type { BookingDto, CreateBookingRequest } from '../../../contracts/booking.js'
 import {
-  apply,
-  ensureMigrationsTable,
-  listMigrationFiles,
-} from '../../src/database/migration-runner/index.js'
-import { createBookingsRepository } from '../../src/repositories/bookingsRepository.js'
+  createBookingsRepository,
+  type BookingsRepository,
+} from '../../src/repositories/bookingsRepository.js'
+import { useMigratedTestDatabase } from '../testDatabase.js'
 
-const TEST_DB_SUFFIX = '_test'
+const UNKNOWN_ID = 0
+const DATE = '2030-01-02'
+const OTHER_DATE = '2030-01-03'
 
-const readTestConfig = (): { database: string; server: ConnectionOptions } => {
-  const env = readEnv(process.env)
-  const database = env.required('DB_TEST_NAME')
-  if (database === env.required('DB_NAME') || !database.endsWith(TEST_DB_SUFFIX)) {
-    throw new Error(
-      `Refusing to modify "${database}": test database must end in ${TEST_DB_SUFFIX} and differ from DB_NAME`,
+describe('bookingsRepository', () => {
+  const db = useMigratedTestDatabase()
+  let bookings: BookingsRepository
+  let alice: number
+  let bob: number
+  let seatA: number
+  let seatB: number
+
+  const insert = async (sql: string, params: Record<string, string | number>) => {
+    const [result] = await db().execute<ResultSetHeader>(sql, params)
+    return result.insertId
+  }
+
+  const storeUser = (name: string) =>
+    insert(
+      `INSERT INTO users (google_id, name, email, role) VALUES (:googleId, :name, :email, 'CANDIDATE')`,
+      { googleId: `google-${name}`, name, email: `${name}@example.com` },
     )
-  }
 
-  return {
-    database,
-    server: {
-      host: env.required('DB_TEST_HOST'),
-      port: env.requiredPort('DB_TEST_PORT'),
-      user: env.required('DB_USER'),
-      password: env.required('DB_PASSWORD'),
-      timezone: 'Z',
-    },
-  }
-}
-
-describe('bookingsRepository integration', () => {
-  const { database, server } = readTestConfig()
-  const escapedDatabase = mysql.escapeId(database)
-  let admin: Connection | undefined
-  let migrationConnection: Connection | undefined
-  let testPool: Pool | undefined
-
-  before(async () => {
-    admin = await mysql.createConnection(server)
-    await admin.query(`DROP DATABASE IF EXISTS ${escapedDatabase}`)
-    await admin.query(`CREATE DATABASE ${escapedDatabase}`)
-
-    migrationConnection = await mysql.createConnection({ ...server, database })
-    await ensureMigrationsTable(migrationConnection)
-    for (const fileName of await listMigrationFiles()) {
-      await apply(migrationConnection, fileName)
-    }
-
-    testPool = mysql.createPool({
-      ...server,
-      database,
-      waitForConnections: true,
-      timezone: 'Z',
+  const storeSeat = (roomId: number, seatNumber: string) =>
+    insert('INSERT INTO seats (room_id, seat_number) VALUES (:roomId, :seatNumber)', {
+      roomId,
+      seatNumber,
     })
+
+  const request = (overrides: Partial<CreateBookingRequest> = {}): CreateBookingRequest => ({
+    seatId: seatA,
+    userId: alice,
+    bookingDate: DATE,
+    timePeriod: 'BEFORE_LUNCH',
+    ...overrides,
   })
 
-  after(async () => {
-    await testPool?.end()
-    await migrationConnection?.end()
-    if (admin) {
-      await admin.query(`DROP DATABASE IF EXISTS ${escapedDatabase}`)
-      await admin.end()
-    }
+  const book = (overrides?: Partial<CreateBookingRequest>): Promise<BookingDto> =>
+    bookings.create(request(overrides))
+
+  before(() => {
+    bookings = createBookingsRepository(db())
   })
 
-  it('creates a booking, finds it, and updates its status to CANCELLED', async () => {
-    assert.ok(testPool)
-    const repository = createBookingsRepository(testPool)
-    const fixtureId = randomUUID()
-    const [userResult] = await testPool.execute<ResultSetHeader>(
-      `INSERT INTO users (google_id, name, email, role) VALUES (?, ?, ?, 'CANDIDATE')`,
-      [fixtureId, 'Booking Test User', `${fixtureId}@example.test`],
-    )
-    const [roomResult] = await testPool.execute<ResultSetHeader>(
-      'INSERT INTO rooms (slug, name) VALUES (?, ?)',
-      [`booking-${fixtureId}`, 'Booking Test Room'],
-    )
-    const [seatResult] = await testPool.execute<ResultSetHeader>(
-      'INSERT INTO seats (room_id, seat_number) VALUES (?, ?)',
-      [roomResult.insertId, 'A1'],
-    )
-    const booking: CreateBookingRequest = {
-      seatId: seatResult.insertId,
-      userId: userResult.insertId,
-      bookingDate: '2030-01-02',
-      timePeriod: 'BEFORE_LUNCH',
+  beforeEach(async () => {
+    for (const table of ['bookings', 'seat_features', 'seats', 'rooms', 'users']) {
+      await db().query(`DELETE FROM ${table}`)
     }
+    const roomId = await insert('INSERT INTO rooms (slug, name) VALUES (:slug, :name)', {
+      slug: 'room-a',
+      name: 'Room A',
+    })
+    ;[alice, bob] = [await storeUser('alice'), await storeUser('bob')]
+    ;[seatA, seatB] = [await storeSeat(roomId, 'A1'), await storeSeat(roomId, 'A2')]
+  })
 
-    const created = await repository.create(booking)
-    assert.equal(created.status, 'ACTIVE')
-    assert.equal(created.seatId, booking.seatId)
-    assert.equal(created.userId, booking.userId)
-    assert.equal(created.bookingDate, booking.bookingDate)
-    assert.equal(created.timePeriod, booking.timePeriod)
+  it('create returns an ACTIVE booking matching the request', async () => {
+    assert.partialDeepStrictEqual(await book(), { ...request(), status: 'ACTIVE' })
+  })
 
-    assert.deepEqual(await repository.findById(created.id), created)
-    assert.deepEqual(await repository.findByUserId(booking.userId), [created])
-    assert.deepEqual(await repository.findBySeatAndDate(booking.seatId, booking.bookingDate), [
-      created,
-    ])
-    assert.equal(await repository.findById(0), null)
+  for (const [target, overrides] of Object.entries({
+    seat: { seatId: UNKNOWN_ID },
+    user: { userId: UNKNOWN_ID },
+  })) {
+    it(`create rejects an unknown ${target}`, async () => {
+      await assert.rejects(book(overrides), { code: 'ER_NO_REFERENCED_ROW_2' })
+    })
+  }
 
-    const cancelled = await repository.updateStatus(created.id, 'CANCELLED')
-    assert.ok(cancelled)
-    assert.equal(cancelled.id, created.id)
-    assert.equal(cancelled.status, 'CANCELLED')
-    assert.equal(await repository.updateStatus(0, 'CANCELLED'), null)
-    assert.equal((await repository.findById(created.id))?.status, 'CANCELLED')
+  it('findById returns the stored booking', async () => {
+    const created = await book()
+    assert.deepEqual(await bookings.findById(created.id), created)
+  })
+
+  it('findById returns null when nothing matches', async () => {
+    await book()
+    assert.equal(await bookings.findById(UNKNOWN_ID), null)
+  })
+
+  it('findByUserId returns only that user’s bookings, ordered by id', async () => {
+    const first = await book()
+    await book({ userId: bob, timePeriod: 'AFTER_LUNCH' })
+    const second = await book({ seatId: seatB })
+
+    assert.deepEqual(await bookings.findByUserId(alice), [first, second])
+  })
+
+  it('findByUserId returns an empty list when the user has no bookings', async () => {
+    await book()
+    assert.deepEqual(await bookings.findByUserId(bob), [])
+  })
+
+  it('findBySeatAndDate excludes other seats and other dates, ordered by id', async () => {
+    const morning = await book()
+    await book({ seatId: seatB })
+    await book({ bookingDate: OTHER_DATE })
+    const afternoon = await book({ userId: bob, timePeriod: 'AFTER_LUNCH' })
+
+    assert.deepEqual(await bookings.findBySeatAndDate(seatA, DATE), [morning, afternoon])
+  })
+
+  it('updateStatus persists and returns the new status', async () => {
+    const created = await book()
+    const cancelled = await bookings.updateStatus(created.id, 'CANCELLED')
+
+    assert.partialDeepStrictEqual(cancelled, { id: created.id, status: 'CANCELLED' })
+    assert.deepEqual(await bookings.findById(created.id), cancelled)
+  })
+
+  it('updateStatus returns null when nothing matches', async () => {
+    assert.equal(await bookings.updateStatus(UNKNOWN_ID, 'CANCELLED'), null)
   })
 })
