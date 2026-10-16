@@ -25,12 +25,17 @@
     "migrate:status": "npm run migrate -- status"
   },
   "dependencies": {
+    "cookie-parser": "^1.4.7",
     "express": "^5.2.1",
+    "google-auth-library": "^11.3.1",
+    "jsonwebtoken": "^9.0.3",
     "mysql2": "^3.24.4"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@types/cookie-parser": "^1.4.10",
     "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^24.0.0",
     "@vitejs/plugin-react": "^6.1.1",
     "eslint": "^10.11.0",
