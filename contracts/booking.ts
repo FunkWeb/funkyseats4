@@ -9,12 +9,9 @@ export interface BookingDto {
   status: BookingStatus
   bookingDate: string
   timePeriod: TimePeriod
-  updatedAt: string
-  createdAt: string
 }
 
-export interface CreateBookingRequest {
-  seatId: number
-  bookingDate: string
-  timePeriod: TimePeriod
-}
+export type CreateBookingRequest = Pick<
+  BookingDto,
+  'seatId' | 'userId' | 'bookingDate' | 'timePeriod'
+>
