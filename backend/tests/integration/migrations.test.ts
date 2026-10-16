@@ -1,38 +1,17 @@
 import { after, before, describe, it } from 'node:test'
-import mysql, { type Connection, type ConnectionOptions } from 'mysql2/promise'
-import { readEnv } from '../../src/config/createConfig.js'
+import mysql, { type Connection } from 'mysql2/promise'
 import {
   apply,
   ensureMigrationsTable,
   listMigrationFiles,
   revert,
 } from '../../src/database/migration-runner/index.js'
-
-const TEST_DB_SUFFIX = '_test'
-
-const readConfig = (): { database: string; server: ConnectionOptions } => {
-  const env = readEnv(process.env)
-  const database = env.required('DB_TEST_NAME')
-  if (database === process.env.DB_NAME || !database.endsWith(TEST_DB_SUFFIX)) {
-    throw new Error(
-      `Refusing to drop "${database}": test database must end in ${TEST_DB_SUFFIX} and differ from DB_NAME`,
-    )
-  }
-  return {
-    database,
-    server: {
-      host: env.required('DB_TEST_HOST'),
-      port: env.requiredPort('DB_TEST_PORT'),
-      user: env.required('DB_USER'),
-      password: env.required('DB_PASSWORD'),
-    },
-  }
-}
+import { readTestDbConfig } from '../testDatabase.js'
 
 const migrationFiles = await listMigrationFiles()
 
 describe('migrations', () => {
-  const { database, server } = readConfig()
+  const { database, server } = readTestDbConfig()
   const escapedDb = mysql.escapeId(database)
   let admin: Connection | undefined
   let conn: Connection | undefined
