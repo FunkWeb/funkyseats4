@@ -1,18 +1,39 @@
 export class AppError extends Error {
-  constructor(message: string) {
+  constructor(
+    message: string,
+    public statusCode: number,
+  ) {
     super(message)
     this.name = new.target.name
   }
 }
 
-export class NotFoundError extends AppError {
-  constructor(resource: string) {
-    super(`${resource} not found`)
+export class ValidationError extends AppError {
+  constructor(message: string) {
+    super(message, 400)
   }
 }
 
-export class ConflictError extends AppError {}
+export class UnauthorizedError extends AppError {
+  constructor(message: string) {
+    super(message, 401)
+  }
+}
 
-export class ForbiddenError extends AppError {}
+export class ForbiddenError extends AppError {
+  constructor(message: string) {
+    super(message, 403)
+  }
+}
 
-export class ValidationError extends AppError {}
+export class NotFoundError extends AppError {
+  constructor(message: string) {
+    super(message, 404)
+  }
+}
+
+export class ConflictError extends AppError {
+  constructor(message: string) {
+    super(message, 409)
+  }
+}
