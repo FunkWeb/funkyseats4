@@ -13,19 +13,22 @@ export interface SeatsServiceDeps {
 }
 
 export const createSeatsService = ({ seats, rooms, features }: SeatsServiceDeps) => {
+  const findSeat = (seatId: number) => findOrThrow(seats.findById(seatId), 'Seat')
+  const findRoom = (roomId: number) => findOrThrow(rooms.findById(roomId), 'Room')
+
   const findByRoom = async (roomId: number): Promise<Seat[]> => {
-    await findOrThrow(rooms.findById(roomId), 'Room')
+    await findRoom(roomId)
     return seats.findByRoomId(roomId)
   }
 
   const create = async (input: CreateSeatInput): Promise<number> => {
-    await findOrThrow(rooms.findById(input.roomId), 'Room')
+    await findRoom(input.roomId)
     return seats.create(input)
   }
 
   const update = async (seatId: number, input: UpdateSeatInput): Promise<void> => {
-    await findOrThrow(seats.findById(seatId), 'Seat')
-    if (input.roomId !== undefined) await findOrThrow(rooms.findById(input.roomId), 'Room')
+    await findSeat(seatId)
+    if (input.roomId !== undefined) await findRoom(input.roomId)
 
     const updated = await seats.update(seatId, input)
     if (!updated && Object.values(input).some((value) => value !== undefined))
@@ -37,17 +40,17 @@ export const createSeatsService = ({ seats, rooms, features }: SeatsServiceDeps)
   }
 
   const findFeatures = async (seatId: number): Promise<FeatureDto[]> => {
-    await findOrThrow(seats.findById(seatId), 'Seat')
+    await findSeat(seatId)
     return features.findBySeatId(seatId)
   }
 
   const attachFeature = async (seatId: number, featureId: number): Promise<void> => {
-    await findOrThrow(seats.findById(seatId), 'Seat')
+    await findSeat(seatId)
     await features.attachToSeat(seatId, featureId)
   }
 
   const detachFeature = async (seatId: number, featureId: number): Promise<void> => {
-    await findOrThrow(seats.findById(seatId), 'Seat')
+    await findSeat(seatId)
     await features.detachFromSeat(seatId, featureId)
   }
 

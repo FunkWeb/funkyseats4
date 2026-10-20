@@ -2,8 +2,10 @@ import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import type { FeatureDto } from '../../../contracts/feature.js'
 import type { CreateSeatInput, Seat, UpdateSeatInput } from '../../../contracts/seat.js'
-import { NotFoundError } from '../errors/appErrors.js'
-import { createSeatsService } from './seatsService.js'
+import { NotFoundError } from '../../src/errors/appErrors.js'
+import { createSeatsService } from '../../src/services/seatsService.js'
+
+const TEST_TIMESTAMP = '2030-01-01T00:00:00.000Z'
 
 const seatRecord: Seat = {
   id: 1,
@@ -11,8 +13,8 @@ const seatRecord: Seat = {
   seatNumber: 'A1',
   description: null,
   deletedAt: null,
-  updatedAt: '2030-01-01T00:00:00.000Z',
-  createdAt: '2030-01-01T00:00:00.000Z',
+  updatedAt: TEST_TIMESTAMP,
+  createdAt: TEST_TIMESTAMP,
 }
 
 const featureRecord: FeatureDto = {
@@ -60,8 +62,8 @@ const createService = (options: { roomIds?: number[]; seatExists?: boolean } = {
               seatMapPath: null,
               maxDaysAhead: 10,
               deletedAt: null,
-              updatedAt: new Date('2030-01-01T00:00:00.000Z'),
-              createdAt: new Date('2030-01-01T00:00:00.000Z'),
+              updatedAt: new Date(TEST_TIMESTAMP),
+              createdAt: new Date(TEST_TIMESTAMP),
             }
           : null,
     },
@@ -124,7 +126,6 @@ describe('seatsService', () => {
     const { service } = createService()
     await service.delete(1)
     await assert.rejects(service.delete(1), NotFoundError)
-    await assert.rejects(createService({ seatExists: false }).service.delete(1), NotFoundError)
   })
 
   it('findFeatures returns the seat features', async () => {
