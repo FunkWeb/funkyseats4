@@ -44,6 +44,7 @@ export const createConfig = (source: EnvSource) => {
     google: {
       clientId: env.required('GOOGLE_CLIENT_ID'),
       clientSecret: env.required('GOOGLE_CLIENT_SECRET'),
+      callbackUrl: env.required('GOOGLE_CALLBACK_URL'),
     },
   } as const
 }
