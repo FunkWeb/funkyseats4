@@ -32,7 +32,6 @@ export const createSeatsService = ({ seats, rooms, features }: SeatsServiceDeps)
 
   const findByRoom = async (roomId: number): Promise<Seat[]> => {
     await findRoom(roomId)
-    await findRoom(roomId)
     return seats.findByRoomId(roomId)
   }
 
@@ -60,7 +59,6 @@ export const createSeatsService = ({ seats, rooms, features }: SeatsServiceDeps)
 
   const findFeatures = async (seatId: number): Promise<FeatureDto[]> => {
     await findSeat(seatId)
-    await findSeat(seatId)
     return features.findBySeatId(seatId)
   }
 
@@ -73,7 +71,6 @@ export const createSeatsService = ({ seats, rooms, features }: SeatsServiceDeps)
   }
 
   const detachFeature = async (seatId: number, featureId: number): Promise<void> => {
-    await findSeat(seatId)
     await findSeat(seatId)
     await features.detachFromSeat(seatId, featureId)
   }
