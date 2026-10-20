@@ -41,14 +41,11 @@ export const createAuthRoutes = ({
   createState = () => randomBytes(32).toString('hex'),
 }: AuthRoutesDeps) => {
   const router = Router()
-  const oauthStateCookieBaseOptions = {
+  const oauthStateCookieOptions = {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax' as const,
     path: OAUTH_STATE_COOKIE_PATH,
-  }
-  const oauthStateCookieOptions = {
-    ...oauthStateCookieBaseOptions,
     maxAge: OAUTH_STATE_MAX_AGE,
   }
 
@@ -61,13 +58,13 @@ export const createAuthRoutes = ({
   router.get('/google/callback', async (req, res) => {
     const state = req.query.state
     const cookieState = readCookie(req, OAUTH_STATE_COOKIE)
-    res.clearCookie(OAUTH_STATE_COOKIE, oauthStateCookieBaseOptions)
+    res.clearCookie(OAUTH_STATE_COOKIE, oauthStateCookieOptions)
 
     if (typeof state !== 'string' || !cookieState || state !== cookieState) {
       throw new ForbiddenError('Invalid OAuth state')
     }
 
-    const code = req.query.code
+    const code = (req.query as Record<string, unknown>).code
     if (typeof code !== 'string' || !code) {
       throw new ValidationError('Missing Google OAuth code')
     }
