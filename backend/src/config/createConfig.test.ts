@@ -9,6 +9,7 @@ const validEnv = {
   DB_NAME: 'db-name',
   GOOGLE_CLIENT_ID: 'google-id',
   GOOGLE_CLIENT_SECRET: 'google-secret',
+  GOOGLE_CALLBACK_URL: 'http://localhost/callback',
 } as const
 
 type RequiredKey = keyof typeof validEnv
@@ -38,7 +39,11 @@ describe('createConfig', () => {
           password: 'db-password',
           database: 'db-name',
         },
-        google: { clientId: 'google-id', clientSecret: 'google-secret' },
+        google: {
+          clientId: 'google-id',
+          clientSecret: 'google-secret',
+          callbackUrl: 'http://localhost/callback',
+        },
       },
     )
   })
