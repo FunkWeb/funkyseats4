@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { createConfig } from '../config/createConfig.js'
 
 const validEnv = {
+  FRONTEND_URL: 'http://localhost:5173',
   DB_HOST: 'db-host',
   DB_USER: 'db-user',
   DB_PASSWORD: 'db-password',
@@ -30,8 +31,13 @@ describe('createConfig', () => {
   it('maps every required variable', () => {
     const config = createConfig(validEnv)
     assert.deepEqual(
-      { db: { ...config.db, port: undefined }, google: config.google },
       {
+        frontendUrl: config.frontendUrl,
+        db: { ...config.db, port: undefined },
+        google: config.google,
+      },
+      {
+        frontendUrl: 'http://localhost:5173',
         db: {
           host: 'db-host',
           port: undefined,
