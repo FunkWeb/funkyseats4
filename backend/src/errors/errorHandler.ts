@@ -1,19 +1,12 @@
 import type { ErrorRequestHandler } from 'express'
 import { AppError } from './appErrors.js'
 
-export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
-  if (err instanceof AppError) {
-    res.status(err.statusCode).json({
-      error: err.message,
-    })
+export const errorHandler: ErrorRequestHandler = (error, _req, res, _next) => {
+  if (error instanceof AppError) {
+    res.status(error.status).json({ error: error.message })
     return
   }
 
-  console.error(err)
-
-  res.status(500).json({
-    error: 'Internal Server Error',
-  })
+  console.error(error)
+  res.status(500).json({ error: 'Internal server error' })
 }
-
-export default errorHandler

@@ -1,39 +1,36 @@
-export class AppError extends Error {
-  constructor(
-    message: string,
-    public statusCode: number,
-  ) {
+export abstract class AppError extends Error {
+  abstract readonly status: number
+
+  constructor(message: string) {
     super(message)
     this.name = new.target.name
   }
 }
 
 export class ValidationError extends AppError {
-  constructor(message: string) {
-    super(message, 400)
-  }
+  readonly status = 400
 }
 
 export class UnauthorizedError extends AppError {
-  constructor(message: string) {
-    super(message, 401)
+  readonly status = 401
+
+  constructor() {
+    super('Not signed in')
   }
 }
 
 export class ForbiddenError extends AppError {
-  constructor(message: string) {
-    super(message, 403)
-  }
+  readonly status = 403
 }
 
 export class NotFoundError extends AppError {
-  constructor(message: string) {
-    super(message, 404)
+  readonly status = 404
+
+  constructor(resource: string) {
+    super(`${resource} not found`)
   }
 }
 
 export class ConflictError extends AppError {
-  constructor(message: string) {
-    super(message, 409)
-  }
+  readonly status = 409
 }
