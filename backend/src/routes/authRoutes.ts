@@ -1,22 +1,11 @@
 import { randomBytes } from 'node:crypto'
-import { Router, type Request, type RequestHandler, type Response } from 'express'
+import { Router, type RequestHandler, type Response } from 'express'
 import type { AuthService } from '../services/authService.js'
 import { ForbiddenError, ValidationError } from '../errors/appErrors.js'
 
 const OAUTH_STATE_COOKIE = 'oauth_state'
 const OAUTH_STATE_MAX_AGE = 10 * 60 * 1000
 const OAUTH_STATE_COOKIE_PATH = '/auth/google/callback'
-
-const readCookie = (req: Request, name: string) => {
-  const parsedCookie = req.cookies?.[name]
-  if (parsedCookie !== undefined) return parsedCookie
-
-  const cookie = req.headers.cookie
-    ?.split(';')
-    .map((value) => value.trim())
-    .find((value) => value.startsWith(`${name}=`))
-  return cookie?.slice(name.length + 1)
-}
 
 export interface AuthRoutesDeps {
   googleOAuth: {
@@ -57,7 +46,7 @@ export const createAuthRoutes = ({
 
   router.get('/google/callback', async (req, res) => {
     const state = req.query.state
-    const cookieState = readCookie(req, OAUTH_STATE_COOKIE)
+    const cookieState = req.cookies[OAUTH_STATE_COOKIE]
     res.clearCookie(OAUTH_STATE_COOKIE, oauthStateCookieOptions)
 
     if (typeof state !== 'string' || !cookieState || state !== cookieState) {
