@@ -37,9 +37,9 @@ export const createUsersRepository = (db: Pool) => {
     return rows
   }
 
-  const findById = async (id: number): Promise<User | undefined> => {
+  const findById = async (id: number): Promise<User | null> => {
     const [user] = await selectUsers('WHERE id = :id', { id })
-    return user
+    return user ?? null
   }
 
   return {

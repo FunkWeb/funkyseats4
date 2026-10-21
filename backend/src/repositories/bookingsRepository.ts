@@ -9,23 +9,21 @@ export interface Booking extends BookingDto {
 
 type BookingRow = Booking & RowDataPacket
 
-const bookingColumns = `
-  id,
-  seat_id AS seatId,
-  user_id AS userId,
-  status,
-  DATE_FORMAT(booking_date, '%Y-%m-%d') AS bookingDate,
-  time_period AS timePeriod,
-  updated_at AS updatedAt,
-  created_at AS createdAt
-`
+const SELECT_BOOKING = `
+  SELECT
+    id,
+    seat_id                                AS seatId,
+    user_id                                AS userId,
+    status,
+    DATE_FORMAT(booking_date, '%Y-%m-%d')  AS bookingDate,
+    time_period                            AS timePeriod,
+    updated_at                             AS updatedAt,
+    created_at                             AS createdAt
+  FROM bookings`
 
 export const createBookingsRepository = (db: Pool) => {
   const selectBookings = async (clause: string, params: QueryParams): Promise<Booking[]> => {
-    const [rows] = await db.execute<BookingRow[]>(
-      `SELECT ${bookingColumns} FROM bookings ${clause}`,
-      params,
-    )
+    const [rows] = await db.execute<BookingRow[]>(`${SELECT_BOOKING} ${clause}`, params)
     return rows
   }
 

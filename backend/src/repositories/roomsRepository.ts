@@ -1,4 +1,6 @@
 import type { Pool, ResultSetHeader, RowDataPacket } from 'mysql2/promise'
+import type { CreateRoomRequest, UpdateRoomRequest } from '../../../contracts/room.js'
+import { pickColumns } from '../database/columns.js'
 import type { QueryParams } from '../database/queryParams.js'
 
 type Room = {
@@ -19,19 +21,19 @@ type RoomRow = Omit<Room, 'deletedAt' | 'updatedAt' | 'createdAt'> &
     createdAt: Date | string
   }
 
-export type NewRoom = Pick<Room, 'slug' | 'name'> &
-  Partial<Pick<Room, 'description' | 'seatMapPath' | 'maxDaysAhead'>>
+const SELECT_ROOM = `
+  SELECT
+    id,
+    slug,
+    name,
+    description,
+    seat_map_path   AS seatMapPath,
+    max_days_ahead  AS maxDaysAhead,
+    updated_at      AS updatedAt,
+    created_at      AS createdAt
+  FROM rooms`
 
-const roomColumns = `
-  id,
-  slug,
-  name,
-  description,
-  seat_map_path AS seatMapPath,
-  max_days_ahead AS maxDaysAhead,
-  updated_at AS updatedAt,
-  created_at AS createdAt
-`
+const WRITABLE_FIELDS = ['slug', 'name', 'description', 'seatMapPath', 'maxDaysAhead'] as const
 
 const toDate = (value: Date | string) => (value instanceof Date ? value : new Date(value))
 
@@ -50,41 +52,13 @@ const toRoom = (row: RoomRow): Room => ({
 export const createRoomsRepository = (db: Pool) => {
   const selectActiveRooms = async (clause: string, params: QueryParams = {}): Promise<Room[]> => {
     const [rows] = await db.execute<RoomRow[]>(
-      `SELECT ${roomColumns} FROM rooms WHERE deleted_at IS NULL ${clause}`,
+      `${SELECT_ROOM} WHERE deleted_at IS NULL ${clause}`,
       params,
     )
     return rows.map(toRoom)
   }
 
-  const findById = async (id: number): Promise<Room | null> => {
-    const [room] = await selectActiveRooms('AND id = :id', { id })
-    return room ?? null
-  }
-
-  const create = async (room: NewRoom): Promise<number> => {
-    const hasMaxDaysAhead = room.maxDaysAhead !== undefined
-    const values: (string | number | null)[] = [
-      room.slug,
-      room.name,
-      room.description ?? null,
-      room.seatMapPath ?? null,
-    ]
-    if (room.maxDaysAhead !== undefined) values.push(room.maxDaysAhead)
-
-    const [result] = await db.execute<ResultSetHeader>(
-      hasMaxDaysAhead
-        ? `INSERT INTO rooms (slug, name, description, seat_map_path, max_days_ahead)
-       VALUES (?, ?, ?, ?, ?)`
-        : `INSERT INTO rooms (slug, name, description, seat_map_path)
-       VALUES (?, ?, ?, ?)`,
-      values,
-    )
-    return result.insertId
-  }
-
-  const findAll = () => selectActiveRooms('ORDER BY name')
-
-  const update = async (id: number, assignment: string, params: QueryParams = {}) => {
+  const updateOne = async (id: number, assignment: string, params: QueryParams = {}) => {
     const [result] = await db.execute<ResultSetHeader>(
       `UPDATE rooms SET ${assignment} WHERE id = :id AND deleted_at IS NULL`,
       { ...params, id },
@@ -92,15 +66,33 @@ export const createRoomsRepository = (db: Pool) => {
     return result.affectedRows === 1
   }
 
-  const deleteRoom = async (id: number): Promise<boolean> => {
-    const [result] = await db.execute<ResultSetHeader>(
-      'UPDATE rooms SET deleted_at = CURRENT_TIMESTAMP WHERE id = ? AND deleted_at IS NULL',
-      [id],
-    )
-    return result.affectedRows > 0
+  const findById = async (id: number): Promise<Room | null> => {
+    const [room] = await selectActiveRooms('AND id = :id', { id })
+    return room ?? null
   }
 
-  return { create, findById, findAll, update, delete: deleteRoom }
+  const create = async (room: CreateRoomRequest): Promise<number> => {
+    const { columns, placeholders, params } = pickColumns(WRITABLE_FIELDS, room)
+    const [result] = await db.execute<ResultSetHeader>(
+      `INSERT INTO rooms (${columns.join(', ')}) VALUES (${placeholders.join(', ')})`,
+      params,
+    )
+    return result.insertId
+  }
+
+  const update = async (id: number, input: UpdateRoomRequest): Promise<boolean> => {
+    const { assignments, params } = pickColumns(WRITABLE_FIELDS, input)
+    if (assignments.length === 0) return false
+    return updateOne(id, assignments.join(', '), params)
+  }
+
+  return {
+    create,
+    findById,
+    findAll: () => selectActiveRooms('ORDER BY name'),
+    update,
+    delete: (id: number): Promise<boolean> => updateOne(id, 'deleted_at = CURRENT_TIMESTAMP'),
+  }
 }
 
 export type RoomsRepository = ReturnType<typeof createRoomsRepository>

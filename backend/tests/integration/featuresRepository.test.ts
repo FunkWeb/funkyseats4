@@ -70,9 +70,9 @@ describe('featuresRepository', () => {
     })
   })
 
-  it('findById returns undefined when nothing matches', async () => {
+  it('findById returns null when nothing matches', async () => {
     await store(dock)
-    assert.equal(await features.findById(UNKNOWN_ID), undefined)
+    assert.equal(await features.findById(UNKNOWN_ID), null)
   })
 
   it('findAll returns every feature ordered by name', async () => {

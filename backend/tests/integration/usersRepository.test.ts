@@ -66,9 +66,9 @@ describe('usersRepository', () => {
     assert.partialDeepStrictEqual(await users.findById(stored.id), stored)
   })
 
-  it('findById returns undefined when nothing matches', async () => {
+  it('findById returns null when nothing matches', async () => {
     await store(alice)
-    assert.equal(await users.findById(UNKNOWN_ID), undefined)
+    assert.equal(await users.findById(UNKNOWN_ID), null)
   })
 
   it('findAll returns every user ordered by name', async () => {
