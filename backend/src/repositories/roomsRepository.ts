@@ -66,31 +66,25 @@ export const createRoomsRepository = (db: Pool) => {
     return result.affectedRows === 1
   }
 
-  const findById = async (id: number): Promise<Room | null> => {
-    const [room] = await selectActiveRooms('AND id = :id', { id })
-    return room ?? null
-  }
-
-  const create = async (room: CreateRoomRequest): Promise<number> => {
-    const { columns, placeholders, params } = pickColumns(WRITABLE_FIELDS, room)
-    const [result] = await db.execute<ResultSetHeader>(
-      `INSERT INTO rooms (${columns.join(', ')}) VALUES (${placeholders.join(', ')})`,
-      params,
-    )
-    return result.insertId
-  }
-
-  const update = async (id: number, input: UpdateRoomRequest): Promise<boolean> => {
-    const { assignments, params } = pickColumns(WRITABLE_FIELDS, input)
-    if (assignments.length === 0) return false
-    return updateOne(id, assignments.join(', '), params)
-  }
-
   return {
-    create,
-    findById,
     findAll: () => selectActiveRooms('ORDER BY name'),
-    update,
+    findById: async (id: number): Promise<Room | null> => {
+      const [room] = await selectActiveRooms('AND id = :id', { id })
+      return room ?? null
+    },
+    create: async (room: CreateRoomRequest): Promise<number> => {
+      const { columns, placeholders, params } = pickColumns(WRITABLE_FIELDS, room)
+      const [result] = await db.execute<ResultSetHeader>(
+        `INSERT INTO rooms (${columns.join(', ')}) VALUES (${placeholders.join(', ')})`,
+        params,
+      )
+      return result.insertId
+    },
+    update: async (id: number, input: UpdateRoomRequest): Promise<boolean> => {
+      const { assignments, params } = pickColumns(WRITABLE_FIELDS, input)
+      if (assignments.length === 0) return false
+      return updateOne(id, assignments.join(', '), params)
+    },
     delete: (id: number): Promise<boolean> => updateOne(id, 'deleted_at = CURRENT_TIMESTAMP'),
   }
 }

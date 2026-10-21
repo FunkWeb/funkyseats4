@@ -32,35 +32,34 @@ export const createBookingsRepository = (db: Pool) => {
     return booking ?? null
   }
 
-  const create = async (booking: CreateBookingRequest): Promise<Booking> => {
-    const [result] = await db.execute<ResultSetHeader>(
-      `INSERT INTO bookings (seat_id, user_id, status, booking_date, time_period)
-       VALUES (:seatId, :userId, 'ACTIVE', :bookingDate, :timePeriod)`,
-      booking,
-    )
-    const createdBooking = await findById(result.insertId)
-    if (!createdBooking) throw new Error(`Booking ${result.insertId} was not found after creation`)
-    return createdBooking
+  return {
+    findById,
+    findByUserId: (userId: number): Promise<Booking[]> =>
+      selectBookings('WHERE user_id = :userId ORDER BY id', { userId }),
+    findBySeatAndDate: (seatId: number, date: string): Promise<Booking[]> =>
+      selectBookings('WHERE seat_id = :seatId AND booking_date = :date ORDER BY id', {
+        seatId,
+        date,
+      }),
+    create: async (booking: CreateBookingRequest): Promise<Booking> => {
+      const [result] = await db.execute<ResultSetHeader>(
+        `INSERT INTO bookings (seat_id, user_id, status, booking_date, time_period)
+         VALUES (:seatId, :userId, 'ACTIVE', :bookingDate, :timePeriod)`,
+        booking,
+      )
+      const createdBooking = await findById(result.insertId)
+      if (!createdBooking)
+        throw new Error(`Booking ${result.insertId} was not found after creation`)
+      return createdBooking
+    },
+    updateStatus: async (id: number, status: BookingStatus): Promise<Booking | null> => {
+      await db.execute<ResultSetHeader>('UPDATE bookings SET status = :status WHERE id = :id', {
+        status,
+        id,
+      })
+      return findById(id)
+    },
   }
-
-  const findByUserId = (userId: number): Promise<Booking[]> =>
-    selectBookings('WHERE user_id = :userId ORDER BY id', { userId })
-
-  const findBySeatAndDate = (seatId: number, date: string): Promise<Booking[]> =>
-    selectBookings('WHERE seat_id = :seatId AND booking_date = :date ORDER BY id', {
-      seatId,
-      date,
-    })
-
-  const updateStatus = async (id: number, status: BookingStatus): Promise<Booking | null> => {
-    await db.execute<ResultSetHeader>('UPDATE bookings SET status = :status WHERE id = :id', {
-      status,
-      id,
-    })
-    return findById(id)
-  }
-
-  return { create, findById, findByUserId, findBySeatAndDate, updateStatus }
 }
 
 export type BookingsRepository = ReturnType<typeof createBookingsRepository>
