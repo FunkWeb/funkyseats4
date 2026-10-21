@@ -24,9 +24,9 @@ export const createFeaturesRepository = (db: Pool) => {
 
   return {
     findAll: () => selectFeatures('ORDER BY features.name'),
-    findById: async (id: number): Promise<FeatureDto | undefined> => {
+    findById: async (id: number): Promise<FeatureDto | null> => {
       const [feature] = await selectFeatures('WHERE features.id = :id', { id })
-      return feature
+      return feature ?? null
     },
     findBySeatId: (seatId: number) =>
       selectFeatures(

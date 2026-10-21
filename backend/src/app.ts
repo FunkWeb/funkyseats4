@@ -17,7 +17,6 @@ app.get('/health', (_req, res) => {
   res.json({ ok: true })
 })
 
-// TODO: replace with real authService
 const authService = createAuthService({
   users: createUsersRepository(pool),
   fetchGoogleProfile,

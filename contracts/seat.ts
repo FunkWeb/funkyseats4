@@ -1,4 +1,4 @@
-export interface Seat {
+export interface SeatDto {
   id: number
   roomId: number
   seatNumber: string
@@ -8,5 +8,5 @@ export interface Seat {
   createdAt: string
 }
 
-export type CreateSeatInput = Omit<Seat, 'id' | 'deletedAt' | 'updatedAt' | 'createdAt'>
-export type UpdateSeatInput = Partial<CreateSeatInput>
+export type CreateSeatRequest = Omit<SeatDto, 'id' | 'deletedAt' | 'updatedAt' | 'createdAt'>
+export type UpdateSeatRequest = Partial<CreateSeatRequest>

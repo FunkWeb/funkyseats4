@@ -1,9 +1,9 @@
 import type { Pool, ResultSetHeader, RowDataPacket } from 'mysql2/promise'
-import type { Seat, CreateSeatInput, UpdateSeatInput } from '../../../contracts/seat.js'
+import type { CreateSeatRequest, SeatDto, UpdateSeatRequest } from '../../../contracts/seat.js'
+import { pickColumns } from '../database/columns.js'
 import type { QueryParams } from '../database/queryParams.js'
 
-type SeatRow = Seat & RowDataPacket
-type SeatField = keyof UpdateSeatInput
+type SeatRow = SeatDto & RowDataPacket
 
 const SELECT_SEAT = `
   SELECT
@@ -16,14 +16,10 @@ const SELECT_SEAT = `
     created_at      AS createdAt
   FROM seats`
 
-const COLUMNS = {
-  roomId: 'room_id',
-  seatNumber: 'seat_number',
-  description: 'description',
-} as const satisfies Record<SeatField, string>
+const WRITABLE_FIELDS = ['roomId', 'seatNumber', 'description'] as const
 
-export const seatsRepository = (db: Pool) => {
-  const selectSeats = async (clause: string, params: QueryParams = {}): Promise<Seat[]> => {
+export const createSeatsRepository = (db: Pool) => {
+  const selectSeats = async (clause: string, params: QueryParams = {}): Promise<SeatDto[]> => {
     const [rows] = await db.execute<SeatRow[]>(
       `${SELECT_SEAT} WHERE deleted_at IS NULL ${clause}`,
       params,
@@ -41,14 +37,14 @@ export const seatsRepository = (db: Pool) => {
 
   return {
     findAll: () => selectSeats('ORDER BY room_id, seat_number'),
-    findById: async (id: number): Promise<Seat | undefined> => {
+    findById: async (id: number): Promise<SeatDto | null> => {
       const [seat] = await selectSeats('AND id = :id', { id })
-      return seat
+      return seat ?? null
     },
     findByRoomId: (roomId: number) =>
       selectSeats('AND room_id = :roomId ORDER BY seat_number', { roomId }),
 
-    create: async (seat: CreateSeatInput): Promise<number> => {
+    create: async (seat: CreateSeatRequest): Promise<number> => {
       const [result] = await db.execute<ResultSetHeader>(
         `INSERT INTO seats (room_id, seat_number, description)
          VALUES (:roomId, :seatNumber, :description)`,
@@ -57,19 +53,14 @@ export const seatsRepository = (db: Pool) => {
       return result.insertId
     },
 
-    update: async (id: number, input: UpdateSeatInput): Promise<boolean> => {
-      const fields = (Object.keys(COLUMNS) as SeatField[]).filter(
-        (field) => input[field] !== undefined,
-      )
-      if (fields.length === 0) return false
-
-      const assignment = fields.map((field) => `${COLUMNS[field]} = :${field}`).join(', ')
-      const params = Object.fromEntries(fields.map((field) => [field, input[field]])) as QueryParams
-      return updateOne(id, assignment, params)
+    update: async (id: number, input: UpdateSeatRequest): Promise<boolean> => {
+      const { assignments, params } = pickColumns(WRITABLE_FIELDS, input)
+      if (assignments.length === 0) return false
+      return updateOne(id, assignments.join(', '), params)
     },
 
     delete: (id: number): Promise<boolean> => updateOne(id, 'deleted_at = CURRENT_TIMESTAMP'),
   }
 }
 
-export type SeatsRepository = ReturnType<typeof seatsRepository>
+export type SeatsRepository = ReturnType<typeof createSeatsRepository>

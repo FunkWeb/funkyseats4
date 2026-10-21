@@ -1,5 +1,5 @@
 import type { FeatureDto } from '../../../contracts/feature.js'
-import type { CreateSeatInput, Seat, UpdateSeatInput } from '../../../contracts/seat.js'
+import type { CreateSeatRequest, SeatDto, UpdateSeatRequest } from '../../../contracts/seat.js'
 import { ConflictError, NotFoundError } from '../errors/appErrors.js'
 import type { FeaturesRepository } from '../repositories/featuresRepository.js'
 import type { RoomsRepository } from '../repositories/roomsRepository.js'
@@ -30,18 +30,18 @@ export const createSeatsService = ({ seats, rooms, features }: SeatsServiceDeps)
       throw new ConflictError(`Seat ${seatNumber} already exists in this room`)
   }
 
-  const findByRoom = async (roomId: number): Promise<Seat[]> => {
+  const findByRoom = async (roomId: number): Promise<SeatDto[]> => {
     await findRoom(roomId)
     return seats.findByRoomId(roomId)
   }
 
-  const create = async (input: CreateSeatInput): Promise<number> => {
+  const create = async (input: CreateSeatRequest): Promise<number> => {
     await findRoom(input.roomId)
     await assertSeatNumberFree(input.roomId, input.seatNumber)
     return seats.create(input)
   }
 
-  const update = async (seatId: number, input: UpdateSeatInput): Promise<void> => {
+  const update = async (seatId: number, input: UpdateSeatRequest): Promise<void> => {
     const seat = await findSeat(seatId)
     const roomId = input.roomId ?? seat.roomId
     const seatNumber = input.seatNumber ?? seat.seatNumber

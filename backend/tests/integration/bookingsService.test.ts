@@ -13,7 +13,7 @@ import {
   type BookingsRepository,
 } from '../../src/repositories/bookingsRepository.js'
 import { createRoomsRepository } from '../../src/repositories/roomsRepository.js'
-import { seatsRepository } from '../../src/repositories/seatsRepository.js'
+import { createSeatsRepository } from '../../src/repositories/seatsRepository.js'
 import {
   createBookingsService,
   type BookingsService,
@@ -84,7 +84,7 @@ describe('bookingsService', () => {
     bookings = createBookingsRepository(db())
     service = createBookingsService({
       bookings,
-      seats: seatsRepository(db()),
+      seats: createSeatsRepository(db()),
       rooms: createRoomsRepository(db()),
       today: () => TODAY,
     })

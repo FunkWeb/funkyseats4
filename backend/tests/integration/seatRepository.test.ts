@@ -1,11 +1,14 @@
 import { before, beforeEach, describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import { seatsRepository, type SeatsRepository } from '../../src/repositories/seatsRepository.js'
-import type { CreateSeatInput, UpdateSeatInput } from '../../../contracts/seat.js'
+import {
+  createSeatsRepository,
+  type SeatsRepository,
+} from '../../src/repositories/seatsRepository.js'
+import type { CreateSeatRequest, UpdateSeatRequest } from '../../../contracts/seat.js'
 import { useMigratedTestDatabase } from '../testDatabase.js'
 import { createFixtures, type Fixtures } from '../testFixtures.js'
 
-type StoredSeat = CreateSeatInput & { id: number }
+type StoredSeat = CreateSeatRequest & { id: number }
 
 describe('seatsRepository', () => {
   const db = useMigratedTestDatabase()
@@ -14,21 +17,21 @@ describe('seatsRepository', () => {
   let roomId: number
   let otherRoomId: number
 
-  const newSeat = (overrides: Partial<CreateSeatInput> = {}): CreateSeatInput => ({
+  const newSeat = (overrides: Partial<CreateSeatRequest> = {}): CreateSeatRequest => ({
     roomId,
     seatNumber: 'A1',
     description: null,
     ...overrides,
   })
 
-  const store = async (seat: CreateSeatInput): Promise<StoredSeat> => ({
+  const store = async (seat: CreateSeatRequest): Promise<StoredSeat> => ({
     ...seat,
     id: await seats.create(seat),
   })
 
   before(() => {
     fixtures = createFixtures(db())
-    seats = seatsRepository(db())
+    seats = createSeatsRepository(db())
   })
 
   beforeEach(async () => {
@@ -57,9 +60,9 @@ describe('seatsRepository', () => {
     assert.partialDeepStrictEqual(await seats.findById(stored.id), stored)
   })
 
-  it('findById returns undefined when nothing matches', async () => {
+  it('findById returns null when nothing matches', async () => {
     await store(newSeat())
-    assert.equal(await seats.findById(0), undefined)
+    assert.equal(await seats.findById(0), null)
   })
 
   it('findByRoomId returns only that room’s seats ordered by seat number', async () => {
@@ -88,7 +91,7 @@ describe('seatsRepository', () => {
     )
   })
 
-  const fieldUpdates: Array<[field: string, changes: () => UpdateSeatInput]> = [
+  const fieldUpdates: Array<[field: string, changes: () => UpdateSeatRequest]> = [
     ['seatNumber', () => ({ seatNumber: 'Z9' })],
     ['description', () => ({ description: 'Near the window' })],
     ['roomId', () => ({ roomId: otherRoomId })],
@@ -134,7 +137,7 @@ describe('seatsRepository', () => {
   it('delete removes the seat', async () => {
     const stored = await store(newSeat())
     assert.equal(await seats.delete(stored.id), true)
-    assert.equal(await seats.findById(stored.id), undefined)
+    assert.equal(await seats.findById(stored.id), null)
   })
 
   it('delete returns false for an unknown id', async () => {
