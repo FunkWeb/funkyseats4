@@ -40,10 +40,12 @@ export const createConfig = (source: EnvSource) => {
   const env = readEnv(source)
   return {
     port: env.port('PORT', 3000),
+    frontendUrl: env.required('FRONTEND_URL'),
     db: createDbConfig(source),
     google: {
       clientId: env.required('GOOGLE_CLIENT_ID'),
       clientSecret: env.required('GOOGLE_CLIENT_SECRET'),
+      callbackUrl: env.required('GOOGLE_CALLBACK_URL'),
     },
   } as const
 }

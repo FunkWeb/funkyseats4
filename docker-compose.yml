@@ -29,6 +29,8 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      GOOGLE_CALLBACK_URL: ${GOOGLE_CALLBACK_URL}
+      FRONTEND_URL: ${FRONTEND_URL}
     depends_on:
       database:
         condition: service_healthy
