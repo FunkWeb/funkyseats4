@@ -4,31 +4,14 @@ import type { NewUser, User, UsersRepository } from '../repositories/usersReposi
 export type GoogleProfile = Omit<NewUser, 'role'>
 
 export interface AuthServiceDeps {
-  users: Pick<UsersRepository, 'findById' | 'findByGoogleId' | 'create' | 'recordLogin'>
+  users: Pick<UsersRepository, 'upsertGoogleLogin'>
   fetchGoogleProfile: (code: string) => Promise<GoogleProfile>
 }
 
 export const createAuthService = ({ users, fetchGoogleProfile }: AuthServiceDeps) => {
   const loginWithGoogle = async (code: string): Promise<UserDto> => {
     const profile = await fetchGoogleProfile(code)
-    const existingUser = await users.findByGoogleId(profile.googleId)
-    let userId = existingUser?.id
-
-    if (userId === undefined) {
-      userId = await users.create({
-        ...profile,
-        role: 'CANDIDATE',
-      })
-    }
-
-    if (!(await users.recordLogin(userId))) {
-      throw new Error('Failed to record user login')
-    }
-
-    const user = await users.findById(userId)
-    if (!user) throw new Error('User not found after login')
-
-    return toUserDto(user)
+    return toUserDto(await users.upsertGoogleLogin({ ...profile, role: 'CANDIDATE' }))
   }
 
   return { loginWithGoogle }
