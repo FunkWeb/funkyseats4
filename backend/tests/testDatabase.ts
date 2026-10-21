@@ -12,19 +12,19 @@ const TEST_DB_SUFFIX = '_test'
 
 export const readTestDbConfig = (): { database: string; server: ConnectionOptions } => {
   const env = readEnv(process.env)
-  const database = env.required('DB_TEST_NAME')
-  if (database === process.env.DB_NAME || !database.endsWith(TEST_DB_SUFFIX)) {
+  const baseName = env.required('DB_TEST_NAME')
+  if (baseName === process.env.DB_NAME || !baseName.endsWith(TEST_DB_SUFFIX)) {
     throw new Error(
-      `Refusing to drop "${database}": test database must end in ${TEST_DB_SUFFIX} and differ from DB_NAME`,
+      `Refusing to drop "${baseName}": test database must end in ${TEST_DB_SUFFIX} and differ from DB_NAME`,
     )
   }
   return {
-    database,
+    database: `${baseName}_${process.pid}`,
     server: {
       host: env.required('DB_TEST_HOST'),
       port: env.requiredPort('DB_TEST_PORT'),
-      user: env.required('DB_USER'),
-      password: env.required('DB_PASSWORD'),
+      user: 'root',
+      password: env.required('DB_ROOT_PASSWORD'),
     },
   }
 }
