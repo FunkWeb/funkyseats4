@@ -1,7 +1,6 @@
 import type { UserDto } from '../../../contracts/user.js'
-import type { NewUser, User, UsersRepository } from '../repositories/usersRepository.js'
-
-export type GoogleProfile = Omit<NewUser, 'role'>
+import type { User, UsersRepository } from '../repositories/usersRepository.js'
+import type { GoogleProfile } from '../auth/googleOAuth.js'
 
 export interface AuthServiceDeps {
   users: Pick<UsersRepository, 'upsertGoogleLogin'>
