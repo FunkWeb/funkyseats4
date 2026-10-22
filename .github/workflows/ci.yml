@@ -10,6 +10,9 @@ on:
     branches: [main, dev]
     paths-ignore: *docs
 
+permissions:
+  contents: read
+
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
@@ -23,6 +26,7 @@ jobs:
       DB_NAME: funkyseats
       DB_USER: funkyseats
       DB_PASSWORD: ci_password
+      DB_ROOT_PASSWORD: ci_root_password
       DB_TEST_NAME: funkyseats_test
       DB_TEST_HOST: test-db
       DB_TEST_PORT: 3306
