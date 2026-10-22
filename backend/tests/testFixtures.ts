@@ -41,7 +41,7 @@ export const createFixtures = (db: Pool) => {
     }
   }
 
-  return { reset, storeRoom, deleteRoom: rooms.delete, storeSeat, seedFreshOffice }
+  return { reset, storeUser, storeRoom, deleteRoom: rooms.delete, storeSeat, seedFreshOffice }
 }
 
 export type Fixtures = ReturnType<typeof createFixtures>
