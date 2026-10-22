@@ -58,6 +58,14 @@ export const createRoomsRepository = (db: Pool) => {
     return rows.map(toRoom)
   }
 
+  const existsBySlug = async (slug: string): Promise<boolean> => {
+    const [rows] = await db.execute<RowDataPacket[]>(
+      'SELECT 1 FROM rooms WHERE slug = :slug LIMIT 1',
+      { slug },
+    )
+    return rows.length > 0
+  }
+
   const updateOne = async (id: number, assignment: string, params: QueryParams = {}) => {
     const [result] = await db.execute<ResultSetHeader>(
       `UPDATE rooms SET ${assignment} WHERE id = :id AND deleted_at IS NULL`,
@@ -68,6 +76,7 @@ export const createRoomsRepository = (db: Pool) => {
 
   return {
     findAll: () => selectActiveRooms('ORDER BY name'),
+    existsBySlug,
     findById: async (id: number): Promise<Room | null> => {
       const [room] = await selectActiveRooms('AND id = :id', { id })
       return room ?? null
