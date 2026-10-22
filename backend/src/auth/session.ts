@@ -34,7 +34,7 @@ export function readUserId(req: Request): string | null {
 
     const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload
     return decoded.sub || null
-  } catch (error) {
+  } catch {
     return null
   }
 }
