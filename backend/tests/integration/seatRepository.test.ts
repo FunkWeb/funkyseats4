@@ -54,6 +54,25 @@ describe('seatsRepository', () => {
     })
   })
 
+  it('create rejects a seat number held by an active seat in the same room', async () => {
+    await store(newSeat())
+    await assert.rejects(seats.create(newSeat()), { code: 'ER_DUP_ENTRY' })
+  })
+
+  it('create allows the same seat number in another room', async () => {
+    await store(newSeat())
+    const other = await store(newSeat({ roomId: otherRoomId }))
+    assert.partialDeepStrictEqual(await seats.findById(other.id), other)
+  })
+
+  it('create reuses the seat number of a soft-deleted seat', async () => {
+    const deleted = await store(newSeat())
+    await seats.delete(deleted.id)
+
+    const reused = await store(newSeat())
+    assert.partialDeepStrictEqual(await seats.findById(reused.id), reused)
+  })
+
   it('findById returns the matching seat', async () => {
     const stored = await store(newSeat())
     await store(newSeat({ seatNumber: 'A2' }))
