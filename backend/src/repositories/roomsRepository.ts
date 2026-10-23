@@ -3,7 +3,7 @@ import type { CreateRoomRequest, UpdateRoomRequest } from '../../../contracts/ro
 import { pickColumns } from '../database/columns.js'
 import type { QueryParams } from '../database/queryParams.js'
 
-type Room = {
+export type Room = {
   id: number
   slug: string
   name: string
