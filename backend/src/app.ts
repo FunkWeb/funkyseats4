@@ -13,7 +13,7 @@ import { authLimiter } from './middleware/rateLimit.js'
 
 export const app = express()
 
-app.set('trust proxy', 1)
+app.set('trust proxy', 2)
 app.use(cookieParser())
 
 app.get('/health', (_req, res) => {
