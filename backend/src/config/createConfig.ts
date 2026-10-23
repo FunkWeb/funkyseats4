@@ -8,6 +8,14 @@ const toPort = (name: string, raw: string): number => {
   return value
 }
 
+const toPositiveInt = (name: string, raw: string): number => {
+  const value = Number(raw)
+  if (!Number.isInteger(value) || value < 1) {
+    throw new Error(`Environment variable ${name} must be a positive integer`)
+  }
+  return value
+}
+
 export const readEnv = (source: EnvSource) => {
   const required = (name: string): string => {
     const value = source[name]
@@ -20,6 +28,10 @@ export const readEnv = (source: EnvSource) => {
     port: (name: string, fallback: number): number => {
       const raw = source[name]
       return raw ? toPort(name, raw) : fallback
+    },
+    positiveInt: (name: string, fallback: number): number => {
+      const raw = source[name]
+      return raw ? toPositiveInt(name, raw) : fallback
     },
     requiredPort: (name: string): number => toPort(name, required(name)),
   }
@@ -41,11 +53,16 @@ export const createConfig = (source: EnvSource) => {
   return {
     port: env.port('PORT', 3000),
     frontendUrl: env.required('FRONTEND_URL'),
+    isProduction: source.NODE_ENV === 'production',
     db: createDbConfig(source),
     google: {
       clientId: env.required('GOOGLE_CLIENT_ID'),
       clientSecret: env.required('GOOGLE_CLIENT_SECRET'),
       callbackUrl: env.required('GOOGLE_CALLBACK_URL'),
+    },
+    session: {
+      secret: env.required('SESSION_SECRET'),
+      lifetimeMinutes: env.positiveInt('SESSION_LIFETIME_MINUTES', 120),
     },
   } as const
 }

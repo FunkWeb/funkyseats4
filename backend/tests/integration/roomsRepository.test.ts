@@ -66,6 +66,14 @@ describe('roomsRepository', () => {
     assert.equal(await rooms.findById(0), null)
   })
 
+  it('existsBySlug includes soft-deleted rooms', async () => {
+    const deleted = await store(room)
+    await rooms.delete(deleted.id)
+
+    assert.equal(await rooms.existsBySlug(room.slug), true)
+    assert.equal(await rooms.existsBySlug('missing-room'), false)
+  })
+
   it('findAll returns active rooms ordered by name', async () => {
     await store({ slug: 'room-b', name: 'Room B' })
     await store({ slug: 'room-a', name: 'Room A' })
