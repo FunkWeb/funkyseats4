@@ -8,6 +8,7 @@ import { buildGoogleAuthUrl, fetchGoogleProfile } from './auth/googleOAuth.js'
 import { createAuthRoutes } from './routes/authRoutes.js'
 import { UnauthorizedError } from './errors/appErrors.js'
 import { errorHandler } from './errors/errorHandler.js'
+import { createSession } from './auth/session.js'
 
 export const app = express()
 
@@ -27,12 +28,9 @@ app.use(
   createAuthRoutes({
     googleOAuth: { getAuthorizationUrl: buildGoogleAuthUrl },
     authService,
-    session: {
-      setSessionCookie: () => {},
-      clearSessionCookie: () => {},
-    },
+    session: createSession({ ...config.session, secure: config.isProduction }),
     requireAuth: () => {
-      throw new UnauthorizedError() //TODO: replace placeholder
+      throw new UnauthorizedError()
     },
     frontendUrl: config.frontendUrl,
   }),

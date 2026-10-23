@@ -104,10 +104,7 @@ describe('createConfig', () => {
 
     for (const value of ['1h', '0', '-1', '12.5', ' ']) {
       it(`throws when ${JSON.stringify(value)}`, () => {
-        assert.throws(
-          () => lifetime(value),
-          /SESSION_LIFETIME_MINUTES must be a positive integer/,
-        )
+        assert.throws(() => lifetime(value), /SESSION_LIFETIME_MINUTES must be a positive integer/)
       })
     }
   })

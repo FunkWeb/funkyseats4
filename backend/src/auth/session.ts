@@ -1,50 +1,46 @@
-import { Request, Response } from 'express'
+import type { CookieOptions, Request, Response } from 'express'
 import jwt from 'jsonwebtoken'
 
-const SESSION_SECRET = process.env.SESSION_SECRET || 'secret'
-const SESSION_LIFETIME_MINUTES = parseInt(process.env.SESSION_LIFETIME_MINUTES || '60', 10)
 const COOKIE_NAME = 'session'
+const ALGORITHM = 'HS256'
 
-interface JWTPayload {
-  sub: string
+interface SessionDeps {
+  secret: string
+  lifetimeMinutes: number
+  secure: boolean
 }
 
-export function set(res: Response, userId: string): void {
-  const token = jwt.sign({ sub: userId }, SESSION_SECRET, {
-    expiresIn: `${SESSION_LIFETIME_MINUTES}m`,
-  })
+export const createSession = ({ secret, lifetimeMinutes, secure }: SessionDeps) => {
+  const baseCookieOptions: CookieOptions = { httpOnly: true, sameSite: 'lax', secure }
 
-  const isProduction = process.env.NODE_ENV === 'production'
-
-  res.cookie(COOKIE_NAME, token, {
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: isProduction,
-    maxAge: SESSION_LIFETIME_MINUTES * 60 * 1000,
-  })
-}
-
-export function readUserId(req: Request): string | null {
-  try {
-    const token = req.cookies?.[COOKIE_NAME]
-
-    if (!token) {
+  const verifiedUserId = (token: string): number | null => {
+    try {
+      const payload = jwt.verify(token, secret, { algorithms: [ALGORITHM] })
+      const userId = typeof payload === 'string' ? NaN : Number(payload.sub)
+      return Number.isInteger(userId) ? userId : null
+    } catch {
       return null
     }
+  }
 
-    const decoded = jwt.verify(token, SESSION_SECRET) as JWTPayload
-    return decoded.sub || null
-  } catch {
-    return null
+  return {
+    setSessionCookie: (res: Response, userId: number): void => {
+      const token = jwt.sign({ sub: String(userId) }, secret, {
+        algorithm: ALGORITHM,
+        expiresIn: `${lifetimeMinutes}m`,
+      })
+      res.cookie(COOKIE_NAME, token, { ...baseCookieOptions, maxAge: lifetimeMinutes * 60_000 })
+    },
+
+    clearSessionCookie: (res: Response): void => {
+      res.clearCookie(COOKIE_NAME, baseCookieOptions)
+    },
+
+    readUserId: (req: Request): number | null => {
+      const token: string | undefined = req.cookies[COOKIE_NAME]
+      return token ? verifiedUserId(token) : null
+    },
   }
 }
 
-export function clear(res: Response): void {
-  const isProduction = process.env.NODE_ENV === 'production'
-
-  res.clearCookie(COOKIE_NAME, {
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: isProduction,
-  })
-}
+export type Session = ReturnType<typeof createSession>
