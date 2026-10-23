@@ -66,12 +66,28 @@ describe('roomsRepository', () => {
     assert.equal(await rooms.findById(0), null)
   })
 
-  it('existsBySlug includes soft-deleted rooms', async () => {
-    const deleted = await store(room)
+  it('existsBySlug matches active rooms only', async () => {
+    await store(room)
+    const deleted = await store({ slug: 'room-b', name: 'Room B' })
     await rooms.delete(deleted.id)
 
     assert.equal(await rooms.existsBySlug(room.slug), true)
+    assert.equal(await rooms.existsBySlug('room-b'), false)
     assert.equal(await rooms.existsBySlug('missing-room'), false)
+  })
+
+  it('create rejects a slug held by an active room', async () => {
+    await store(room)
+    await assert.rejects(rooms.create(room), { code: 'ER_DUP_ENTRY' })
+  })
+
+  it('create reuses the slug of a soft-deleted room', async () => {
+    const deleted = await store(room)
+    await rooms.delete(deleted.id)
+
+    const reused = await store(room)
+    assert.notEqual(reused.id, deleted.id)
+    assert.equal(reused.slug, room.slug)
   })
 
   it('findAll returns active rooms ordered by name', async () => {

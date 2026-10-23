@@ -11,8 +11,9 @@ export default {
          deleted_at	    TIMESTAMP NULL,
          updated_at	    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
          created_at	    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+         active_seat_number VARCHAR(10) GENERATED ALWAYS AS (IF(deleted_at IS NULL, seat_number, NULL)) STORED,
          FOREIGN KEY (room_id) REFERENCES rooms(id),
-         UNIQUE (room_id, seat_number)
+         UNIQUE (room_id, active_seat_number)
           )
     `)
   },

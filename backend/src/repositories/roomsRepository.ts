@@ -3,7 +3,7 @@ import type { CreateRoomRequest, UpdateRoomRequest } from '../../../contracts/ro
 import { pickColumns } from '../database/columns.js'
 import type { QueryParams } from '../database/queryParams.js'
 
-type Room = {
+export type Room = {
   id: number
   slug: string
   name: string
@@ -60,7 +60,7 @@ export const createRoomsRepository = (db: Pool) => {
 
   const existsBySlug = async (slug: string): Promise<boolean> => {
     const [rows] = await db.execute<RowDataPacket[]>(
-      'SELECT 1 FROM rooms WHERE slug = :slug LIMIT 1',
+      'SELECT 1 FROM rooms WHERE active_slug = :slug LIMIT 1',
       { slug },
     )
     return rows.length > 0

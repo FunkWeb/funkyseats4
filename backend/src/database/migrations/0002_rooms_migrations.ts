@@ -5,14 +5,16 @@ export default {
     await db.query(`
       CREATE TABLE rooms (
         id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-        slug            VARCHAR(50) NOT NULL UNIQUE,
+        slug            VARCHAR(50) NOT NULL,
         name            VARCHAR(50) NOT NULL,
         description     TEXT,
         seat_map_path   VARCHAR(255),
         max_days_ahead  INT NOT NULL DEFAULT 7,
         deleted_at      TIMESTAMP NULL,
         updated_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        active_slug     VARCHAR(50) GENERATED ALWAYS AS (IF(deleted_at IS NULL, slug, NULL)) STORED,
+        UNIQUE (active_slug)
       )
     `)
   },
