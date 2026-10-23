@@ -1,7 +1,7 @@
 import { Request, Response } from 'express'
 import jwt from 'jsonwebtoken'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'secret'
+const SESSION_SECRET = process.env.SESSION_SECRET || 'secret'
 const SESSION_LIFETIME_MINUTES = parseInt(process.env.SESSION_LIFETIME_MINUTES || '60', 10)
 const COOKIE_NAME = 'session'
 
@@ -10,7 +10,7 @@ interface JWTPayload {
 }
 
 export function set(res: Response, userId: string): void {
-  const token = jwt.sign({ sub: userId }, JWT_SECRET, {
+  const token = jwt.sign({ sub: userId }, SESSION_SECRET, {
     expiresIn: `${SESSION_LIFETIME_MINUTES}m`,
   })
 
@@ -32,7 +32,7 @@ export function readUserId(req: Request): string | null {
       return null
     }
 
-    const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload
+    const decoded = jwt.verify(token, SESSION_SECRET) as JWTPayload
     return decoded.sub || null
   } catch {
     return null
