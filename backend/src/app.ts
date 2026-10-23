@@ -9,9 +9,11 @@ import { createAuthRoutes } from './routes/authRoutes.js'
 import { errorHandler } from './errors/errorHandler.js'
 import { createSession } from './auth/session.js'
 import { createRequireAuth } from './auth/requireAuth.js'
+import { authLimiter } from './middleware/rateLimit.js'
 
 export const app = express()
 
+app.set('trust proxy', 2)
 app.use(cookieParser())
 
 app.get('/health', (_req, res) => {
@@ -25,6 +27,7 @@ const authService = createAuthService({ users, fetchGoogleProfile })
 
 app.use(
   '/auth',
+  authLimiter,
   createAuthRoutes({
     googleOAuth: { getAuthorizationUrl: buildGoogleAuthUrl },
     authService,
