@@ -6,9 +6,9 @@ import { createUsersRepository } from './repositories/usersRepository.js'
 import { createAuthService } from './services/authService.js'
 import { buildGoogleAuthUrl, fetchGoogleProfile } from './auth/googleOAuth.js'
 import { createAuthRoutes } from './routes/authRoutes.js'
-import { UnauthorizedError } from './errors/appErrors.js'
 import { errorHandler } from './errors/errorHandler.js'
 import { createSession } from './auth/session.js'
+import { createRequireAuth } from './auth/requireAuth.js'
 
 export const app = express()
 
@@ -18,20 +18,18 @@ app.get('/health', (_req, res) => {
   res.json({ ok: true })
 })
 
-const authService = createAuthService({
-  users: createUsersRepository(pool),
-  fetchGoogleProfile,
-})
+const users = createUsersRepository(pool)
+const session = createSession({ ...config.session, secure: config.isProduction })
+const requireAuth = createRequireAuth({ session, users })
+const authService = createAuthService({ users, fetchGoogleProfile })
 
 app.use(
   '/auth',
   createAuthRoutes({
     googleOAuth: { getAuthorizationUrl: buildGoogleAuthUrl },
     authService,
-    session: createSession({ ...config.session, secure: config.isProduction }),
-    requireAuth: () => {
-      throw new UnauthorizedError()
-    },
+    session,
+    requireAuth,
     frontendUrl: config.frontendUrl,
   }),
 )
