@@ -3,7 +3,7 @@ export type RoomDto = {
   slug: string
   name: string
   description: string | null
-  seatMapUrl: string | null
+  seatMapPath: string | null
   maxDaysAhead: number
 }
 

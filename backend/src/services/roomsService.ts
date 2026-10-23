@@ -17,7 +17,7 @@ const toRoomDto = (room: Room): RoomDto => ({
   slug: room.slug,
   name: room.name,
   description: room.description,
-  seatMapUrl: room.seatMapPath,
+  seatMapPath: room.seatMapPath,
   maxDaysAhead: room.maxDaysAhead,
 })
 
@@ -40,7 +40,6 @@ export const createRoomsService = ({ rooms }: RoomsServiceDeps) => {
   const update = async (roomId: number, input: UpdateRoomRequest): Promise<void> => {
     const room = await findRoom(roomId)
     if (input.slug !== undefined && input.slug !== room.slug) await assertSlugAvailable(input.slug)
-    if (Object.keys(input).length === 0) return
     if (!(await rooms.update(roomId, input))) throw new NotFoundError('Room')
   }
 
