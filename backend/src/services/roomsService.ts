@@ -24,24 +24,22 @@ const toRoomDto = (room: Room): RoomDto => ({
 export const createRoomsService = ({ rooms }: RoomsServiceDeps) => {
   const findRoom = (roomId: number) => findOrThrow(rooms.findById(roomId), 'Room')
 
+  const assertSlugAvailable = async (slug: string) => {
+    if (await rooms.existsBySlug(slug)) throw new ConflictError(`Room slug ${slug} already exists`)
+  }
+
   const findAll = async (): Promise<RoomDto[]> => (await rooms.findAll()).map(toRoomDto)
 
   const findById = async (roomId: number): Promise<RoomDto> => toRoomDto(await findRoom(roomId))
 
   const create = async (input: CreateRoomRequest): Promise<number> => {
-    if (await rooms.existsBySlug(input.slug))
-      throw new ConflictError(`Room slug ${input.slug} already exists`)
+    await assertSlugAvailable(input.slug)
     return rooms.create(input)
   }
 
   const update = async (roomId: number, input: UpdateRoomRequest): Promise<void> => {
     const room = await findRoom(roomId)
-    if (
-      input.slug !== undefined &&
-      input.slug !== room.slug &&
-      (await rooms.existsBySlug(input.slug))
-    )
-      throw new ConflictError(`Room slug ${input.slug} already exists`)
+    if (input.slug !== undefined && input.slug !== room.slug) await assertSlugAvailable(input.slug)
     if (Object.keys(input).length === 0) return
     if (!(await rooms.update(roomId, input))) throw new NotFoundError('Room')
   }
