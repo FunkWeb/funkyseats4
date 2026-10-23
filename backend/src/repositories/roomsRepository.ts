@@ -60,7 +60,7 @@ export const createRoomsRepository = (db: Pool) => {
 
   const existsBySlug = async (slug: string): Promise<boolean> => {
     const [rows] = await db.execute<RowDataPacket[]>(
-      'SELECT 1 FROM rooms WHERE slug = :slug AND deleted_at IS NULL LIMIT 1',
+      'SELECT 1 FROM rooms WHERE active_slug = :slug LIMIT 1',
       { slug },
     )
     return rows.length > 0
