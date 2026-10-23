@@ -11,6 +11,7 @@ const validEnv = {
   GOOGLE_CLIENT_ID: 'google-id',
   GOOGLE_CLIENT_SECRET: 'google-secret',
   GOOGLE_CALLBACK_URL: 'http://localhost/callback',
+  GOOGLE_ALLOWED_DOMAIN: 'example.no',
   SESSION_SECRET: 'session-secret',
 } as const
 
@@ -51,6 +52,7 @@ describe('createConfig', () => {
           clientId: 'google-id',
           clientSecret: 'google-secret',
           callbackUrl: 'http://localhost/callback',
+          allowedDomain: 'example.no',
         },
         sessionSecret: 'session-secret',
       },
