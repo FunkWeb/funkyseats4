@@ -16,7 +16,11 @@ const client = new OAuth2Client(
 )
 
 export const buildGoogleAuthUrl = (state: string) =>
-  client.generateAuthUrl({ scope: ['openid', 'email', 'profile'], state })
+  client.generateAuthUrl({
+    scope: ['openid', 'email', 'profile'],
+    state,
+    hd: config.google.allowedDomain,
+  })
 
 export const fetchGoogleProfile = async (code: string): Promise<GoogleProfile> => {
   const { tokens } = await client.getToken(code)
@@ -29,6 +33,8 @@ export const fetchGoogleProfile = async (code: string): Promise<GoogleProfile> =
   const payload = ticket.getPayload()
   if (!payload?.email || !payload.email_verified)
     throw new ForbiddenError('Google email is not verified')
+  if (payload.hd !== config.google.allowedDomain)
+    throw new ForbiddenError('Account is not part of the organisation')
 
   return {
     googleId: payload.sub,
