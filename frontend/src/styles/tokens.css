@@ -1,0 +1,28 @@
+:root {
+  color-scheme: light;
+  --color-card-border: #f2c94c;
+  --color-card-background: #ffffff;
+  --color-card-muted-border: #a3a3a3;
+  --color-card-muted-background: #eeeeee;
+  --border-width-card: 1px;
+  --border-width-card-emphasis: 3px;
+  --border-radius-card: 0.5rem;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --color-card-border: #f2c94c;
+  --color-card-background: #242424;
+  --color-card-muted-border: #737373;
+  --color-card-muted-background: #333333;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --color-card-border: #f2c94c;
+    --color-card-background: #242424;
+    --color-card-muted-border: #737373;
+    --color-card-muted-background: #333333;
+  }
+}

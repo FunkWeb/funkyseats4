@@ -1,0 +1,12 @@
+.card {
+  box-sizing: border-box;
+  border: var(--border-width-card) solid var(--color-card-border);
+  border-bottom-width: var(--border-width-card-emphasis);
+  border-radius: var(--border-radius-card);
+  background-color: var(--color-card-background);
+}
+
+.muted {
+  border-color: var(--color-card-muted-border);
+  background-color: var(--color-card-muted-background);
+}
