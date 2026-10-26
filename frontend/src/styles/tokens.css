@@ -1,0 +1,114 @@
+:root {
+  color-scheme: light;
+  --color-button-primary: #f2c94c;
+  --color-button-primary-hover: #e8bb32;
+  --color-button-primary-active: #d8a915;
+  --color-button-primary-text: #29230f;
+  --color-button-accent: #2878c7;
+  --color-button-accent-hover: #2168ad;
+  --color-button-accent-active: #1c588f;
+  --color-button-accent-text: #ffffff;
+  --color-button-outline: #ffffff;
+  --color-button-outline-hover: #edf5fc;
+  --color-button-outline-active: #dcecf9;
+  --color-button-outline-text: #1d5f9e;
+  --color-button-outline-border: #2878c7;
+  --color-button-status: #e6e8eb;
+  --color-button-status-text: #555d66;
+  --color-button-status-border: #d1d5da;
+  --color-button-danger: #c83c46;
+  --color-button-danger-hover: #ae3039;
+  --color-button-danger-active: #922831;
+  --color-button-danger-text: #ffffff;
+  --color-button-success: #21845b;
+  --color-button-success-hover: #196f4b;
+  --color-button-success-active: #155b3e;
+  --color-button-success-text: #ffffff;
+  --color-button-disabled: #e6e8eb;
+  --color-button-disabled-text: #777f88;
+  --color-button-disabled-border: #d1d5da;
+  --color-button-focus-ring: #125fa4;
+  --space-button-inline: 1rem;
+  --space-button-block: 0.625rem;
+  --space-button-icon-gap: 0.5rem;
+  --space-px: 1px;
+  --size-button-min-height: 2.75rem;
+  --size-button-icon: 1.125rem;
+  --radius-button: 0.375rem;
+  --width-button-border: 1px;
+  --width-button-focus-ring: 3px;
+  --offset-button-focus-ring: 2px;
+  --opacity-button-disabled: 0.72;
+  --weight-button: 600;
+  --line-height-button: 1.25;
+  --shadow-button: 0 1px 2px rgb(0 0 0 / 12%);
+  --transition-button: 120ms ease;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --color-button-primary: #f2c94c;
+  --color-button-primary-hover: #f7d66d;
+  --color-button-primary-active: #e8bb32;
+  --color-button-primary-text: #29230f;
+  --color-button-accent: #3f91dc;
+  --color-button-accent-hover: #5aa5e8;
+  --color-button-accent-active: #2878c7;
+  --color-button-accent-text: #101d2a;
+  --color-button-outline: #202a35;
+  --color-button-outline-hover: #293746;
+  --color-button-outline-active: #33475b;
+  --color-button-outline-text: #9dcfff;
+  --color-button-outline-border: #5aa5e8;
+  --color-button-status: #343b43;
+  --color-button-status-text: #d0d5da;
+  --color-button-status-border: #48515b;
+  --color-button-danger: #d6505a;
+  --color-button-danger-hover: #e36b74;
+  --color-button-danger-active: #c83c46;
+  --color-button-danger-text: #ffffff;
+  --color-button-success: #29996a;
+  --color-button-success-hover: #36ad7a;
+  --color-button-success-active: #21845b;
+  --color-button-success-text: #ffffff;
+  --color-button-disabled: #343b43;
+  --color-button-disabled-text: #9199a2;
+  --color-button-disabled-border: #48515b;
+  --color-button-focus-ring: #8cc7ff;
+  --shadow-button: 0 1px 2px rgb(0 0 0 / 32%);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    color-scheme: dark;
+    --color-button-primary: #f2c94c;
+    --color-button-primary-hover: #f7d66d;
+    --color-button-primary-active: #e8bb32;
+    --color-button-primary-text: #29230f;
+    --color-button-accent: #3f91dc;
+    --color-button-accent-hover: #5aa5e8;
+    --color-button-accent-active: #2878c7;
+    --color-button-accent-text: #101d2a;
+    --color-button-outline: #202a35;
+    --color-button-outline-hover: #293746;
+    --color-button-outline-active: #33475b;
+    --color-button-outline-text: #9dcfff;
+    --color-button-outline-border: #5aa5e8;
+    --color-button-status: #343b43;
+    --color-button-status-text: #d0d5da;
+    --color-button-status-border: #48515b;
+    --color-button-danger: #d6505a;
+    --color-button-danger-hover: #e36b74;
+    --color-button-danger-active: #c83c46;
+    --color-button-danger-text: #ffffff;
+    --color-button-success: #29996a;
+    --color-button-success-hover: #36ad7a;
+    --color-button-success-active: #21845b;
+    --color-button-success-text: #ffffff;
+    --color-button-disabled: #343b43;
+    --color-button-disabled-text: #9199a2;
+    --color-button-disabled-border: #48515b;
+    --color-button-focus-ring: #8cc7ff;
+    --shadow-button: 0 1px 2px rgb(0 0 0 / 32%);
+  }
+}

@@ -4,6 +4,7 @@
     "module": "NodeNext",
     "rootDir": ".",
     "outDir": "dist",
+    "jsx": "react-jsx",
     "strict": true,
     "skipLibCheck": true,
     "types": ["node"]
