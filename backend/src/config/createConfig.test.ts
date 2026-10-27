@@ -3,12 +3,16 @@ import assert from 'node:assert/strict'
 import { createConfig } from '../config/createConfig.js'
 
 const validEnv = {
+  FRONTEND_URL: 'http://localhost:5173',
   DB_HOST: 'db-host',
   DB_USER: 'db-user',
   DB_PASSWORD: 'db-password',
   DB_NAME: 'db-name',
   GOOGLE_CLIENT_ID: 'google-id',
   GOOGLE_CLIENT_SECRET: 'google-secret',
+  GOOGLE_CALLBACK_URL: 'http://localhost/callback',
+  GOOGLE_ALLOWED_DOMAIN: 'example.no',
+  SESSION_SECRET: 'session-secret',
 } as const
 
 type RequiredKey = keyof typeof validEnv
@@ -29,8 +33,14 @@ describe('createConfig', () => {
   it('maps every required variable', () => {
     const config = createConfig(validEnv)
     assert.deepEqual(
-      { db: { ...config.db, port: undefined }, google: config.google },
       {
+        frontendUrl: config.frontendUrl,
+        db: { ...config.db, port: undefined },
+        google: config.google,
+        sessionSecret: config.session.secret,
+      },
+      {
+        frontendUrl: 'http://localhost:5173',
         db: {
           host: 'db-host',
           port: undefined,
@@ -38,7 +48,13 @@ describe('createConfig', () => {
           password: 'db-password',
           database: 'db-name',
         },
-        google: { clientId: 'google-id', clientSecret: 'google-secret' },
+        google: {
+          clientId: 'google-id',
+          clientSecret: 'google-secret',
+          callbackUrl: 'http://localhost/callback',
+          allowedDomain: 'example.no',
+        },
+        sessionSecret: 'session-secret',
       },
     )
   })
@@ -74,4 +90,24 @@ describe('createConfig', () => {
       })
     }
   }
+
+  describe('SESSION_LIFETIME_MINUTES', () => {
+    const lifetime = (value?: string) =>
+      createConfig({ ...validEnv, SESSION_LIFETIME_MINUTES: value }).session.lifetimeMinutes
+
+    it('uses 120 when unset or empty', () => {
+      assert.equal(lifetime(), 120)
+      assert.equal(lifetime(''), 120)
+    })
+
+    it('parses as a number', () => {
+      assert.equal(lifetime('90'), 90)
+    })
+
+    for (const value of ['1h', '0', '-1', '12.5', ' ']) {
+      it(`throws when ${JSON.stringify(value)}`, () => {
+        assert.throws(() => lifetime(value), /SESSION_LIFETIME_MINUTES must be a positive integer/)
+      })
+    }
+  })
 })

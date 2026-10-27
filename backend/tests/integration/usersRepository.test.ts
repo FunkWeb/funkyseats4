@@ -25,7 +25,7 @@ const bob: NewUser = {
   role: 'SUPERVISOR',
 }
 
-const missing: StoredUser = { ...alice, id: 0, googleId: 'unknown', email: 'unknown@example.com' }
+const UNKNOWN_ID = 0
 
 describe('usersRepository', () => {
   const db = useMigratedTestDatabase()
@@ -35,12 +35,6 @@ describe('usersRepository', () => {
     ...user,
     id: await users.create(user),
   })
-
-  const lookups = {
-    findById: (user: StoredUser) => users.findById(user.id),
-    findByGoogleId: (user: StoredUser) => users.findByGoogleId(user.googleId),
-    findByEmail: (user: StoredUser) => users.findByEmail(user.email),
-  }
 
   before(() => {
     users = createUsersRepository(db())
@@ -66,18 +60,16 @@ describe('usersRepository', () => {
     })
   }
 
-  for (const [name, find] of Object.entries(lookups)) {
-    it(`${name} returns the matching user`, async () => {
-      const stored = await store(alice)
-      await store(bob)
-      assert.partialDeepStrictEqual(await find(stored), stored)
-    })
+  it('findById returns the matching user', async () => {
+    const stored = await store(alice)
+    await store(bob)
+    assert.partialDeepStrictEqual(await users.findById(stored.id), stored)
+  })
 
-    it(`${name} returns undefined when nothing matches`, async () => {
-      await store(alice)
-      assert.equal(await find(missing), undefined)
-    })
-  }
+  it('findById returns null when nothing matches', async () => {
+    await store(alice)
+    assert.equal(await users.findById(UNKNOWN_ID), null)
+  })
 
   it('findAll returns every user ordered by name', async () => {
     await store(bob)
@@ -95,18 +87,25 @@ describe('usersRepository', () => {
     assert.equal((await users.findById(stored.id))?.role, 'ADMIN')
   })
 
-  it('recordLogin sets lastLoginAt', async () => {
-    const stored = await store(alice)
-    assert.equal(await users.recordLogin(stored.id), true)
-    assert.ok((await users.findById(stored.id))?.lastLoginAt instanceof Date)
+  it('updateRole returns false for an unknown id', async () => {
+    assert.equal(await users.updateRole(UNKNOWN_ID, 'ADMIN'), false)
   })
 
-  for (const [name, update] of Object.entries({
-    updateRole: (id: number) => users.updateRole(id, 'ADMIN'),
-    recordLogin: (id: number) => users.recordLogin(id),
-  })) {
-    it(`${name} returns false for an unknown id`, async () => {
-      assert.equal(await update(missing.id), false)
-    })
-  }
+  it('upsertGoogleLogin creates a new user with login recorded', async () => {
+    const user = await users.upsertGoogleLogin(alice)
+    assert.partialDeepStrictEqual(user, alice)
+    assert.ok(user.lastLoginAt instanceof Date)
+  })
+
+  it('upsertGoogleLogin returns the existing user and keeps their role', async () => {
+    const stored = await store(bob)
+    const user = await users.upsertGoogleLogin({ ...bob, role: 'CANDIDATE' })
+    assert.partialDeepStrictEqual(user, stored)
+    assert.ok(user.lastLoginAt instanceof Date)
+  })
+
+  it('upsertGoogleLogin rejects a new googleId with an existing email', async () => {
+    await store(alice)
+    await assert.rejects(users.upsertGoogleLogin({ ...bob, email: alice.email }), /collided/)
+  })
 })

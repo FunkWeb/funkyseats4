@@ -1,6 +1,6 @@
 import type { Pool } from 'mysql2/promise'
 import { createRoomsRepository } from '../src/repositories/roomsRepository.js'
-import { seatsRepository } from '../src/repositories/seatsRepository.js'
+import { createSeatsRepository } from '../src/repositories/seatsRepository.js'
 import { createUsersRepository } from '../src/repositories/usersRepository.js'
 
 const TABLES_CHILDREN_FIRST = ['bookings', 'seat_features', 'features', 'seats', 'rooms', 'users']
@@ -8,7 +8,7 @@ const TABLES_CHILDREN_FIRST = ['bookings', 'seat_features', 'features', 'seats',
 export const createFixtures = (db: Pool) => {
   const users = createUsersRepository(db)
   const rooms = createRoomsRepository(db)
-  const seats = seatsRepository(db)
+  const seats = createSeatsRepository(db)
 
   const reset = async () => {
     for (const table of TABLES_CHILDREN_FIRST) await db.query(`DELETE FROM ${table}`)
@@ -41,7 +41,7 @@ export const createFixtures = (db: Pool) => {
     }
   }
 
-  return { reset, storeRoom, deleteRoom: rooms.delete, storeSeat, seedFreshOffice }
+  return { reset, storeUser, storeRoom, deleteRoom: rooms.delete, storeSeat, seedFreshOffice }
 }
 
 export type Fixtures = ReturnType<typeof createFixtures>

@@ -18,7 +18,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "build:frontend": "vite build",
-    "test:integration": "tsx --env-file-if-exists=.env --test --test-concurrency=1 \"backend/tests/integration/**/*.test.ts\"",
+    "test:integration": "tsx --env-file-if-exists=.env --test \"backend/tests/integration/**/*.test.ts\"",
     "test": "tsx --env-file-if-exists=.env --test \"backend/src/**/*.test.ts\"",
     "migrate": "tsx --env-file=.env backend/src/database/migration-runner/migrationCli.ts",
     "migrate:down": "npm run migrate -- down",
@@ -27,6 +27,7 @@
   "dependencies": {
     "cookie-parser": "^1.4.7",
     "express": "^5.2.1",
+    "express-rate-limit": "^8.7.1",
     "google-auth-library": "^11.3.1",
     "jsonwebtoken": "^9.0.3",
     "mysql2": "^3.24.4"
@@ -44,6 +45,6 @@
     "tsx": "^4.23.15",
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.70.1",
-    "vite": "^8.3.1"
+    "vite": "^8.3.4"
   }
 }

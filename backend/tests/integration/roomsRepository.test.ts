@@ -1,14 +1,14 @@
 import { before, beforeEach, describe, it } from 'node:test'
 import assert from 'node:assert/strict'
+import type { CreateRoomRequest } from '../../../contracts/room.js'
 import {
   createRoomsRepository,
-  type NewRoom,
   type RoomsRepository,
 } from '../../src/repositories/roomsRepository.js'
 import { useMigratedTestDatabase } from '../testDatabase.js'
 import { createFixtures } from '../testFixtures.js'
 
-const room: NewRoom = {
+const room: CreateRoomRequest = {
   slug: 'room-a',
   name: 'Room A',
 }
@@ -17,7 +17,7 @@ describe('roomsRepository', () => {
   const db = useMigratedTestDatabase()
   let rooms: RoomsRepository
 
-  const store = async (newRoom: NewRoom) => {
+  const store = async (newRoom: CreateRoomRequest) => {
     const id = await rooms.create(newRoom)
     const stored = await rooms.findById(id)
     if (!stored) throw new Error('Created room was not found')
@@ -66,6 +66,30 @@ describe('roomsRepository', () => {
     assert.equal(await rooms.findById(0), null)
   })
 
+  it('existsBySlug matches active rooms only', async () => {
+    await store(room)
+    const deleted = await store({ slug: 'room-b', name: 'Room B' })
+    await rooms.delete(deleted.id)
+
+    assert.equal(await rooms.existsBySlug(room.slug), true)
+    assert.equal(await rooms.existsBySlug('room-b'), false)
+    assert.equal(await rooms.existsBySlug('missing-room'), false)
+  })
+
+  it('create rejects a slug held by an active room', async () => {
+    await store(room)
+    await assert.rejects(rooms.create(room), { code: 'ER_DUP_ENTRY' })
+  })
+
+  it('create reuses the slug of a soft-deleted room', async () => {
+    const deleted = await store(room)
+    await rooms.delete(deleted.id)
+
+    const reused = await store(room)
+    assert.notEqual(reused.id, deleted.id)
+    assert.equal(reused.slug, room.slug)
+  })
+
   it('findAll returns active rooms ordered by name', async () => {
     await store({ slug: 'room-b', name: 'Room B' })
     await store({ slug: 'room-a', name: 'Room A' })
@@ -82,7 +106,7 @@ describe('roomsRepository', () => {
     const stored = await store(room)
 
     assert.equal(
-      await rooms.update(stored.id, 'name = :name, max_days_ahead = :maxDaysAhead', {
+      await rooms.update(stored.id, {
         name: 'Updated room',
         maxDaysAhead: 14,
       }),
@@ -92,7 +116,7 @@ describe('roomsRepository', () => {
       name: 'Updated room',
       maxDaysAhead: 14,
     })
-    assert.equal(await rooms.update(0, 'name = :name', { name: 'Missing room' }), false)
+    assert.equal(await rooms.update(0, { name: 'Missing room' }), false)
   })
 
   it('delete soft-deletes an active room', async () => {

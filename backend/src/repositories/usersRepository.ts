@@ -37,27 +37,14 @@ export const createUsersRepository = (db: Pool) => {
     return rows
   }
 
-  const findOneBy = async (
-    column: 'id' | 'google_id' | 'email',
-    value: string | number,
-  ): Promise<User | undefined> => {
-    const [user] = await selectUsers(`WHERE ${column} = :value`, { value })
-    return user
-  }
-
-  const updateOne = async (id: number, assignment: string, params: QueryParams = {}) => {
-    const [result] = await db.execute<ResultSetHeader>(
-      `UPDATE users SET ${assignment} WHERE id = :id`,
-      { ...params, id },
-    )
-    return result.affectedRows === 1
+  const findById = async (id: number): Promise<User | null> => {
+    const [user] = await selectUsers('WHERE id = :id', { id })
+    return user ?? null
   }
 
   return {
     findAll: () => selectUsers('ORDER BY name'),
-    findById: (id: number) => findOneBy('id', id),
-    findByGoogleId: (googleId: string) => findOneBy('google_id', googleId),
-    findByEmail: (email: string) => findOneBy('email', email),
+    findById,
     create: async (user: NewUser) => {
       const [result] = await db.execute<ResultSetHeader>(
         `INSERT INTO users (google_id, name, email, avatar_path, role)
@@ -66,8 +53,26 @@ export const createUsersRepository = (db: Pool) => {
       )
       return result.insertId
     },
-    updateRole: (id: number, role: UserRole) => updateOne(id, 'role = :role', { role }),
-    recordLogin: (id: number) => updateOne(id, 'last_login_at = CURRENT_TIMESTAMP'),
+    upsertGoogleLogin: async (user: NewUser) => {
+      const [result] = await db.execute<ResultSetHeader>(
+        `INSERT INTO users (google_id, name, email, avatar_path, role, last_login_at)
+         VALUES (:googleId, :name, :email, :avatarPath, :role, CURRENT_TIMESTAMP)
+         ON DUPLICATE KEY UPDATE last_login_at = CURRENT_TIMESTAMP, id = LAST_INSERT_ID(id)`,
+        user,
+      )
+      const upserted = await findById(result.insertId)
+      if (upserted?.googleId !== user.googleId) {
+        throw new Error(`Google login for ${user.email} collided with user ${result.insertId}`)
+      }
+      return upserted
+    },
+    updateRole: async (id: number, role: UserRole) => {
+      const [result] = await db.execute<ResultSetHeader>(
+        'UPDATE users SET role = :role WHERE id = :id',
+        { role, id },
+      )
+      return result.affectedRows === 1
+    },
   }
 }
 

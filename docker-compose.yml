@@ -7,7 +7,7 @@ services:
       MYSQL_USER: ${DB_USER}
       MYSQL_PASSWORD: ${DB_PASSWORD}
     ports:
-      - '3306:3306'
+      - '127.0.0.1:3306:3306'
     volumes:
       - db-data:/var/lib/mysql
     healthcheck:
@@ -29,6 +29,11 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      GOOGLE_CALLBACK_URL: ${GOOGLE_CALLBACK_URL}
+      GOOGLE_ALLOWED_DOMAIN: ${GOOGLE_ALLOWED_DOMAIN}
+      FRONTEND_URL: ${FRONTEND_URL}
+      SESSION_SECRET: ${SESSION_SECRET}
+      SESSION_LIFETIME_MINUTES: ${SESSION_LIFETIME_MINUTES}
     depends_on:
       database:
         condition: service_healthy
@@ -39,7 +44,7 @@ services:
       context: .
       dockerfile: frontend/Dockerfile
     ports:
-      - '8080:8080'
+      - '127.0.0.1:8080:8080'
     depends_on:
       - backend
     restart: unless-stopped

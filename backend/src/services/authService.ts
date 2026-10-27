@@ -1,16 +1,17 @@
 import type { UserDto } from '../../../contracts/user.js'
-import type { NewUser, UsersRepository } from '../repositories/usersRepository.js'
-
-export type GoogleProfile = Omit<NewUser, 'role'>
+import type { UsersRepository } from '../repositories/usersRepository.js'
+import type { GoogleProfile } from '../auth/googleOAuth.js'
+import { toUserDto } from './usersService.js'
 
 export interface AuthServiceDeps {
-  users: Pick<UsersRepository, 'findById' | 'findByGoogleId' | 'create' | 'recordLogin'>
+  users: Pick<UsersRepository, 'upsertGoogleLogin'>
   fetchGoogleProfile: (code: string) => Promise<GoogleProfile>
 }
 
-export const createAuthService = (_deps: AuthServiceDeps) => {
-  const loginWithGoogle = async (_code: string): Promise<UserDto> => {
-    throw new Error('Not implemented')
+export const createAuthService = ({ users, fetchGoogleProfile }: AuthServiceDeps) => {
+  const loginWithGoogle = async (code: string): Promise<UserDto> => {
+    const profile = await fetchGoogleProfile(code)
+    return toUserDto(await users.upsertGoogleLogin({ ...profile, role: 'CANDIDATE' }))
   }
 
   return { loginWithGoogle }
