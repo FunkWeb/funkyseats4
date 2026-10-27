@@ -1,15 +1,21 @@
 import { RequestHandler, Router } from 'express'
 
+interface FeaturesService {
+  getAllFeatures: () => Promise<unknown>
+  createFeature: (data: unknown) => Promise<{ id: string | number }>
+}
+
 export function createFeaturesRoutes(
   featuresService: unknown,
   requireAuth: RequestHandler,
   requireRole: (role: string) => RequestHandler,
 ) {
+  const service = featuresService as FeaturesService
   const router = Router()
 
   router.get('/', requireAuth, async (_req, res, next) => {
     try {
-      const features = await (featuresService as any).getAllFeatures()
+      const features = await service.getAllFeatures()
       res.json(features)
     } catch (error) {
       next(error)
@@ -18,7 +24,7 @@ export function createFeaturesRoutes(
 
   router.post('/', requireAuth, requireRole('admin'), async (req, res, next) => {
     try {
-      const newFeature = await (featuresService as any).createFeature(req.body)
+      const newFeature = await service.createFeature(req.body)
       res.status(201).json({ id: newFeature.id })
     } catch (error: unknown) {
       const err = error as { code?: string; status?: number }
