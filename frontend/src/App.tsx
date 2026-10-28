@@ -1,3 +1,5 @@
+import PageHeader from "./components/PageHeader";
+
 export default function App() {
-  return <h1>Funkyseats</h1>
+  return <PageHeader title="Funkyseats4" />
 }
