@@ -1,38 +1,24 @@
-import { RequestHandler, Router } from 'express'
+import { Router, type RequestHandler } from 'express'
+import type { FeaturesService } from '../services/featuresService.js'
+import { requireRole } from '../auth/requireRole.js'
+import { parseCreateFeature } from '../validation/featureRequests.js'
 
-interface FeaturesService {
-  getAllFeatures: () => Promise<unknown>
-  createFeature: (data: unknown) => Promise<{ id: string | number }>
+export interface FeaturesRoutesDeps {
+  featuresService: Pick<FeaturesService, 'findAll' | 'create'>
+  requireAuth: RequestHandler
 }
 
-export function createFeaturesRoutes(
-  featuresService: unknown,
-  requireAuth: RequestHandler,
-  requireRole: (role: string) => RequestHandler,
-) {
-  const service = featuresService as FeaturesService
+export const createFeaturesRoutes = ({ featuresService, requireAuth }: FeaturesRoutesDeps) => {
   const router = Router()
+  router.use(requireAuth)
 
-  router.get('/', requireAuth, async (_req, res, next) => {
-    try {
-      const features = await service.getAllFeatures()
-      res.json(features)
-    } catch (error) {
-      next(error)
-    }
+  router.get('/', async (_req, res) => {
+    res.json(await featuresService.findAll())
   })
 
-  router.post('/', requireAuth, requireRole('admin'), async (req, res, next) => {
-    try {
-      const newFeature = await service.createFeature(req.body)
-      res.status(201).json({ id: newFeature.id })
-    } catch (error: unknown) {
-      const err = error as { code?: string; status?: number }
-      if (err.code === 'DUPLICATE' || err.status === 409) {
-        return res.status(409).json({ message: 'Feature name already exist' })
-      }
-      next(error)
-    }
+  router.post('/', requireRole('ADMIN'), async (req, res) => {
+    const id = await featuresService.create(parseCreateFeature(req.body))
+    res.status(201).json({ id })
   })
 
   return router

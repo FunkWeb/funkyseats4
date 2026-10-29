@@ -1,4 +1,6 @@
-export type FeatureCategory = 'OS' | 'SOFTWARE' | 'HARDWARE' | 'OTHER'
+export const FEATURE_CATEGORIES = ['OS', 'SOFTWARE', 'HARDWARE', 'OTHER'] as const
+
+export type FeatureCategory = (typeof FEATURE_CATEGORIES)[number]
 
 export interface FeatureDto {
   id: number
