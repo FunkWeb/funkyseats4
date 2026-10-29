@@ -1,0 +1,101 @@
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding-block: var(--space-2);
+  padding-inline: var(--space-4);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  color: var(--button-text);
+  background-color: var(--button-background);
+  font: inherit;
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-normal);
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color var(--duration-fast),
+    border-color var(--duration-fast),
+    box-shadow var(--duration-fast),
+    color var(--duration-fast);
+}
+
+.button:hover:not(:disabled) {
+  background-color: var(--button-hover);
+}
+
+.button:active:not(:disabled) {
+  background-color: var(--button-active);
+}
+
+.button:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: var(--space-1);
+}
+
+.button:disabled:not(.status) {
+  border-color: var(--color-border);
+  color: var(--color-text-muted);
+  background-color: var(--color-bg);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.primary {
+  --button-background: var(--color-primary);
+  --button-hover: var(--color-primary-hover);
+  --button-active: var(--color-primary-hover);
+  --button-text: var(--color-text-on-primary);
+}
+
+.accent {
+  --button-background: var(--color-secondary);
+  --button-hover: var(--color-secondary-hover);
+  --button-active: var(--color-secondary-hover);
+  --button-text: var(--color-text-on-secondary);
+}
+
+.outline {
+  --button-background: var(--color-surface);
+  --button-hover: var(--color-secondary-subtle);
+  --button-active: var(--color-secondary-subtle);
+  --button-text: var(--color-secondary);
+  border-color: var(--color-border);
+}
+
+.status {
+  --button-background: var(--color-bg);
+  --button-text: var(--color-text-muted);
+  border-color: var(--color-border);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.danger {
+  --button-background: var(--color-danger);
+  --button-hover: var(--color-danger);
+  --button-active: var(--color-danger);
+  --button-text: var(--color-text-on-secondary);
+}
+
+.success {
+  --button-background: var(--color-success);
+  --button-hover: var(--color-success);
+  --button-active: var(--color-success);
+  --button-text: var(--color-text-on-secondary);
+}
+
+.icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon > :where(svg, img) {
+  max-inline-size: 100%;
+  max-block-size: 100%;
+}
