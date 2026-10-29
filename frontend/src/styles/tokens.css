@@ -1,0 +1,101 @@
+:root {
+  --gray-0: #ffffff;
+  --gray-50: #f7f8fa;
+  --gray-100: #eef0f3;
+  --gray-200: #dde1e7;
+  --gray-400: #9aa3b0;
+  --gray-600: #5b6573;
+  --gray-800: #2a313b;
+  --gray-900: #161a20;
+
+  --yellow-100: #fef0d6;
+  --yellow-500: #fab63a;
+  --yellow-600: #e39b17;
+
+  --indigo-100: #e7e5f0;
+  --indigo-700: #342e57;
+  --indigo-800: #241f3e;
+
+  --green-100: #e1f6ea;
+  --green-500: #1f9d57;
+
+  --red-100: #fde6e6;
+  --red-500: #d93838;
+
+  --orange-100: #fde8db;
+  --orange-500: #d4621a;
+
+  --color-bg: var(--gray-50);
+  --color-surface: var(--gray-0);
+  --color-border: var(--gray-200);
+  --color-text: var(--gray-900);
+  --color-text-muted: var(--gray-600);
+  --color-text-on-primary: var(--indigo-700);
+  --color-text-on-secondary: var(--gray-0);
+
+  --color-primary: var(--yellow-500);
+  --color-primary-hover: var(--yellow-600);
+  --color-primary-subtle: var(--yellow-100);
+
+  --color-secondary: var(--indigo-700);
+  --color-secondary-hover: var(--indigo-800);
+  --color-secondary-subtle: var(--indigo-100);
+
+  --color-success: var(--green-500);
+  --color-success-subtle: var(--green-100);
+  --color-danger: var(--red-500);
+  --color-danger-subtle: var(--red-100);
+  --color-warning: var(--orange-500);
+  --color-warning-subtle: var(--orange-100);
+
+  --seat-available: var(--color-success-subtle);
+  --seat-available-border: var(--color-success);
+  --seat-booked: var(--gray-200);
+  --seat-booked-border: var(--gray-400);
+  --seat-mine: var(--color-primary);
+  --seat-mine-border: var(--color-primary-hover);
+  --seat-selected: var(--color-secondary-subtle);
+  --seat-selected-border: var(--color-secondary);
+  --seat-disabled: var(--gray-100);
+  --seat-disabled-border: var(--gray-200);
+
+  --font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-family-mono: ui-monospace, 'Cascadia Code', Consolas, monospace;
+
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-md: 1rem;
+  --font-size-lg: 1.25rem;
+  --font-size-xl: 1.5rem;
+  --font-size-2xl: 2rem;
+
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-bold: 700;
+
+  --line-height-tight: 1.2;
+  --line-height-normal: 1.5;
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-12: 3rem;
+
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-full: 9999px;
+
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.06);
+  --shadow-md: 0 4px 12px rgb(0 0 0 / 0.08);
+
+  --duration-fast: 120ms;
+  --duration-normal: 200ms;
+
+  --z-dropdown: 10;
+  --z-modal: 100;
+  --z-toast: 1000;
+}
