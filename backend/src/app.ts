@@ -6,14 +6,18 @@ import { createUsersRepository } from './repositories/usersRepository.js'
 import { createBookingsRepository } from './repositories/bookingsRepository.js'
 import { createSeatsRepository } from './repositories/seatsRepository.js'
 import { createRoomsRepository } from './repositories/roomsRepository.js'
+import { createFeaturesRepository } from './repositories/featuresRepository.js'
 import { createAuthService } from './services/authService.js'
 import { createBookingsService } from './services/bookingsService.js'
+import { createSeatsService } from './services/seatsService.js'
 import { buildGoogleAuthUrl, fetchGoogleProfile } from './auth/googleOAuth.js'
 import { createAuthRoutes } from './routes/authRoutes.js'
 import { createBookingsRoutes } from './routes/bookingsRoutes.js'
+import { createSeatsRoutes } from './routes/seatsRoutes.js'
 import { errorHandler } from './errors/errorHandler.js'
 import { createSession } from './auth/session.js'
 import { createRequireAuth } from './auth/requireAuth.js'
+import { requireRole } from './auth/requireRole.js'
 import { apiLimiter, authLimiter } from './middleware/rateLimit.js'
 
 export const app = express()
@@ -35,6 +39,11 @@ const bookingsService = createBookingsService({
   seats: createSeatsRepository(pool),
   rooms: createRoomsRepository(pool),
 })
+const seatsService = createSeatsService({
+  seats: createSeatsRepository(pool),
+  rooms: createRoomsRepository(pool),
+  features: createFeaturesRepository(pool),
+})
 
 app.use(
   '/auth',
@@ -49,5 +58,6 @@ app.use(
 )
 
 app.use('/bookings', apiLimiter, createBookingsRoutes({ bookingsService, requireAuth }))
+app.use('/', apiLimiter, createSeatsRoutes({ seatsService, requireAuth, requireRole }))
 
 app.use(errorHandler)
