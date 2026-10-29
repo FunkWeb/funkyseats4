@@ -22,7 +22,8 @@
     "test": "tsx --env-file-if-exists=.env --test \"backend/src/**/*.test.ts\"",
     "migrate": "tsx --env-file=.env backend/src/database/migration-runner/migrationCli.ts",
     "migrate:down": "npm run migrate -- down",
-    "migrate:status": "npm run migrate -- status"
+    "migrate:status": "npm run migrate -- status",
+    "seed:test": "tsx --env-file=.env backend/src/database/seedTestData.ts"
   },
   "dependencies": {
     "cookie-parser": "^1.4.7",
