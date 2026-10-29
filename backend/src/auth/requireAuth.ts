@@ -1,4 +1,4 @@
-import type { RequestHandler } from 'express'
+import type { Request, RequestHandler } from 'express'
 import { UnauthorizedError } from '../errors/appErrors.js'
 import type { UsersRepository } from '../repositories/usersRepository.js'
 import { toUserDto } from '../services/usersService.js'
@@ -19,3 +19,8 @@ export const createRequireAuth =
     req.user = toUserDto(user)
     next()
   }
+
+export const currentUser = (req: Request) => {
+  if (!req.user) throw new UnauthorizedError()
+  return req.user
+}

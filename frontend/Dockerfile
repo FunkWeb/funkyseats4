@@ -4,6 +4,7 @@ COPY package*.json ./
 RUN npm ci
 COPY vite.config.ts ./
 COPY frontend ./frontend
+COPY contracts ./contracts
 RUN npm run build:frontend
 
 FROM nginxinc/nginx-unprivileged:alpine
