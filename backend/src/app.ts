@@ -10,10 +10,12 @@ import { createFeaturesRepository } from './repositories/featuresRepository.js'
 import { createAuthService } from './services/authService.js'
 import { createBookingsService } from './services/bookingsService.js'
 import { createFeaturesService } from './services/featuresService.js'
+import { createSeatsService } from './services/seatsService.js'
 import { buildGoogleAuthUrl, fetchGoogleProfile } from './auth/googleOAuth.js'
 import { createAuthRoutes } from './routes/authRoutes.js'
 import { createBookingsRoutes } from './routes/bookingsRoutes.js'
 import { createFeaturesRoutes } from './routes/featuresRoutes.js'
+import { createSeatsRoutes } from './routes/seatsRoutes.js'
 import { errorHandler } from './errors/errorHandler.js'
 import { createSession } from './auth/session.js'
 import { createRequireAuth } from './auth/requireAuth.js'
@@ -39,6 +41,11 @@ const bookingsService = createBookingsService({
   seats: createSeatsRepository(pool),
   rooms: createRoomsRepository(pool),
 })
+const seatsService = createSeatsService({
+  seats: createSeatsRepository(pool),
+  rooms: createRoomsRepository(pool),
+  features: createFeaturesRepository(pool),
+})
 const featuresService = createFeaturesService({ features: createFeaturesRepository(pool) })
 
 app.use(
@@ -55,5 +62,6 @@ app.use(
 
 app.use('/bookings', apiLimiter, createBookingsRoutes({ bookingsService, requireAuth }))
 app.use('/features', apiLimiter, createFeaturesRoutes({ featuresService, requireAuth }))
+app.use('/', apiLimiter, createSeatsRoutes({ seatsService, requireAuth, requireRole }))
 
 app.use(errorHandler)
