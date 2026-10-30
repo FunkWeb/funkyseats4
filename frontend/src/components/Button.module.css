@@ -1,0 +1,70 @@
+.button {
+  --button-border: transparent;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--button-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  color: var(--button-text);
+  background-color: var(--button-background);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition-property: background-color, border-color, box-shadow, color;
+  transition-duration: var(--duration-fast);
+}
+
+.button:hover:not(:disabled) {
+  background-color: var(--button-hover);
+}
+
+.button:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: var(--space-1);
+}
+
+.button:disabled {
+  --button-background: var(--color-bg);
+  --button-text: var(--color-text-muted);
+  --button-border: var(--color-border);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.primary {
+  --button-background: var(--color-primary);
+  --button-hover: var(--color-primary-hover);
+  --button-text: var(--color-text-on-primary);
+}
+
+.accent {
+  --button-background: var(--color-secondary);
+  --button-hover: var(--color-secondary-hover);
+  --button-text: var(--color-text-on-secondary);
+}
+
+.outline {
+  --button-background: var(--color-surface);
+  --button-hover: var(--color-secondary-subtle);
+  --button-text: var(--color-secondary);
+  --button-border: var(--color-border);
+}
+
+.danger {
+  --button-background: var(--color-danger);
+  --button-hover: var(--color-danger-hover);
+  --button-text: var(--color-text-on-danger);
+}
+
+.success {
+  --button-background: var(--color-success);
+  --button-hover: var(--color-success-hover);
+  --button-text: var(--color-text-on-success);
+}
+
+.icon {
+  display: inline-flex;
+}

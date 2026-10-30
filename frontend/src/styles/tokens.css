@@ -18,9 +18,12 @@
 
   --green-100: #e1f6ea;
   --green-500: #1f9d57;
+  --green-600: #188149;
+  --green-700: #146b3c;
 
   --red-100: #fde6e6;
   --red-500: #d93838;
+  --red-600: #b92e2e;
 
   --orange-100: #fde8db;
   --orange-500: #d4621a;
@@ -32,6 +35,9 @@
   --color-text-muted: var(--gray-600);
   --color-text-on-primary: var(--indigo-700);
   --color-text-on-secondary: var(--gray-0);
+  --color-text-on-success: var(--gray-0);
+  --color-text-on-danger: var(--gray-0);
+  --color-focus-ring: var(--color-secondary);
 
   --color-primary: var(--yellow-500);
   --color-primary-hover: var(--yellow-600);
@@ -41,9 +47,11 @@
   --color-secondary-hover: var(--indigo-800);
   --color-secondary-subtle: var(--indigo-100);
 
-  --color-success: var(--green-500);
+  --color-success: var(--green-600);
+  --color-success-hover: var(--green-700);
   --color-success-subtle: var(--green-100);
   --color-danger: var(--red-500);
+  --color-danger-hover: var(--red-600);
   --color-danger-subtle: var(--red-100);
   --color-warning: var(--orange-500);
   --color-warning-subtle: var(--orange-100);
