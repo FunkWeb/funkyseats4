@@ -27,9 +27,6 @@ export const parseOneOf = <T extends string>(
   return value as T
 }
 
-export const asRecord = (body: unknown): Record<string, unknown> =>
-  typeof body === 'object' && body !== null ? (body as Record<string, unknown>) : {}
-
 export const parseNonEmptyString = (value: unknown, field: string) => {
   if (typeof value !== 'string' || !value.trim())
     throw new ValidationError(`${field} must be a non-empty string`)
@@ -38,3 +35,6 @@ export const parseNonEmptyString = (value: unknown, field: string) => {
 
 export const parseOptionalString = (value: unknown, field: string) =>
   value === undefined || value === null ? null : parseNonEmptyString(value, field)
+
+export const asRecord = (body: unknown): Record<string, unknown> =>
+  typeof body === 'object' && body !== null ? (body as Record<string, unknown>) : {}
