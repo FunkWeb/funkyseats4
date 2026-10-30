@@ -36,6 +36,7 @@ const users = createUsersRepository(pool)
 const session = createSession({ ...config.session, secure: config.isProduction })
 const requireAuth = createRequireAuth({ session, users })
 const authService = createAuthService({ users, fetchGoogleProfile })
+const featuresRepository = createFeaturesRepository(pool)
 const bookingsService = createBookingsService({
   bookings: createBookingsRepository(pool),
   seats: createSeatsRepository(pool),
@@ -44,9 +45,9 @@ const bookingsService = createBookingsService({
 const seatsService = createSeatsService({
   seats: createSeatsRepository(pool),
   rooms: createRoomsRepository(pool),
-  features: createFeaturesRepository(pool),
+  features: featuresRepository,
 })
-const featuresService = createFeaturesService({ features: createFeaturesRepository(pool) })
+const featuresService = createFeaturesService({ features: featuresRepository })
 
 app.use(
   '/auth',
