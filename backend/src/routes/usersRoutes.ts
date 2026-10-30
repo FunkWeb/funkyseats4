@@ -1,46 +1,25 @@
-import { Router, RequestHandler } from 'express'
+import { Router, type RequestHandler } from 'express'
+import { requireRole } from '../auth/requireRole.js'
 import type { UsersService } from '../services/usersService.js'
-import { NotFoundError } from '../errors/appErrors.js'
+import { parseId } from '../validation/parsers.js'
+import { parseUpdateUserRole } from '../validation/userRequests.js'
 
-type UserRole = 'CANDIDATE' | 'SUPERVISOR' | 'ADMIN'
-const VALID_ROLES: UserRole[] = ['CANDIDATE', 'SUPERVISOR', 'ADMIN']
+export interface UsersRoutesDeps {
+  usersService: Pick<UsersService, 'findAll' | 'updateRole'>
+  requireAuth: RequestHandler
+}
 
-export const createUsersRoutes = (
-  usersService: UsersService,
-  requireAuth: RequestHandler,
-  requireRole: (...allowed: UserRole[]) => RequestHandler,
-) => {
+export const createUsersRoutes = ({ usersService, requireAuth }: UsersRoutesDeps) => {
   const router = Router()
+  router.use(requireAuth, requireRole('ADMIN'))
 
-  router.use(requireAuth)
-  router.use(requireRole('ADMIN'))
-
-  router.get('/', async (req, res, next) => {
-    try {
-      const users = await usersService.findAll()
-      return res.json(users)
-    } catch (error) {
-      next(error)
-    }
+  router.get('/', async (_req, res) => {
+    res.json(await usersService.findAll())
   })
 
-  router.patch('/:id/role', async (req, res, next) => {
-    try {
-      const userId = Number(req.params.id)
-      const { role } = req.body
-
-      if (!role || !VALID_ROLES.includes(role as UserRole)) {
-        return res.status(400).send()
-      }
-
-      await usersService.updateRole(userId, { role: role as UserRole })
-      return res.status(204).send()
-    } catch (error) {
-      if (error instanceof NotFoundError) {
-        return res.status(404).send()
-      }
-      next(error)
-    }
+  router.patch('/:id/role', async (req, res) => {
+    await usersService.updateRole(parseId(req.params.id, 'id'), parseUpdateUserRole(req.body))
+    res.sendStatus(204)
   })
 
   return router
