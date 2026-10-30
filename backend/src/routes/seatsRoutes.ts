@@ -36,11 +36,11 @@ export const createSeatsRoutes = ({ seatsService, requireAuth, requireRole }: Se
   const router = Router()
   router.use(requireAuth)
 
-  router.get('/rooms/:roomId/seats', async (req, res) => {
-    res.json(await seatsService.findByRoom(parseId(req.params.roomId, 'roomId')))
+  router.get('/', async (req, res) => {
+    res.json(await seatsService.findByRoom(parseId(req.query.roomId, 'roomId')))
   })
 
-  router.post('/seats', requireRole('ADMIN'), async (req, res) => {
+  router.post('/', requireRole('ADMIN'), async (req, res) => {
     const body = asRecord(req.body)
     const seat: CreateSeatRequest = {
       roomId: parseId(body.roomId, 'roomId'),
@@ -51,7 +51,7 @@ export const createSeatsRoutes = ({ seatsService, requireAuth, requireRole }: Se
     res.status(201).json({ id })
   })
 
-  router.patch('/seats/:id', requireRole('ADMIN'), async (req, res) => {
+  router.patch('/:id', requireRole('ADMIN'), async (req, res) => {
     const body = asRecord(req.body)
     const seat: UpdateSeatRequest = {}
     if (body.roomId !== undefined) seat.roomId = parseId(body.roomId, 'roomId')
@@ -62,16 +62,16 @@ export const createSeatsRoutes = ({ seatsService, requireAuth, requireRole }: Se
     res.sendStatus(204)
   })
 
-  router.delete('/seats/:id', requireRole('ADMIN'), async (req, res) => {
+  router.delete('/:id', requireRole('ADMIN'), async (req, res) => {
     await seatsService.delete(parseId(req.params.id, 'id'))
     res.sendStatus(204)
   })
 
-  router.get('/seats/:id/features', async (req, res) => {
+  router.get('/:id/features', async (req, res) => {
     res.json(await seatsService.findFeatures(parseId(req.params.id, 'id')))
   })
 
-  router.put('/seats/:id/features/:featureId', requireRole('ADMIN'), async (req, res) => {
+  router.put('/:id/features/:featureId', requireRole('ADMIN'), async (req, res) => {
     await seatsService.attachFeature(
       parseId(req.params.id, 'id'),
       parseId(req.params.featureId, 'featureId'),
@@ -79,7 +79,7 @@ export const createSeatsRoutes = ({ seatsService, requireAuth, requireRole }: Se
     res.sendStatus(204)
   })
 
-  router.delete('/seats/:id/features/:featureId', requireRole('ADMIN'), async (req, res) => {
+  router.delete('/:id/features/:featureId', requireRole('ADMIN'), async (req, res) => {
     await seatsService.detachFeature(
       parseId(req.params.id, 'id'),
       parseId(req.params.featureId, 'featureId'),
