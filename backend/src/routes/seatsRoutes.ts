@@ -36,10 +36,6 @@ export const createSeatsRoutes = ({ seatsService, requireAuth, requireRole }: Se
   const router = Router()
   router.use(requireAuth)
 
-  router.get('/', async (req, res) => {
-    res.json(await seatsService.findByRoom(parseId(req.query.roomId, 'roomId')))
-  })
-
   router.post('/', requireRole('ADMIN'), async (req, res) => {
     const body = asRecord(req.body)
     const seat: CreateSeatRequest = {
