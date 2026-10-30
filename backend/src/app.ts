@@ -10,10 +10,12 @@ import { createFeaturesRepository } from './repositories/featuresRepository.js'
 import { createAuthService } from './services/authService.js'
 import { createBookingsService } from './services/bookingsService.js'
 import { createFeaturesService } from './services/featuresService.js'
+import { createUsersService } from './services/usersService.js'
 import { buildGoogleAuthUrl, fetchGoogleProfile } from './auth/googleOAuth.js'
 import { createAuthRoutes } from './routes/authRoutes.js'
 import { createBookingsRoutes } from './routes/bookingsRoutes.js'
 import { createFeaturesRoutes } from './routes/featuresRoutes.js'
+import { createUsersRoutes } from './routes/usersRoutes.js'
 import { errorHandler } from './errors/errorHandler.js'
 import { createSession } from './auth/session.js'
 import { createRequireAuth } from './auth/requireAuth.js'
@@ -39,6 +41,7 @@ const bookingsService = createBookingsService({
   rooms: createRoomsRepository(pool),
 })
 const featuresService = createFeaturesService({ features: createFeaturesRepository(pool) })
+const usersService = createUsersService({ users })
 
 app.use(
   '/auth',
@@ -54,5 +57,6 @@ app.use(
 
 app.use('/bookings', apiLimiter, createBookingsRoutes({ bookingsService, requireAuth }))
 app.use('/features', apiLimiter, createFeaturesRoutes({ featuresService, requireAuth }))
+app.use('/users', apiLimiter, createUsersRoutes({ usersService, requireAuth }))
 
 app.use(errorHandler)
