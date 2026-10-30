@@ -1,4 +1,6 @@
-export type UserRole = 'CANDIDATE' | 'SUPERVISOR' | 'ADMIN'
+export const USER_ROLES = ['CANDIDATE', 'SUPERVISOR', 'ADMIN'] as const
+
+export type UserRole = (typeof USER_ROLES)[number]
 
 export interface UserDto {
   id: number
