@@ -1,6 +1,6 @@
 import { Router, type RequestHandler } from 'express'
-import { requireRole } from '../auth/requireRole.js'
 import type { FeaturesService } from '../services/featuresService.js'
+import { requireRole } from '../auth/requireRole.js'
 import { parseCreateFeature } from '../validation/featureRequests.js'
 
 export interface FeaturesRoutesDeps {
