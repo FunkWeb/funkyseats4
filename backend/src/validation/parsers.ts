@@ -1,11 +1,13 @@
 import { ValidationError } from '../errors/appErrors.js'
 
-export const parseId = (value: unknown, field: string) => {
+export const parsePositiveInteger = (value: unknown, field: string) => {
   const id = typeof value === 'string' || typeof value === 'number' ? Number(value) : NaN
   if (!Number.isInteger(id) || id <= 0)
     throw new ValidationError(`${field} must be a positive integer`)
   return id
 }
+
+export const parseId = parsePositiveInteger
 
 const isIsoDate = (value: unknown): value is string =>
   typeof value === 'string' &&
@@ -35,6 +37,9 @@ export const parseNonEmptyString = (value: unknown, field: string) => {
 
 export const parseOptionalString = (value: unknown, field: string) =>
   value === undefined || value === null ? null : parseNonEmptyString(value, field)
+
+export const parseIfPresent = <T>(value: unknown, parse: (value: unknown) => T) =>
+  value === undefined ? undefined : parse(value)
 
 export const asRecord = (body: unknown): Record<string, unknown> =>
   typeof body === 'object' && body !== null ? (body as Record<string, unknown>) : {}
