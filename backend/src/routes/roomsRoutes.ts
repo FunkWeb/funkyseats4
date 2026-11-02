@@ -1,99 +1,46 @@
-import { Router, Request, Response, NextFunction, RequestHandler } from 'express'
+import { Router, type RequestHandler } from 'express'
+import { requireRole } from '../auth/requireRole.js'
 import type { RoomsService } from '../services/roomsService.js'
-import type { CreateRoomRequest, UpdateRoomRequest } from '../../../contracts/room.js'
-import { NotFoundError } from '../errors/appErrors.js'
+import type { SeatsService } from '../services/seatsService.js'
+import { parseCreateRoom, parseUpdateRoom } from '../validation/roomRequests.js'
+import { parseId } from '../validation/parsers.js'
 
-export const createRoomsRoutes = ({
-  roomsService,
-  requireAuth,
-  requireRole,
-}: {
-  roomsService: RoomsService
+export interface RoomsRoutesDeps {
+  roomsService: Pick<RoomsService, 'findAll' | 'findById' | 'create' | 'update' | 'delete'>
+  seatsService: Pick<SeatsService, 'findByRoom'>
   requireAuth: RequestHandler
-  requireRole: (...allowed: ('CANDIDATE' | 'SUPERVISOR' | 'ADMIN')[]) => RequestHandler
-}) => {
-  const router = Router()
+}
 
+export const createRoomsRoutes = ({ roomsService, seatsService, requireAuth }: RoomsRoutesDeps) => {
+  const router = Router()
   router.use(requireAuth)
 
-  router.get('/', (async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const rooms = await roomsService.findAll()
-      return res.json(rooms)
-    } catch (error) {
-      next(error)
-    }
-  }) as RequestHandler)
+  router.get('/', async (_req, res) => {
+    res.json(await roomsService.findAll())
+  })
 
-  router.get('/:id', (async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const id = Number(req.params.id)
-      const room = await roomsService.findById(id)
+  router.get('/:id', async (req, res) => {
+    res.json(await roomsService.findById(parseId(req.params.id, 'id')))
+  })
 
-      if (!room) {
-        return res.status(404).send()
-      }
+  router.get('/:id/seats', async (req, res) => {
+    res.json(await seatsService.findByRoom(parseId(req.params.id, 'id')))
+  })
 
-      return res.json(room)
-    } catch (error) {
-      if (error instanceof NotFoundError) {
-        return res.status(404).send()
-      }
-      next(error)
-    }
-  }) as RequestHandler)
+  router.post('/', requireRole('ADMIN'), async (req, res) => {
+    const id = await roomsService.create(parseCreateRoom(req.body))
+    res.status(201).json({ id })
+  })
 
-  router.post('/', requireRole('ADMIN'), (async (
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ) => {
-    try {
-      const body: CreateRoomRequest = req.body
-      const created = await roomsService.create(body)
+  router.patch('/:id', requireRole('ADMIN'), async (req, res) => {
+    await roomsService.update(parseId(req.params.id, 'id'), parseUpdateRoom(req.body))
+    res.sendStatus(204)
+  })
 
-      return res.status(201).json({ id: created })
-    } catch (error) {
-      next(error)
-    }
-  }) as RequestHandler)
-
-  router.patch('/:id', requireRole('ADMIN'), (async (
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ) => {
-    try {
-      const id = Number(req.params.id)
-      const body: UpdateRoomRequest = req.body
-
-      await roomsService.update(id, body)
-      return res.status(204).send()
-    } catch (error) {
-      if (error instanceof NotFoundError) {
-        return res.status(404).send()
-      }
-      next(error)
-    }
-  }) as RequestHandler)
-
-  router.delete('/:id', requireRole('ADMIN'), (async (
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ) => {
-    try {
-      const id = Number(req.params.id)
-
-      await roomsService.delete(id)
-      return res.status(204).send()
-    } catch (error) {
-      if (error instanceof NotFoundError) {
-        return res.status(404).send()
-      }
-      next(error)
-    }
-  }) as RequestHandler)
+  router.delete('/:id', requireRole('ADMIN'), async (req, res) => {
+    await roomsService.delete(parseId(req.params.id, 'id'))
+    res.sendStatus(204)
+  })
 
   return router
 }
