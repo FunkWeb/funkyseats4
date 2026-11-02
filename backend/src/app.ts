@@ -20,6 +20,9 @@ import { errorHandler } from './errors/errorHandler.js'
 import { createSession } from './auth/session.js'
 import { createRequireAuth } from './auth/requireAuth.js'
 import { apiLimiter, authLimiter } from './middleware/rateLimit.js'
+import { createRoomsService } from './services/roomsService.js'
+import { createRoomsRoutes } from './routes/roomsRoutes.js'
+import { requireRole } from './auth/requireRole.js'
 
 export const app = express()
 
@@ -42,6 +45,8 @@ const bookingsService = createBookingsService({
 })
 const featuresService = createFeaturesService({ features: createFeaturesRepository(pool) })
 const usersService = createUsersService({ users })
+const roomsRepository = createRoomsRepository(pool)
+const roomsService = createRoomsService({ rooms: roomsRepository })
 
 app.use(
   '/auth',
@@ -53,6 +58,15 @@ app.use(
     requireAuth,
     frontendUrl: config.frontendUrl,
   }),
+
+  app.use(
+    '/rooms',
+    createRoomsRoutes({
+      roomsService,
+      requireAuth,
+      requireRole,
+    }),
+  ),
 )
 
 app.use('/bookings', apiLimiter, createBookingsRoutes({ bookingsService, requireAuth }))
