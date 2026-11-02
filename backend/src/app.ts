@@ -25,11 +25,13 @@ import { createSession } from './auth/session.js'
 import { createRequireAuth } from './auth/requireAuth.js'
 import { requireRole } from './auth/requireRole.js'
 import { apiLimiter, authLimiter } from './middleware/rateLimit.js'
+import { createRequireSameOrigin } from './middleware/requireSameOrigin.js'
 
 export const app = express()
 
 app.set('trust proxy', 2)
 app.use(cookieParser())
+app.use(createRequireSameOrigin(new URL(config.frontendUrl).origin))
 app.use(express.json())
 
 app.get('/health', (_req, res) => {
