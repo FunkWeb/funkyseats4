@@ -1,6 +1,8 @@
 export type BookingStatus = 'ACTIVE' | 'COMPLETE' | 'CANCELLED'
 
-export type TimePeriod = 'BEFORE_LUNCH' | 'AFTER_LUNCH' | 'ALL_DAY'
+export const TIME_PERIODS = ['BEFORE_LUNCH', 'AFTER_LUNCH', 'ALL_DAY'] as const
+
+export type TimePeriod = (typeof TIME_PERIODS)[number]
 
 export interface BookingDto {
   id: number
