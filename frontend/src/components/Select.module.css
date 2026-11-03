@@ -1,0 +1,40 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  width: 100%;
+}
+
+.label {
+  font-size: 0.875rem;
+  font-weight: var(--font-weight-medium, 500);
+  color: var(--color-text, currentColor);
+}
+
+.select {
+  width: 100%;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: 1rem;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition-property: border-color, box-shadow;
+  transition-duration: var(--duration-fast);
+}
+
+.select:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: var(--space-1);
+}
+
+.select:disabled {
+  background-color: var(--color-bg);
+  color: var(--color-text-muted);
+  border-color: var(--color-border);
+  cursor: not-allowed;
+  box-shadow: none;
+}
