@@ -1,4 +1,4 @@
-import { useId } from 'react'
+import { useId, type SelectHTMLAttributes } from 'react'
 import styles from './Select.module.css'
 
 export interface SelectOption {
@@ -6,16 +6,19 @@ export interface SelectOption {
   value: string
 }
 
-export interface SelectProps {
+type NativeSelectProps = Omit<
+  SelectHTMLAttributes<HTMLSelectElement>,
+  'value' | 'defaultValue' | 'onChange' | 'children' | 'multiple'
+>
+
+export interface SelectProps extends NativeSelectProps {
   label: string
   options: SelectOption[]
   value: string
   onChange: (value: string) => void
-  id?: string
-  className?: string
 }
 
-export function Select({ label, options, value, onChange, id, className }: SelectProps) {
+export function Select({ label, options, value, onChange, id, className, ...selectProps }: SelectProps) {
   const generatedId = useId()
   const selectId = id ?? generatedId
   const containerClassName = [styles.container, className].filter(Boolean).join(' ')
@@ -26,6 +29,7 @@ export function Select({ label, options, value, onChange, id, className }: Selec
         {label}
       </label>
       <select
+        {...selectProps}
         id={selectId}
         className={styles.select}
         value={value}
