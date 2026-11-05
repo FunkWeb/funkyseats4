@@ -1,4 +1,5 @@
 import { useId, type SelectHTMLAttributes } from 'react'
+import { classNames } from '../utils/classNames'
 import styles from './Select.module.css'
 
 export interface SelectOption {
@@ -14,14 +15,15 @@ type NativeSelectProps = Omit<
 export interface SelectProps extends NativeSelectProps {
   label: string
   options: SelectOption[]
-  value: string
+  value: string | null
+  placeholder?: string
   onChange: (value: string) => void
 }
 
-export function Select({ label, options, value, onChange, id, className, ...selectProps }: SelectProps) {
+export function Select({ label, options, value, placeholder, onChange, id, className, ...selectProps }: SelectProps) {
   const generatedId = useId()
   const selectId = id ?? generatedId
-  const containerClassName = [styles.container, className].filter(Boolean).join(' ')
+  const containerClassName = classNames(styles.container, className)
 
   return (
     <div className={containerClassName}>
@@ -32,9 +34,14 @@ export function Select({ label, options, value, onChange, id, className, ...sele
         {...selectProps}
         id={selectId}
         className={styles.select}
-        value={value}
+        value={value ?? ''}
         onChange={(e) => onChange(e.target.value)}
       >
+        {value === null && (
+          <option value="" disabled hidden>
+            {placeholder}
+          </option>
+        )}
         {options.map((option) => (
           <option key={option.value} value={option.value}>
             {option.label}
