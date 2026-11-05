@@ -1,3 +1,4 @@
+import { useId } from 'react'
 import styles from './Select.module.css'
 
 export interface SelectOption {
@@ -15,7 +16,8 @@ export interface SelectProps {
 }
 
 export function Select({ label, options, value, onChange, id, className }: SelectProps) {
-  const selectId = id || `select-${label.toLowerCase().replace(/\s+/g, '-')}`
+  const generatedId = useId()
+  const selectId = id ?? generatedId
   const containerClassName = [styles.container, className].filter(Boolean).join(' ')
 
   return (
