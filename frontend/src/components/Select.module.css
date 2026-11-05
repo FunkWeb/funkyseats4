@@ -6,9 +6,9 @@
 }
 
 .label {
-  font-size: 0.875rem;
-  font-weight: var(--font-weight-medium, 500);
-  color: var(--color-text, currentColor);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text);
 }
 
 .select {
@@ -16,14 +16,11 @@
   padding: var(--space-2) var(--space-4);
   border-radius: var(--radius-md);
   border: 1px solid var(--color-border);
-  background-color: var(--color-bg);
+  background-color: var(--color-surface);
   color: var(--color-text);
-  font-family: inherit;
-  font-size: 1rem;
+  font-size: var(--font-size-md);
   cursor: pointer;
   box-shadow: var(--shadow-sm);
-  transition-property: border-color, box-shadow;
-  transition-duration: var(--duration-fast);
 }
 
 .select:focus-visible {
@@ -34,7 +31,6 @@
 .select:disabled {
   background-color: var(--color-bg);
   color: var(--color-text-muted);
-  border-color: var(--color-border);
   cursor: not-allowed;
   box-shadow: none;
 }
