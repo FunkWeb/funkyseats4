@@ -20,7 +20,16 @@ export interface SelectProps extends NativeSelectProps {
   onChange: (value: string) => void
 }
 
-export function Select({ label, options, value, placeholder, onChange, id, className, ...selectProps }: SelectProps) {
+export function Select({
+  label,
+  options,
+  value,
+  placeholder,
+  onChange,
+  id,
+  className,
+  ...selectProps
+}: SelectProps) {
   const generatedId = useId()
   const selectId = id ?? generatedId
   const containerClassName = classNames(styles.container, className)
