@@ -1,36 +1,29 @@
-import type { ReactNode } from 'react'
+import type { ButtonHTMLAttributes, ReactNode } from 'react'
+import { classNames } from '../utils/classNames'
+import type { ButtonVariant } from './Button'
+import buttonStyles from './Button.module.css'
 import styles from './IconButton.module.css'
 
-export type IconButtonVariant = 'primary' | 'secondary' | 'ghost'
-
-export interface IconButtonProps {
+export interface IconButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children'> {
   icon: ReactNode
-  onClick?: () => void
-  variant?: IconButtonVariant
-  disabled?: boolean
-  className?: string
-  'aria-label'?: string
+  variant?: ButtonVariant
+  'aria-label': string
 }
 
 export function IconButton({
   icon,
-  onClick,
   variant = 'primary',
-  disabled = false,
   className,
-  'aria-label': ariaLabel,
+  type = 'button',
+  ...buttonProps
 }: IconButtonProps) {
-  const buttonClassName = [styles.button, styles[variant], className].filter(Boolean).join(' ')
+  const classes = classNames(buttonStyles.button, buttonStyles[variant], styles.iconOnly, className)
 
   return (
-    <button
-      type="button"
-      className={buttonClassName}
-      onClick={onClick}
-      disabled={disabled}
-      aria-label={ariaLabel}
-    >
-      <span className={styles.iconWrapper}>{icon}</span>
+    <button {...buttonProps} className={classes} type={type}>
+      <span className={styles.icon} aria-hidden>
+        {icon}
+      </span>
     </button>
   )
 }

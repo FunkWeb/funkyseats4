@@ -65,6 +65,13 @@
   --button-text: var(--color-text-on-success);
 }
 
+.ghost {
+  --button-background: transparent;
+  --button-hover: var(--color-secondary-subtle);
+  --button-text: var(--color-secondary);
+  box-shadow: none;
+}
+
 .icon {
   display: inline-flex;
 }
