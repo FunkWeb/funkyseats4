@@ -12,7 +12,13 @@ export interface SectionHeaderProps {
   className?: string
 }
 
-export function SectionHeader({ title, description, action, as: Heading = 'h2', className }: SectionHeaderProps) {
+export function SectionHeader({
+  title,
+  description,
+  action,
+  as: Heading = 'h2',
+  className,
+}: SectionHeaderProps) {
   return (
     <header className={classNames(styles.header, className)}>
       <div className={styles.text}>
