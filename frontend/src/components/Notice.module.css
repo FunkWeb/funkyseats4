@@ -2,75 +2,48 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  padding: var(--space-3, 12px) var(--space-4, 16px);
-  border-radius: var(--radius-md, 6px);
-  border: 1px solid var(--color-border);
-  background-color: var(--color-bg);
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid;
+  border-radius: var(--radius-md);
   color: var(--color-text);
-  gap: var(--space-3, 12px);
 }
 
 .content {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1), 4px;
+  gap: var(--space-1);
 }
 
 .title {
-  font-size: 0.95rem;
-  font-weight: var(--font-weight-medium, 600);
-  line-height: 1.3;
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-tight);
 }
 
 .description {
   margin: 0;
-  font-size: 0.875rem;
-  color: var(--color-text-muted, var(--color-text));
-  line-height: 1.4;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  line-height: var(--line-height-normal);
 }
 
 .info {
-  border-color: var(--color-text-muted, var(--color-text));
-  line-height: 1.4;
-}
-
-.info {
-  border-color: var(--color-info-border, var(--color-border));
-  background-color: var(--color-info-bg, var(--color-bg));
+  border-color: var(--color-secondary);
+  background-color: var(--color-secondary-subtle);
 }
 
 .success {
-  border-color: var(--color-success-border, var(--color-border));
-  background-color: var(--color-success-bg, var(--color-bg));
+  border-color: var(--color-success);
+  background-color: var(--color-success-subtle);
 }
 
-warning {
-  border-color: var(--color-warning-border, var(--color-border));
-  background-color: var(--color-warning-bg, var(--color-bg));
+.warning {
+  border-color: var(--color-warning);
+  background-color: var(--color-warning-subtle);
 }
 
-.error {
-  border-color: var(--color-error-border, var(--color-border));
-  background-color: var(--color-error-bg, var(--color-bg));
-}
-
-.closeButton {
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  font-size: 1rem;
-  line-height: 1;
-  padding: var(--space-1, 4px);
-  color: var(--color-text);
-  border-radius: var(--radius-sm, 4px);
-  transition: opacity var(--duration-fast, 150ms);
-}
-
-.closeButton:hover {
-  opacity: 0.7;
-}
-
-.closeButton:focus-visible {
-  outline: 2px solid var(--color-focus-ring);
-  outline-offset: var(--space-1);
+.danger {
+  border-color: var(--color-danger);
+  background-color: var(--color-danger-subtle);
 }

@@ -1,8 +1,12 @@
-import type { ReactNode } from 'react'
+import { classNames } from '../utils/classNames'
 import { IconButton } from './IconButton'
 import styles from './Notice.module.css'
 
-export type NoticeVariant = 'info' | 'success' | 'warning' | 'error'
+export const noticeVariants = ['info', 'success', 'warning', 'danger'] as const
+
+export type NoticeVariant = (typeof noticeVariants)[number]
+
+const urgentVariants: readonly NoticeVariant[] = ['warning', 'danger']
 
 export interface NoticeProps {
   title: string
@@ -13,12 +17,11 @@ export interface NoticeProps {
 }
 
 export function Notice({ title, description, variant = 'info', onClose, className }: NoticeProps) {
-  const containerClassName = [styles.container, styles[variant], className]
-    .filter(Boolean)
-    .join(' ')
+  const containerClassName = classNames(styles.container, styles[variant], className)
+  const role = urgentVariants.includes(variant) ? 'alert' : 'status'
 
   return (
-    <div className={containerClassName} role="alert">
+    <div className={containerClassName} role={role}>
       <div className={styles.content}>
         <strong className={styles.title}>{title}</strong>
         <p className={styles.description}>{description}</p>
