@@ -1,0 +1,17 @@
+.card {
+  box-sizing: border-box;
+  border: 1px solid var(--card-border);
+  border-bottom-width: 3px;
+  border-radius: var(--radius-md);
+  background-color: var(--card-background);
+}
+
+.default {
+  --card-border: var(--color-primary);
+  --card-background: var(--color-surface);
+}
+
+.muted {
+  --card-border: var(--gray-400);
+  --card-background: var(--gray-100);
+}
