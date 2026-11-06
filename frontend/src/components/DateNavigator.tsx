@@ -1,16 +1,10 @@
 import { useRef } from 'react'
 import { classNames } from '../utils/classNames'
+import { formatShortDate, shiftIsoDate } from '../utils/isoDate'
 import { Button } from './Button'
 import { IconButton } from './IconButton'
 import { ChevronIcon } from './icons/ChevronIcon'
 import styles from './DateNavigator.module.css'
-
-const dateFormatter = new Intl.DateTimeFormat(undefined, {
-  weekday: 'short',
-  day: 'numeric',
-  month: 'short',
-  timeZone: 'Europe/Oslo',
-})
 
 export interface DateNavigatorProps {
   value: string
@@ -19,14 +13,6 @@ export interface DateNavigatorProps {
   onDateChange: (date: string) => void
   disabled?: boolean
   className?: string
-}
-
-const toDate = (isoDate: string) => new Date(`${isoDate}T12:00:00Z`)
-
-function shiftDate(isoDate: string, days: number) {
-  const date = toDate(isoDate)
-  date.setUTCDate(date.getUTCDate() + days)
-  return date.toISOString().slice(0, 10)
 }
 
 export function DateNavigator({
@@ -38,7 +24,7 @@ export function DateNavigator({
   className,
 }: DateNavigatorProps) {
   const pickerRef = useRef<HTMLInputElement>(null)
-  const lastBookableDate = shiftDate(today, maxDaysAhead)
+  const lastBookableDate = shiftIsoDate(today, maxDaysAhead)
 
   return (
     <div
@@ -51,7 +37,7 @@ export function DateNavigator({
         icon={<ChevronIcon direction="left" />}
         aria-label="Previous day"
         disabled={disabled || value <= today}
-        onClick={() => onDateChange(shiftDate(value, -1))}
+        onClick={() => onDateChange(shiftIsoDate(value, -1))}
       />
       <div className={styles.datePicker}>
         <button
@@ -62,7 +48,7 @@ export function DateNavigator({
           onClick={() => pickerRef.current?.showPicker()}
         >
           <time dateTime={value} aria-live="polite">
-            {dateFormatter.format(toDate(value))}
+            {formatShortDate(value)}
           </time>
         </button>
         <input
@@ -82,7 +68,7 @@ export function DateNavigator({
         icon={<ChevronIcon direction="right" />}
         aria-label="Next day"
         disabled={disabled || value >= lastBookableDate}
-        onClick={() => onDateChange(shiftDate(value, 1))}
+        onClick={() => onDateChange(shiftIsoDate(value, 1))}
       />
       <Button
         variant="outline"
