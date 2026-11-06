@@ -1,56 +1,47 @@
 .dateNavigator {
   display: flex;
+  align-items: center;
   gap: var(--space-2);
-  overflow-x: auto;
-  padding: var(--space-1);
 }
 
-.date {
-  display: flex;
-  flex: 0 0 auto;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-1);
+.datePicker {
+  position: relative;
+}
+
+.currentDate {
+  min-width: 9rem;
   padding: var(--space-2) var(--space-3);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   color: var(--color-text);
   background-color: var(--color-surface);
-  box-shadow: var(--shadow-sm);
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-medium);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
   cursor: pointer;
-  transition-property: background-color, border-color, box-shadow, color;
+  transition-property: background-color, border-color;
   transition-duration: var(--duration-fast);
 }
 
-.date:hover:not(:disabled):not([aria-pressed='true']) {
+.currentDate:hover:not(:disabled) {
   border-color: var(--color-secondary);
   background-color: var(--color-secondary-subtle);
 }
 
-.date:focus-visible {
+.currentDate:focus-visible {
   outline: 2px solid var(--color-focus-ring);
   outline-offset: var(--space-1);
 }
 
-.date[aria-pressed='true'] {
-  border-color: var(--color-secondary);
-  color: var(--color-text-on-secondary);
-  background-color: var(--color-secondary);
-  font-weight: var(--font-weight-medium);
-}
-
-.date:disabled {
+.currentDate:disabled {
   color: var(--color-text-muted);
-  background-color: var(--color-bg);
-  box-shadow: none;
   cursor: not-allowed;
 }
 
-.weekday {
-  font-size: var(--font-size-sm);
-}
-
-.dateLabel {
-  font-size: var(--font-size-md);
-  font-weight: var(--font-weight-medium);
+.pickerInput {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
 }

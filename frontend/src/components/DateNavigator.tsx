@@ -1,21 +1,15 @@
+import { useRef } from 'react'
+import { classNames } from '../utils/classNames'
+import { Button } from './Button'
+import { IconButton } from './IconButton'
+import { ChevronIcon } from './icons/ChevronIcon'
 import styles from './DateNavigator.module.css'
 
-const officeTimeZone = 'Europe/Oslo'
-
-const weekdayFormatter = new Intl.DateTimeFormat(undefined, {
-  weekday: 'short',
-  timeZone: officeTimeZone,
-})
-
 const dateFormatter = new Intl.DateTimeFormat(undefined, {
+  weekday: 'short',
   day: 'numeric',
   month: 'short',
-  timeZone: officeTimeZone,
-})
-
-const accessibleDateFormatter = new Intl.DateTimeFormat(undefined, {
-  dateStyle: 'full',
-  timeZone: officeTimeZone,
+  timeZone: 'Europe/Oslo',
 })
 
 export interface DateNavigatorProps {
@@ -24,40 +18,15 @@ export interface DateNavigatorProps {
   maxDaysAhead: number
   onDateChange: (date: string) => void
   disabled?: boolean
+  className?: string
 }
 
-function parseDateOnly(value: string): Date | undefined {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    return undefined
-  }
+const toDate = (isoDate: string) => new Date(`${isoDate}T12:00:00Z`)
 
-  const date = new Date(`${value}T12:00:00Z`)
-
-  return Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== value
-    ? undefined
-    : date
-}
-
-function getDateOptions(today: string, maxDaysAhead: number) {
-  const startDate = parseDateOnly(today)
-  const dayCount = Math.floor(maxDaysAhead)
-
-  if (startDate == null || !Number.isFinite(maxDaysAhead) || dayCount < 0) {
-    return []
-  }
-
-  return Array.from({ length: dayCount + 1 }, (_, index) => {
-    const date = new Date(startDate)
-    date.setUTCDate(date.getUTCDate() + index)
-    const dateValue = date.toISOString().slice(0, 10)
-
-    return {
-      value: dateValue,
-      weekday: weekdayFormatter.format(date),
-      dateLabel: dateFormatter.format(date),
-      accessibleLabel: accessibleDateFormatter.format(date),
-    }
-  })
+function shiftDate(isoDate: string, days: number) {
+  const date = toDate(isoDate)
+  date.setUTCDate(date.getUTCDate() + days)
+  return date.toISOString().slice(0, 10)
 }
 
 export function DateNavigator({
@@ -66,25 +35,62 @@ export function DateNavigator({
   maxDaysAhead,
   onDateChange,
   disabled = false,
+  className,
 }: DateNavigatorProps) {
-  const dates = getDateOptions(today, maxDaysAhead)
+  const pickerRef = useRef<HTMLInputElement>(null)
+  const lastBookableDate = shiftDate(today, maxDaysAhead)
 
   return (
-    <div className={styles.dateNavigator} role="group" aria-label="Choose a booking date">
-      {dates.map((date) => (
+    <div
+      className={classNames(styles.dateNavigator, className)}
+      role="group"
+      aria-label="Choose a booking date"
+    >
+      <IconButton
+        variant="ghost"
+        icon={<ChevronIcon direction="left" />}
+        aria-label="Previous day"
+        disabled={disabled || value <= today}
+        onClick={() => onDateChange(shiftDate(value, -1))}
+      />
+      <div className={styles.datePicker}>
         <button
-          key={date.value}
-          className={styles.date}
+          className={styles.currentDate}
           type="button"
-          aria-label={date.accessibleLabel}
-          aria-pressed={value === date.value}
+          aria-haspopup="dialog"
           disabled={disabled}
-          onClick={() => onDateChange(date.value)}
+          onClick={() => pickerRef.current?.showPicker()}
         >
-          <span className={styles.weekday}>{date.weekday}</span>
-          <span className={styles.dateLabel}>{date.dateLabel}</span>
+          <time dateTime={value} aria-live="polite">
+            {dateFormatter.format(toDate(value))}
+          </time>
         </button>
-      ))}
+        <input
+          ref={pickerRef}
+          className={styles.pickerInput}
+          type="date"
+          tabIndex={-1}
+          aria-hidden
+          value={value}
+          min={today}
+          max={lastBookableDate}
+          onChange={(event) => event.target.value && onDateChange(event.target.value)}
+        />
+      </div>
+      <IconButton
+        variant="ghost"
+        icon={<ChevronIcon direction="right" />}
+        aria-label="Next day"
+        disabled={disabled || value >= lastBookableDate}
+        onClick={() => onDateChange(shiftDate(value, 1))}
+      />
+      <Button
+        variant="outline"
+        disabled={disabled || value === today}
+        onClick={() => onDateChange(today)}
+      >
+        Today
+      </Button>
     </div>
   )
 }
