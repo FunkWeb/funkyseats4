@@ -6,8 +6,8 @@ type PageHeaderProps = {
 
 export default function PageHeader({ title }: PageHeaderProps) {
     return (
-        <header className={styles.pageHeader}>
-            <h1 className={styles.headerTitle}>{title}</h1>
+        <header id={styles.pageHeader}>
+            <h1 id={styles.headerTitle}>{title}</h1>
         </header>
     )
 }

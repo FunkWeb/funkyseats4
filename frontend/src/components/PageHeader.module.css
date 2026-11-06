@@ -1,8 +1,12 @@
-.pageHeader {
-    margin-bottom: 1.5rem;
+#pageHeader {
+    margin: 0;
+    padding-top: var(--space-1);
+    padding-bottom: var(--space-1);
+    padding-left: var(--space-6);
+    border-bottom: solid var(--color-primary);
 }
 
-.headerTitle {
-    font-size: 1.75rem;
-    margin: 0;
+#headerTitle {
+    font-family: var(--font-family);
+    font-size: var(--font-size-xl);
 }
