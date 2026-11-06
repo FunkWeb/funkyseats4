@@ -1,4 +1,3 @@
-import type { ReactNode } from 'react'
 import styles from './Avatar.module.css'
 
 export type AvatarSize = 'sm' | 'md' | 'lg'
