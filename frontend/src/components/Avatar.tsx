@@ -19,20 +19,8 @@ function getInitials(name?: string): string {
   return parts[0].charAt(0) + parts[parts.length - 1].charAt(0)
 }
 
-export function Avatar({
-  src,
-  alt = '',
-  name,
-  size = 'md',
-  className,
-}: AvatarProps) {
-  const avatarClassName = [
-    styles.avatar,
-    styles[size],
-    className,
-  ]
-    .filter(Boolean)
-    .join(' ')
+export function Avatar({ src, alt = '', name, size = 'md', className }: AvatarProps) {
+  const avatarClassName = [styles.avatar, styles[size], className].filter(Boolean).join(' ')
 
   const initials = getInitials(name)
 
