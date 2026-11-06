@@ -12,6 +12,6 @@
 }
 
 .muted {
-  --card-border: var(--gray-400);
-  --card-background: var(--gray-100);
+  --card-border: var(--color-border-muted);
+  --card-background: var(--color-surface-muted);
 }
