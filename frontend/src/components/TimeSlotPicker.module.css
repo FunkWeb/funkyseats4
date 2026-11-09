@@ -28,20 +28,23 @@
   background-color: var(--color-surface);
   color: var(--color-text);
   cursor: pointer;
+  transition-property: background-color, border-color;
+  transition-duration: var(--duration-fast);
 }
 
+.option:hover:not(.unavailable, .group:disabled *),
 .selected {
   border-color: var(--color-secondary);
   background-color: var(--color-secondary-subtle);
 }
 
+.input {
+  accent-color: var(--color-secondary);
+}
+
 .input:focus-visible {
   outline: 2px solid var(--color-focus-ring);
   outline-offset: var(--space-1);
-}
-
-.input {
-  accent-color: var(--color-secondary);
 }
 
 .label {
@@ -56,6 +59,8 @@
 
 .unavailable,
 .group:disabled .option {
+  border-color: var(--seat-disabled-border);
+  background-color: var(--seat-disabled);
   color: var(--color-text-muted);
   cursor: not-allowed;
 }

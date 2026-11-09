@@ -7,8 +7,10 @@ export interface TimeSlotPickerProps {
   value: TimePeriod | null
   availablePeriods: TimePeriod[]
   onChange: (period: TimePeriod) => void
+  label?: string
   disabled?: boolean
   unavailableReason?: (period: TimePeriod) => string | undefined
+  className?: string
 }
 
 const periodLabels: Record<TimePeriod, string> = {
@@ -21,15 +23,17 @@ export function TimeSlotPicker({
   value,
   availablePeriods,
   onChange,
+  label = 'Booking period',
   disabled = false,
   unavailableReason,
+  className,
 }: TimeSlotPickerProps) {
   const groupId = useId()
   const availableSet = new Set(availablePeriods)
 
   return (
-    <fieldset className={styles.group} disabled={disabled}>
-      <legend className={styles.legend}>Booking period</legend>
+    <fieldset className={classNames(styles.group, className)} disabled={disabled}>
+      <legend className={styles.legend}>{label}</legend>
       <div className={styles.options}>
         {TIME_PERIODS.map((period) => {
           const isAvailable = availableSet.has(period)
@@ -57,7 +61,7 @@ export function TimeSlotPicker({
               />
               <span className={styles.label}>{periodLabels[period]}</span>
               {reason && (
-                <span className={styles.reason} id={reasonId}>
+                <span className={styles.reason} id={reasonId} aria-hidden>
                   {reason}
                 </span>
               )}
