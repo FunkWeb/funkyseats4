@@ -1,71 +1,84 @@
 :root {
+  color-scheme: light dark;
+
   --gray-0: #ffffff;
   --gray-50: #f7f8fa;
   --gray-100: #eef0f3;
   --gray-200: #dde1e7;
   --gray-400: #9aa3b0;
   --gray-600: #5b6573;
+  --gray-700: #3a424e;
   --gray-800: #2a313b;
+  --gray-850: #1f242c;
   --gray-900: #161a20;
 
   --yellow-100: #fef0d6;
   --yellow-500: #fab63a;
   --yellow-600: #e39b17;
+  --yellow-900: #3a2e12;
 
   --indigo-100: #e7e5f0;
+  --indigo-200: #c9c5e6;
+  --indigo-300: #a9a3d6;
   --indigo-700: #342e57;
+  --indigo-750: #2b2745;
   --indigo-800: #241f3e;
 
   --green-100: #e1f6ea;
   --green-500: #1f9d57;
   --green-600: #188149;
   --green-700: #146b3c;
+  --green-900: #12321f;
 
   --red-100: #fde6e6;
   --red-500: #d93838;
   --red-600: #b92e2e;
+  --red-900: #3a1a1a;
 
   --orange-100: #fde8db;
   --orange-500: #d4621a;
+  --orange-900: #3a2414;
 
-  --color-bg: var(--gray-50);
-  --color-surface: var(--gray-0);
-  --color-border: var(--gray-200);
-  --color-text: var(--gray-900);
-  --color-text-muted: var(--gray-600);
+  --color-bg: light-dark(var(--gray-50), var(--gray-900));
+  --color-surface: light-dark(var(--gray-0), var(--gray-850));
+  --color-surface-muted: light-dark(var(--gray-100), var(--gray-800));
+  --color-border: light-dark(var(--gray-200), var(--gray-700));
+  --color-border-muted: light-dark(var(--gray-400), var(--gray-600));
+  --color-text: light-dark(var(--gray-900), var(--gray-50));
+  --color-text-muted: light-dark(var(--gray-600), var(--gray-400));
   --color-text-on-primary: var(--indigo-700);
-  --color-text-on-secondary: var(--gray-0);
+  --color-text-on-secondary: light-dark(var(--gray-0), var(--gray-900));
   --color-text-on-success: var(--gray-0);
   --color-text-on-danger: var(--gray-0);
   --color-focus-ring: var(--color-secondary);
 
   --color-primary: var(--yellow-500);
   --color-primary-hover: var(--yellow-600);
-  --color-primary-subtle: var(--yellow-100);
+  --color-primary-subtle: light-dark(var(--yellow-100), var(--yellow-900));
 
-  --color-secondary: var(--indigo-700);
-  --color-secondary-hover: var(--indigo-800);
-  --color-secondary-subtle: var(--indigo-100);
+  --color-secondary: light-dark(var(--indigo-700), var(--indigo-300));
+  --color-secondary-hover: light-dark(var(--indigo-800), var(--indigo-200));
+  --color-secondary-subtle: light-dark(var(--indigo-100), var(--indigo-750));
 
   --color-success: var(--green-600);
   --color-success-hover: var(--green-700);
-  --color-success-subtle: var(--green-100);
+  --color-success-subtle: light-dark(var(--green-100), var(--green-900));
   --color-danger: var(--red-500);
   --color-danger-hover: var(--red-600);
-  --color-danger-subtle: var(--red-100);
+  --color-danger-subtle: light-dark(var(--red-100), var(--red-900));
   --color-warning: var(--orange-500);
-  --color-warning-subtle: var(--orange-100);
+  --color-warning-subtle: light-dark(var(--orange-100), var(--orange-900));
 
   --seat-available: var(--color-success-subtle);
   --seat-available-border: var(--color-success);
-  --seat-booked: var(--gray-200);
-  --seat-booked-border: var(--gray-400);
+  --seat-booked: light-dark(var(--gray-200), var(--gray-800));
+  --seat-booked-border: light-dark(var(--gray-400), var(--gray-600));
   --seat-mine: var(--color-primary);
   --seat-mine-border: var(--color-primary-hover);
   --seat-selected: var(--color-secondary-subtle);
   --seat-selected-border: var(--color-secondary);
-  --seat-disabled: var(--gray-100);
-  --seat-disabled-border: var(--gray-200);
+  --seat-disabled: light-dark(var(--gray-100), var(--gray-850));
+  --seat-disabled-border: light-dark(var(--gray-200), var(--gray-700));
 
   --font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-family-mono: ui-monospace, 'Cascadia Code', Consolas, monospace;
@@ -97,8 +110,8 @@
   --radius-lg: 12px;
   --radius-full: 9999px;
 
-  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.06);
-  --shadow-md: 0 4px 12px rgb(0 0 0 / 0.08);
+  --shadow-sm: 0 1px 2px light-dark(rgb(0 0 0 / 0.06), rgb(0 0 0 / 0.4));
+  --shadow-md: 0 4px 12px light-dark(rgb(0 0 0 / 0.08), rgb(0 0 0 / 0.5));
 
   --duration-fast: 120ms;
   --duration-normal: 200ms;

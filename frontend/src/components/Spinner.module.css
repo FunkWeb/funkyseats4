@@ -1,0 +1,46 @@
+.spinner {
+  display: inline-block;
+  box-sizing: border-box;
+  width: var(--spinner-size);
+  height: var(--spinner-size);
+  border: var(--spinner-thickness) solid var(--color-border);
+  border-top-color: var(--color-secondary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.sm {
+  --spinner-size: var(--space-4);
+  --spinner-thickness: 2px;
+}
+
+.md {
+  --spinner-size: var(--space-8);
+  --spinner-thickness: 3px;
+}
+
+.lg {
+  --spinner-size: var(--space-12);
+  --spinner-thickness: 4px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation-duration: 2.4s;
+  }
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
