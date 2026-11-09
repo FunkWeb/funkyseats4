@@ -1,0 +1,11 @@
+.header {
+  padding-block: var(--space-1);
+  padding-inline-start: var(--space-6);
+  border-bottom: 3px solid var(--color-primary);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--font-size-xl);
+  line-height: var(--line-height-tight);
+}
