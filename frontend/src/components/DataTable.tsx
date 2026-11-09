@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { Spinner } from './Spinner'
 import styles from './DataTable.module.css'
 
 export interface Column<T = Record<string, unknown>> {
@@ -25,7 +26,9 @@ export function DataTable<T extends Record<string, unknown>>({
   if (loading) {
     return (
       <div className={containerClassName}>
-        <div className={styles.skeleton} />
+        <div className={styles.loading}>
+          <Spinner />
+        </div>
       </div>
     )
   }
