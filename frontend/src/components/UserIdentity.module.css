@@ -1,0 +1,25 @@
+.userIdentity {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3, 12px);
+}
+
+.details {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.name {
+  font-weight: var(--font-weight-medium, 600);
+  color: var(--color-text, #0f172a);
+  font-size: 0.9375rem;
+  line-height: 1.2;
+}
+
+.subtitle {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted, #64748b);
+  line-height: 1.2;
+  margin-top: 2px;
+}
