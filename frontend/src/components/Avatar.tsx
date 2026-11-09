@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import styles from './Avatar.module.css'
 
 export type AvatarSize = 'sm' | 'md' | 'lg'
@@ -22,11 +23,18 @@ export function Avatar({ src, alt = '', name, size = 'md', className }: AvatarPr
   const avatarClassName = [styles.avatar, styles[size], className].filter(Boolean).join(' ')
 
   const initials = getInitials(name)
+  const [failedSrc, setFailedSrc] = useState<string>()
+  const showImage = src && src !== failedSrc
 
   return (
     <div className={avatarClassName}>
-      {src ? (
-        <img src={src} alt={alt || name || 'Avatar'} className={styles.image} />
+      {showImage ? (
+        <img
+          src={src}
+          alt={alt || name || 'Avatar'}
+          className={styles.image}
+          onError={() => setFailedSrc(src)}
+        />
       ) : (
         <span className={styles.initials}>{initials}</span>
       )}
