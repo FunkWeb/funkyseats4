@@ -1,0 +1,33 @@
+<!doctype html>
+<!--
+  How to use the dev-preview:
+
+  1. Create src/DevPreview.tsx (git-ignored, so it is personal to you) and paste:
+
+       import { StrictMode } from 'react'
+       import { createRoot } from 'react-dom/client'
+       import './styles/index.css'
+       import { Button } from './components/Button'
+
+       createRoot(document.getElementById('root')!).render(
+         <StrictMode>
+           <Button>Test</Button>
+         </StrictMode>,
+       )
+
+  2. Swap the Button import and <Button>Test</Button> for the component you are building.
+  3. Run npm run dev:frontend and open http://localhost:5173/dev-preview.html
+
+  Not included in production builds.
+-->
+<html lang="no">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Funkyseats · Dev Preview</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/DevPreview.tsx"></script>
+  </body>
+</html>
