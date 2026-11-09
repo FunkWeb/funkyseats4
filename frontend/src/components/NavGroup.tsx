@@ -1,7 +1,7 @@
-import NavItem from './NavItem'
+// import NavItem from './NavItem'
 
-type Props = {
-    navitem: string;
-};
+// type Props = {
+//     navitem: string;
+// };
 
-export NavItem;
+// export NavItem;
