@@ -1,10 +1,5 @@
-import PageHeader from "./components/PageHeader";
-import "./styles/index.css"
+import { PageHeader } from './components/PageHeader'
 
 export default function App() {
-  return (
-    <>
-      <PageHeader title="Funkyseats4" />
-    </>
-  );
+  return <PageHeader title="Funkyseats4" />
 }
