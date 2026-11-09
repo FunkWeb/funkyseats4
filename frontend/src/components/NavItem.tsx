@@ -11,7 +11,11 @@ export interface NavItemProps {
 }
 
 export function NavItem({ label, href, icon, isCurrent = false, isNested = false }: NavItemProps) {
-  const className = classNames(styles.navItem, isNested && styles.nested, isCurrent && styles.active)
+  const className = classNames(
+    styles.navItem,
+    isNested && styles.nested,
+    isCurrent && styles.active,
+  )
   const content = (
     <>
       {isCurrent && <span className={styles.marker} aria-hidden />}
