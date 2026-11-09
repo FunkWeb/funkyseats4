@@ -1,31 +1,36 @@
 import type { ReactNode } from 'react'
+import { classNames } from '../utils/classNames'
 import { Spinner } from './Spinner'
 import styles from './DataTable.module.css'
 
-export interface Column<T = Record<string, unknown>> {
-  key: string
-  header: string
-  render?: (row: T) => ReactNode
-}
+type RenderableKey<T> = { [K in keyof T]: T[K] extends ReactNode ? K : never }[keyof T] & string
 
-export interface DataTableProps<T = Record<string, unknown>> {
+export type Column<T> =
+  | { key: RenderableKey<T>; header: string }
+  | { key: string; header: string; render: (row: T) => ReactNode }
+
+export interface DataTableProps<T> {
   columns: Column<T>[]
   data: T[]
-  loading?: boolean
+  getRowKey: (row: T) => string
+  isLoading?: boolean
+  emptyMessage?: string
   className?: string
 }
 
-export function DataTable<T extends Record<string, unknown>>({
+export function DataTable<T>({
   columns,
   data,
-  loading = false,
+  getRowKey,
+  isLoading = false,
+  emptyMessage = 'No results',
   className,
 }: DataTableProps<T>) {
-  const containerClassName = [styles.container, className].filter(Boolean).join(' ')
+  const containerClassName = classNames(styles.container, className)
 
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className={containerClassName}>
+      <div className={containerClassName} aria-busy>
         <div className={styles.loading}>
           <Spinner />
         </div>
@@ -46,15 +51,23 @@ export function DataTable<T extends Record<string, unknown>>({
           </tr>
         </thead>
         <tbody>
-          {data.map((row: T, rowIndex: number) => (
-            <tr key={rowIndex} className={styles.row}>
-              {columns.map((col) => (
-                <td key={col.key} className={styles.cell}>
-                  {col.render ? col.render(row) : (row[col.key] as ReactNode)}
-                </td>
-              ))}
+          {data.length === 0 ? (
+            <tr className={styles.row}>
+              <td colSpan={columns.length} className={classNames(styles.cell, styles.empty)}>
+                {emptyMessage}
+              </td>
             </tr>
-          ))}
+          ) : (
+            data.map((row) => (
+              <tr key={getRowKey(row)} className={styles.row}>
+                {columns.map((col) => (
+                  <td key={col.key} className={styles.cell}>
+                    {'render' in col ? col.render(row) : (row[col.key] as ReactNode)}
+                  </td>
+                ))}
+              </tr>
+            ))
+          )}
         </tbody>
       </table>
     </div>

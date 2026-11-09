@@ -11,7 +11,7 @@
   border-collapse: collapse;
   text-align: left;
   color: var(--color-text);
-  font-size: 1rem;
+  font-size: var(--font-size-md);
 }
 
 .headerCell,
@@ -20,9 +20,8 @@
 }
 
 .headerCell {
-  font-weight: var(--font-weight-medium, 500);
+  font-weight: var(--font-weight-medium);
   border-bottom: 1px solid var(--color-border);
-  background-color: var(--color-bg);
 }
 
 .row {
@@ -38,4 +37,9 @@
   align-items: center;
   justify-content: center;
   min-height: 120px;
+}
+
+.empty {
+  text-align: center;
+  color: var(--color-text-muted);
 }

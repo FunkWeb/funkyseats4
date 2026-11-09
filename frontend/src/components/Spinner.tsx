@@ -1,3 +1,4 @@
+import { classNames } from '../utils/classNames'
 import styles from './Spinner.module.css'
 
 export const spinnerSizes = ['sm', 'md', 'lg'] as const
@@ -11,7 +12,9 @@ export interface SpinnerProps {
 }
 
 export function Spinner({ size = 'md', label = 'Loading', className }: SpinnerProps) {
-  const spinnerClassName = [styles.spinner, styles[size], className].filter(Boolean).join(' ')
-
-  return <span role="status" aria-label={label} className={spinnerClassName} />
+  return (
+    <span role="status" className={classNames(styles.spinner, styles[size], className)}>
+      <span className={styles.visuallyHidden}>{label}</span>
+    </span>
+  )
 }
