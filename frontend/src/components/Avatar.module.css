@@ -2,10 +2,10 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--radius-full, 50%);
-  background-color: var(--color-surface, #e2e8f0);
-  color: var(--color-text, #0f177a);
-  font-weight: var(--font-weight-medium, 500);
+  border-radius: var(--radius-full);
+  background-color: var(--color-secondary-subtle);
+  color: var(--color-secondary);
+  font-weight: var(--font-weight-medium);
   overflow: hidden;
   user-select: none;
   flex-shrink: 0;
@@ -24,17 +24,17 @@
 .sm {
   width: 32px;
   height: 32px;
-  font-size: 0.875rem;
+  font-size: var(--font-size-sm);
 }
 
 .md {
   width: 40px;
   height: 40px;
-  font-size: 1rem;
+  font-size: var(--font-size-md);
 }
 
 .lg {
   width: 48px;
   height: 48px;
-  font-size: 1.25rem;
+  font-size: var(--font-size-lg);
 }
