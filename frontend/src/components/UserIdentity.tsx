@@ -10,7 +10,13 @@ export interface UserIdentityProps {
   className?: string
 }
 
-export function UserIdentity({ name, subtitle, avatarSrc, size = 'md', className }: UserIdentityProps) {
+export function UserIdentity({
+  name,
+  subtitle,
+  avatarSrc,
+  size = 'md',
+  className,
+}: UserIdentityProps) {
   return (
     <div className={classNames(styles.userIdentity, styles[size], className)}>
       <Avatar src={avatarSrc} name={name} alt="" size={size} />
