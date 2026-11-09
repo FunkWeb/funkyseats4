@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { classNames } from '../utils/classNames'
 import styles from './Card.module.css'
 
 export const cardVariants = ['default', 'muted'] as const
@@ -12,7 +13,7 @@ export interface CardProps {
 }
 
 export function Card({ variant = 'default', children, className }: CardProps) {
-  const cardClassName = [styles.card, styles[variant], className].filter(Boolean).join(' ')
+  const cardClassName = classNames(styles.card, styles[variant], className)
 
   return <div className={cardClassName}>{children}</div>
 }
