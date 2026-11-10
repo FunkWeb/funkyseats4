@@ -6,7 +6,7 @@
   padding: var(--space-3);
   border-radius: var(--radius-md);
   color: var(--color-text-on-secondary);
-  background-color: var(--color-secondary);
+  background-color: var(--color-secondary-solid);
 }
 
 .group {

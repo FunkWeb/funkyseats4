@@ -41,8 +41,8 @@
 }
 
 .accent {
-  --button-background: var(--color-secondary);
-  --button-hover: var(--color-secondary-hover);
+  --button-background: var(--color-secondary-solid);
+  --button-hover: var(--color-secondary-solid-hover);
   --button-text: var(--color-text-on-secondary);
 }
 

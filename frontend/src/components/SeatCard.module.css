@@ -58,8 +58,8 @@
 
 .unavailable {
   border-radius: var(--radius-sm);
-  color: var(--gray-0);
-  background-color: var(--gray-600);
+  color: light-dark(var(--gray-0), var(--gray-400));
+  background-color: light-dark(var(--gray-600), var(--gray-800));
   font-weight: var(--font-weight-medium);
   text-transform: none;
 }
