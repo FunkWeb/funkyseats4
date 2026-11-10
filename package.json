@@ -49,6 +49,7 @@
     "prettier": "^3.9.8",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
+    "react-router": "^7.18.5",
     "tsx": "^4.23.15",
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.70.1",
