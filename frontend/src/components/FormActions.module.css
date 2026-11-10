@@ -1,0 +1,53 @@
+.formActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3, 12px);
+  margin-top: var(--space-4, 16px);
+}
+
+.cancelButton,
+.saveButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  border-radius: var(--radius-md, 6px);
+  font-size: 0.875rem;
+  font-weight: var(--font-weight-medium, 500);
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.cancelButton {
+  background-color: transparent;
+  color: var(--color-text, #0f172a);
+  border-color: var(--color-border, #cbd5e1);
+}
+
+.cancelButton:hover {
+  background-color: var(--color-bg-subtle, #f1f5f9);
+}
+
+.saveButton {
+  background-color: var(--color-primary, #2563eb);
+  color: #ffffff;
+}
+
+.saveButton:hover:not(:disabled) {
+  background-color: var(--color-primary-hover, #1d4ed8);
+}
+
+.saveButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.cancelButton:focus-visible,
+.saveButton:focus-visible {
+  outline: 2px solid var(--color-focus, #2563eb);
+  outline-offset: 2px;
+}
