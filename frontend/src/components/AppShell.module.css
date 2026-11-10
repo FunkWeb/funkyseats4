@@ -1,6 +1,16 @@
 .shell {
   display: flex;
   min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.sidebar {
+  position: sticky;
+  top: 0;
+  flex-shrink: 0;
+  height: 100vh;
+  height: 100dvh;
+  overflow-y: auto;
 }
 
 .content {
