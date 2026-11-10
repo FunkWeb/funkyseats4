@@ -34,11 +34,27 @@
   color: var(--color-text);
 }
 
+.hideLabels .feature {
+  position: relative;
+}
+
 .hideLabels .label {
   position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
+  inset-block-end: calc(100% + var(--space-1));
+  inset-inline-start: 50%;
+  z-index: 1;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-on-secondary);
+  background-color: var(--color-secondary);
+  font-size: var(--font-size-xs);
   white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  translate: -50% 0;
+  transition: opacity var(--duration-fast);
+}
+
+.hideLabels .feature:hover .label {
+  opacity: 1;
 }
