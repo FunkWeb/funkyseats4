@@ -1,12 +1,19 @@
-.group {
+.picker {
+  --picker-focus-ring: var(--color-primary);
+
   position: relative;
   min-width: 0;
-  margin: 0;
   padding: var(--space-3);
-  border: 0;
   border-radius: var(--radius-md);
   color: var(--color-text-on-secondary);
   background-color: var(--color-secondary);
+}
+
+.group {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
 }
 
 .legend {
@@ -35,11 +42,11 @@
 }
 
 .close:hover {
-  background-color: rgb(255 255 255 / 0.15);
+  background-color: color-mix(in srgb, currentColor 15%, transparent);
 }
 
 .close:focus-visible {
-  outline: 2px solid var(--color-primary);
+  outline: 2px solid var(--picker-focus-ring);
   outline-offset: 2px;
 }
 
@@ -76,7 +83,7 @@
 }
 
 .option:has(.input:focus-visible) {
-  outline: 2px solid var(--color-primary);
+  outline: 2px solid var(--picker-focus-ring);
   outline-offset: 2px;
 }
 

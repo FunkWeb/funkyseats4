@@ -35,14 +35,10 @@ export function TimeSlotPicker({
   const availableSet = new Set(availablePeriods)
 
   return (
-    <fieldset className={classNames(styles.group, className)} disabled={disabled}>
-      <legend className={styles.legend}>{label}</legend>
-      {onClose && (
-        <button type="button" className={styles.close} aria-label="Close" onClick={onClose}>
-          <CloseIcon />
-        </button>
-      )}
-      <div className={styles.options}>
+    <div className={classNames(styles.picker, className)}>
+      <fieldset className={styles.group} disabled={disabled}>
+        <legend className={styles.legend}>{label}</legend>
+        <div className={styles.options}>
         {TIME_PERIODS.map((period) => {
           const isAvailable = availableSet.has(period)
           const reason = !isAvailable ? unavailableReason?.(period) : undefined
@@ -76,7 +72,13 @@ export function TimeSlotPicker({
             </label>
           )
         })}
-      </div>
-    </fieldset>
+        </div>
+      </fieldset>
+      {onClose && (
+        <button type="button" className={styles.close} aria-label="Close" onClick={onClose}>
+          <CloseIcon />
+        </button>
+      )}
+    </div>
   )
 }

@@ -22,7 +22,7 @@ export function SeatCard({
   seatName,
   features,
   occupant,
-  freeLabel = 'Ledig',
+  freeLabel = 'Available',
   muted = false,
   status,
   actions,
