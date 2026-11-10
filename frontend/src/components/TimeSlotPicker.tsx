@@ -2,11 +2,13 @@ import { useId } from 'react'
 import { TIME_PERIODS, type TimePeriod } from '../../../contracts/booking'
 import { classNames } from '../utils/classNames'
 import styles from './TimeSlotPicker.module.css'
+import { CloseIcon } from './icons/CloseIcon'
 
 export interface TimeSlotPickerProps {
   value: TimePeriod | null
   availablePeriods: TimePeriod[]
   onChange: (period: TimePeriod) => void
+  onClose?: () => void
   label?: string
   disabled?: boolean
   unavailableReason?: (period: TimePeriod) => string | undefined
@@ -23,6 +25,7 @@ export function TimeSlotPicker({
   value,
   availablePeriods,
   onChange,
+  onClose,
   label = 'Booking period',
   disabled = false,
   unavailableReason,
@@ -34,6 +37,11 @@ export function TimeSlotPicker({
   return (
     <fieldset className={classNames(styles.group, className)} disabled={disabled}>
       <legend className={styles.legend}>{label}</legend>
+      {onClose && (
+        <button type="button" className={styles.close} aria-label="Close" onClick={onClose}>
+          <CloseIcon />
+        </button>
+      )}
       <div className={styles.options}>
         {TIME_PERIODS.map((period) => {
           const isAvailable = availableSet.has(period)
