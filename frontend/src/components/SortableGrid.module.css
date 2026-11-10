@@ -1,0 +1,36 @@
+.sortableGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--space-3, 12px);
+  padding: var(--space-4, 16px);
+}
+
+.itemWrapper {
+  cursor: grab;
+  user-select: none;
+}
+
+.controls {
+  display: flex;
+  gap: 4px;
+  margin-top: var(--space-2, 8px);
+}
+
+.moveButton {
+  background: none;
+  border: 1px solid var(--color-border, #cbd5e1);
+  cursor: pointer;
+  padding: 2px 6px;
+  font-size: 0.75rem;
+  border-radius: var(--radius-sm, 4px);
+  color: var(--color-text, #0f172a);
+}
+
+.moveButton:hover:not(:disabled) {
+  background-color: var(--color-bg-subtle, #f1f5f9);
+}
+
+.moveButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
