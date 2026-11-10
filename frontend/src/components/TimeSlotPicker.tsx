@@ -39,39 +39,39 @@ export function TimeSlotPicker({
       <fieldset className={styles.group} disabled={disabled}>
         <legend className={styles.legend}>{label}</legend>
         <div className={styles.options}>
-        {TIME_PERIODS.map((period) => {
-          const isAvailable = availableSet.has(period)
-          const reason = !isAvailable ? unavailableReason?.(period) : undefined
-          const reasonId = `${groupId}-${period}-reason`
+          {TIME_PERIODS.map((period) => {
+            const isAvailable = availableSet.has(period)
+            const reason = !isAvailable ? unavailableReason?.(period) : undefined
+            const reasonId = `${groupId}-${period}-reason`
 
-          return (
-            <label
-              className={classNames(
-                styles.option,
-                value === period && styles.selected,
-                !isAvailable && styles.unavailable,
-              )}
-              key={period}
-            >
-              <input
-                className={styles.input}
-                type="radio"
-                name={groupId}
-                value={period}
-                checked={value === period}
-                disabled={!isAvailable}
-                aria-describedby={reason ? reasonId : undefined}
-                onChange={() => onChange(period)}
-              />
-              <span className={styles.label}>{periodLabels[period]}</span>
-              {reason && (
-                <span className={styles.reason} id={reasonId} aria-hidden>
-                  {reason}
-                </span>
-              )}
-            </label>
-          )
-        })}
+            return (
+              <label
+                className={classNames(
+                  styles.option,
+                  value === period && styles.selected,
+                  !isAvailable && styles.unavailable,
+                )}
+                key={period}
+              >
+                <input
+                  className={styles.input}
+                  type="radio"
+                  name={groupId}
+                  value={period}
+                  checked={value === period}
+                  disabled={!isAvailable}
+                  aria-describedby={reason ? reasonId : undefined}
+                  onChange={() => onChange(period)}
+                />
+                <span className={styles.label}>{periodLabels[period]}</span>
+                {reason && (
+                  <span className={styles.reason} id={reasonId} aria-hidden>
+                    {reason}
+                  </span>
+                )}
+              </label>
+            )
+          })}
         </div>
       </fieldset>
       {onClose && (
