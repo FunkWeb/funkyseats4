@@ -15,6 +15,7 @@
   justify-content: space-between;
   gap: var(--space-2);
   min-inline-size: 0;
+  min-block-size: var(--space-6);
 }
 
 .freeLabel {
@@ -23,10 +24,9 @@
 }
 
 .features {
-  flex-shrink: 0;
-  margin-inline-start: auto;
-  flex-wrap: nowrap;
-  gap: var(--space-2);
+  flex: 1 1 0;
+  justify-content: flex-end;
+  gap: 0;
 }
 
 .title {
