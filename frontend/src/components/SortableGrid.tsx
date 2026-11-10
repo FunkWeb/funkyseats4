@@ -3,12 +3,13 @@ import { TileCard } from './TileCard'
 import styles from './SortableGrid.module.css'
 
 export interface Seat {
-  id: string
-  label: string
+  id: string | number
+  label?: string
+  seatNumber?: string
   [key: string]: unknown
 }
 
-export type SeatLayout = string[]
+export type SeatLayout = (string | number)[]
 
 export interface SortableGridProps {
   seats: Seat[]
@@ -26,7 +27,7 @@ export function SortableGrid({
   disabled = false,
   className,
 }: SortableGridProps) {
-  const [draggedId, setDraggedId] = useState<string | null>(null)
+  const [draggedId, setDraggedId] = useState<string | number | null>(null)
 
   const containerClassName = [styles.sortableGrid, className].filter(Boolean).join(' ')
 
@@ -42,7 +43,7 @@ export function SortableGrid({
     onLayoutChange(newLayout)
   }
 
-  const handleDragStart = (id: string) => {
+  const handleDragStart = (id: string | number) => {
     if (disabled) return
     setDraggedId(id)
   }
@@ -51,8 +52,8 @@ export function SortableGrid({
     e.preventDefault()
   }
 
-  const handleDrop = (targetId: string) => {
-    if (disabled || !draggedId || draggedId === targetId) return
+  const handleDrop = (targetId: string | number) => {
+    if (disabled || draggedId === null || draggedId === targetId) return
     const fromIndex = layout.indexOf(draggedId)
     const toIndex = layout.indexOf(targetId)
     if (fromIndex !== -1 && toIndex !== -1) {
@@ -63,40 +64,50 @@ export function SortableGrid({
 
   return (
     <div className={containerClassName}>
-      {orderedSeats.map((seat, index) => (
-        <div
-          key={seat.id}
-          draggable={!disabled}
-          onDragStart={() => handleDragStart(seat.id)}
-          onDragOver={handleDragOver}
-          onDrop={() => handleDrop(seat.id)}
-          className={styles.itemWrapper}
-        >
-          <TileCard seat={seat as any} state="available" onSelect={() => {}} disabled={disabled} />
-          {!disabled && (
-            <div className={styles.controls}>
-              <button
-                type="button"
-                className={styles.moveButton}
-                onClick={() => moveSeat(index, index - 1)}
-                disabled={index === 0}
-                aria-label={`Move ${seat.label} left`}
-              >
-                ←
-              </button>
-              <button
-                type="button"
-                className={styles.moveButton}
-                onClick={() => moveSeat(index, index + 1)}
-                disabled={index === orderedSeats.length - 1}
-                aria-label={`Move ${seat.label} right`}
-              >
-                →
-              </button>
-            </div>
-          )}
-        </div>
-      ))}
+      {orderedSeats.map((seat, index) => {
+        const displayLabel = seat.seatNumber || seat.label || String(seat.id)
+        const numericId = typeof seat.id === 'number' ? seat.id : Number(seat.id) || index
+
+        return (
+          <div
+            key={seat.id}
+            draggable={!disabled}
+            onDragStart={() => handleDragStart(seat.id)}
+            onDragOver={handleDragOver}
+            onDrop={() => handleDrop(seat.id)}
+            className={styles.itemWrapper}
+          >
+            <TileCard
+              seat={{ id: numericId, seatNumber: displayLabel }}
+              state="available"
+              onSelect={() => {}}
+              disabled={disabled}
+            />
+            {!disabled && (
+              <div className={styles.controls}>
+                <button
+                  type="button"
+                  className={styles.moveButton}
+                  onClick={() => moveSeat(index, index - 1)}
+                  disabled={index === 0}
+                  aria-label={`Move ${displayLabel} left`}
+                >
+                  ←
+                </button>
+                <button
+                  type="button"
+                  className={styles.moveButton}
+                  onClick={() => moveSeat(index, index + 1)}
+                  disabled={index === orderedSeats.length - 1}
+                  aria-label={`Move ${displayLabel} right`}
+                >
+                  →
+                </button>
+              </div>
+            )}
+          </div>
+        )
+      })}
     </div>
   )
 }
