@@ -9,7 +9,7 @@ import styles from './DateNavigator.module.css'
 export interface DateNavigatorProps {
   value: string
   today: string
-  maxDaysAhead: number
+  maxDaysAhead?: number
   onDateChange: (date: string) => void
   disabled?: boolean
   className?: string
@@ -24,7 +24,8 @@ export function DateNavigator({
   className,
 }: DateNavigatorProps) {
   const pickerRef = useRef<HTMLInputElement>(null)
-  const lastBookableDate = shiftIsoDate(today, maxDaysAhead)
+  const lastBookableDate =
+    maxDaysAhead === undefined ? undefined : shiftIsoDate(today, maxDaysAhead)
 
   return (
     <div
@@ -60,6 +61,7 @@ export function DateNavigator({
           value={value}
           min={today}
           max={lastBookableDate}
+          disabled={disabled}
           onChange={(event) => event.target.value && onDateChange(event.target.value)}
         />
       </div>
@@ -67,7 +69,7 @@ export function DateNavigator({
         variant="ghost"
         icon={<ChevronIcon direction="right" />}
         aria-label="Next day"
-        disabled={disabled || value >= lastBookableDate}
+        disabled={disabled || (lastBookableDate !== undefined && value >= lastBookableDate)}
         onClick={() => onDateChange(shiftIsoDate(value, 1))}
       />
       <Button
