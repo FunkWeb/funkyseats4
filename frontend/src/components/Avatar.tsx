@@ -21,13 +21,16 @@ function getInitials(name = ''): string {
 export function Avatar({ src, alt, name, size = 'md', className }: AvatarProps) {
   const [failedSrc, setFailedSrc] = useState<string>()
   const avatarClassName = classNames(styles.avatar, styles[size], className)
+  const decorative = alt === ''
   const label = alt ?? name ?? 'Avatar'
   const showImage = src && src !== failedSrc
 
   return (
-    <div className={avatarClassName}>
+    <div className={avatarClassName} aria-hidden={decorative || undefined}>
       {showImage ? (
         <img src={src} alt={label} className={styles.image} onError={() => setFailedSrc(src)} />
+      ) : decorative ? (
+        <span className={styles.initials}>{getInitials(name)}</span>
       ) : (
         <span role="img" aria-label={label} className={styles.initials}>
           {getInitials(name)}
