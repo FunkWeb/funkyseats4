@@ -20,11 +20,11 @@ export function FormActions({
 
   return (
     <div className={containerClassName}>
-      <Button type="button" onClick={onCancel}>
-        Cancel
-      </Button>
       <Button type="submit" disabled={isSaveDisabled}>
         {isSaving ? 'Saving...' : 'Save'}
+      </Button>
+      <Button type="button" variant="accent" onClick={onCancel}>
+        Cancel
       </Button>
     </div>
   )
