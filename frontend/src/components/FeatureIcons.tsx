@@ -6,6 +6,7 @@ import { StarIcon } from './icons/StarIcon'
 
 export interface FeatureIconsProps {
   features: Pick<FeatureDto, 'id' | 'name' | 'iconPath'>[]
+  hideLabels?: boolean
   className?: string
 }
 
@@ -25,13 +26,16 @@ function FeatureIcon({ iconPath }: { iconPath: string | null }) {
   )
 }
 
-export function FeatureIcons({ features, className }: FeatureIconsProps) {
+export function FeatureIcons({ features, hideLabels = false, className }: FeatureIconsProps) {
   if (features.length === 0) {
     return null
   }
 
   return (
-    <ul className={classNames(styles.list, className)} aria-label="Features">
+    <ul
+      className={classNames(styles.list, hideLabels && styles.hideLabels, className)}
+      aria-label="Features"
+    >
       {features.map((feature) => (
         <li className={styles.feature} key={`${feature.id}:${feature.iconPath ?? ''}`}>
           <FeatureIcon iconPath={feature.iconPath} />

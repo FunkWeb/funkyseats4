@@ -29,3 +29,16 @@
   font-size: var(--font-size-sm);
   line-height: var(--line-height-normal);
 }
+
+.hideLabels .fallbackIcon {
+  color: var(--color-text);
+}
+
+.hideLabels .label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

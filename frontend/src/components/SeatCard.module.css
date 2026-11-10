@@ -1,63 +1,65 @@
 .seatCard {
-  display: grid;
-  inline-size: 100%;
-  min-block-size: var(--space-12);
-  place-content: center;
-  gap: var(--space-1);
-  padding: var(--space-2);
-  border: 1px solid var(--seat-border);
-  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-inline-size: 0;
+  padding: var(--space-3);
   color: var(--color-text);
-  background-color: var(--seat-background);
   font-family: var(--font-family);
   line-height: var(--line-height-tight);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-inline-size: 0;
+}
+
+.freeLabel {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.features {
+  flex-shrink: 0;
+  margin-inline-start: auto;
+  flex-wrap: nowrap;
+  gap: var(--space-2);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
   text-align: center;
 }
 
-button.seatCard {
-  cursor: pointer;
-  transition:
-    background-color var(--duration-fast),
-    border-color var(--duration-fast);
+.footer {
+  display: flex;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
 }
 
-button.seatCard:hover:not(:disabled) {
-  border-color: var(--color-secondary);
-}
-
-button.seatCard:focus-visible {
-  outline: 2px solid var(--color-focus-ring);
-  outline-offset: var(--space-1);
-}
-
-button.seatCard:disabled {
-  cursor: not-allowed;
-}
-
-.available {
-  --seat-background: var(--seat-available);
-  --seat-border: var(--seat-available-border);
-}
-.selected {
-  --seat-background: var(--seat-selected);
-  --seat-border: var(--seat-selected-border);
-}
-.booked {
-  --seat-background: var(--seat-booked);
-  --seat-border: var(--seat-booked-border);
-}
-.unavailable {
-  --seat-background: var(--seat-disabled);
-  --seat-border: var(--seat-disabled-border);
-}
-
-.seatNumber {
-  font-size: var(--font-size-md);
-  font-weight: var(--font-weight-bold);
+.footer > * {
+  flex: 1 1 0;
+  min-inline-size: 0;
 }
 
 .status {
-  color: var(--color-text-muted);
-  font-size: var(--font-size-xs);
+  margin: 0;
+  padding: var(--space-2);
+  color: var(--color-secondary);
+  font-weight: var(--font-weight-bold);
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.unavailable {
+  border-radius: var(--radius-sm);
+  color: var(--gray-0);
+  background-color: var(--gray-600);
   font-weight: var(--font-weight-medium);
+  text-transform: none;
 }
