@@ -32,7 +32,11 @@ export function SeatCard({
     <Card variant={muted ? 'muted' : 'default'} className={classNames(styles.seatCard, className)}>
       <div className={styles.header}>
         {occupant ? (
-          <UserIdentity size="sm" name={occupant.name} avatarSrc={occupant.avatarPath ?? undefined} />
+          <UserIdentity
+            size="sm"
+            name={occupant.name}
+            avatarSrc={occupant.avatarPath ?? undefined}
+          />
         ) : (
           <span className={styles.freeLabel}>{freeLabel}</span>
         )}
@@ -43,7 +47,9 @@ export function SeatCard({
 
       {(status || actions) && (
         <div className={styles.footer}>
-          {status && <p className={classNames(styles.status, muted && styles.unavailable)}>{status}</p>}
+          {status && (
+            <p className={classNames(styles.status, muted && styles.unavailable)}>{status}</p>
+          )}
           {actions}
         </div>
       )}
