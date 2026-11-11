@@ -36,6 +36,7 @@
     "mysql2": "^3.24.4"
   },
   "devDependencies": {
+    "@tanstack/react-query": "^5.107.1",
     "@eslint/js": "^10.0.1",
     "@types/cookie-parser": "^1.4.10",
     "@types/express": "^5.0.6",
