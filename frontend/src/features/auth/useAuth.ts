@@ -1,10 +1,11 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { hashKey, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import type { UserDto } from '../../../../contracts/user'
 import { getMe, logout as logoutRequest } from '../../api/authApi'
 import { authQueryKey } from '../../api/queryClient'
 
 export { authQueryKey }
 
-type UserDto = NonNullable<Awaited<ReturnType<typeof getMe>>>
+const authQueryHash = hashKey(authQueryKey)
 
 export interface UseAuthResult {
   user: UserDto | null | undefined
@@ -32,10 +33,7 @@ export function useAuth(): UseAuthResult {
     mutationFn: logoutRequest,
     onSuccess: () => {
       queryClient.setQueryData(authQueryKey, null)
-      queryClient.removeQueries({
-        predicate: (query) =>
-          query.queryKey[0] !== authQueryKey[0] || query.queryKey[1] !== authQueryKey[1],
-      })
+      queryClient.removeQueries({ predicate: (query) => query.queryHash !== authQueryHash })
     },
   })
 
