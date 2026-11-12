@@ -1,3 +1,7 @@
+import { useParams } from 'react-router'
+
 export default function SeatViewPage() {
-  return null
+  const { roomId } = useParams()
+
+  return <>{roomId}</>
 }

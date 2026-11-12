@@ -15,11 +15,12 @@
   --yellow-100: #fef0d6;
   --yellow-500: #fab63a;
   --yellow-600: #e39b17;
-  --yellow-900: #3a2e12;
 
   --indigo-100: #e7e5f0;
   --indigo-200: #c9c5e6;
   --indigo-300: #a9a3d6;
+  --indigo-500: #5b52c4;
+  --indigo-600: #4a42a6;
   --indigo-700: #342e57;
   --indigo-750: #2b2745;
   --indigo-800: #241f3e;
@@ -41,23 +42,25 @@
 
   --color-bg: light-dark(var(--gray-50), var(--gray-900));
   --color-surface: light-dark(var(--gray-0), var(--gray-850));
-  --color-surface-muted: light-dark(var(--gray-100), var(--gray-800));
+  --color-surface-muted: light-dark(var(--gray-100), var(--gray-900));
   --color-border: light-dark(var(--gray-200), var(--gray-700));
-  --color-border-muted: light-dark(var(--gray-400), var(--gray-600));
+  --color-border-muted: light-dark(var(--gray-400), var(--gray-700));
   --color-text: light-dark(var(--gray-900), var(--gray-50));
   --color-text-muted: light-dark(var(--gray-600), var(--gray-400));
   --color-text-on-primary: var(--indigo-700);
-  --color-text-on-secondary: light-dark(var(--gray-0), var(--gray-900));
+  --color-text-on-secondary: var(--gray-0);
   --color-text-on-success: var(--gray-0);
   --color-text-on-danger: var(--gray-0);
   --color-focus-ring: var(--color-secondary);
 
   --color-primary: var(--yellow-500);
   --color-primary-hover: var(--yellow-600);
-  --color-primary-subtle: light-dark(var(--yellow-100), var(--yellow-900));
+  --color-primary-subtle: light-dark(var(--yellow-100), var(--gray-800));
 
   --color-secondary: light-dark(var(--indigo-700), var(--indigo-300));
   --color-secondary-hover: light-dark(var(--indigo-800), var(--indigo-200));
+  --color-secondary-solid: light-dark(var(--indigo-700), var(--indigo-600));
+  --color-secondary-solid-hover: light-dark(var(--indigo-800), var(--indigo-500));
   --color-secondary-subtle: light-dark(var(--indigo-100), var(--indigo-750));
 
   --color-success: var(--green-600);
