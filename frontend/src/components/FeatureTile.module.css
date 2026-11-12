@@ -46,15 +46,17 @@
   justify-content: center;
   inline-size: 1.75rem;
   block-size: 1.75rem;
-  font-size: 1.5rem;
-  line-height: 1;
 }
 
-.icon > img,
-.icon > svg {
+.icon > svg,
+.svgMask {
   inline-size: 100%;
   block-size: 100%;
-  object-fit: contain;
+}
+
+.svgMask {
+  background-color: currentColor;
+  mask: var(--icon-url) center / contain no-repeat;
 }
 
 .name {

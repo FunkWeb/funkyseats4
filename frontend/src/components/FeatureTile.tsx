@@ -1,11 +1,11 @@
-import { useState, type ReactNode } from 'react'
+import { useState, type CSSProperties, type ReactElement, type SVGProps } from 'react'
 import type { FeatureDto } from '../../../contracts/feature'
 import { classNames } from '../utils/classNames'
 import { StarIcon } from './icons/StarIcon'
 import styles from './FeatureTile.module.css'
 
 export type ExtendedFeatureDto = FeatureDto & {
-  icon?: ReactNode
+  icon?: ReactElement<SVGProps<SVGSVGElement>>
 }
 
 export interface FeatureTileProps {
@@ -23,7 +23,15 @@ function TileIcon({ feature }: { feature: ExtendedFeatureDto }) {
   }
 
   if (feature.iconPath && !hasImageError) {
-    return <img src={feature.iconPath} alt="" onError={() => setHasImageError(true)} />
+    return (
+      <>
+        <span
+          className={styles.svgMask}
+          style={{ '--icon-url': `url("${feature.iconPath}")` } as CSSProperties}
+        />
+        <img src={feature.iconPath} alt="" hidden onError={() => setHasImageError(true)} />
+      </>
+    )
   }
 
   return <StarIcon />
