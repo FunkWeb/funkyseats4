@@ -1,25 +1,9 @@
-export class HttpError extends Error {
-  name = 'HttpError'
-
-  constructor(
-    message: string,
-    readonly status: number,
-  ) {
-    super(message)
-  }
-}
-
-export class UnauthorizedError extends HttpError {
-  name = 'UnauthorizedError'
-
-  constructor(message: string) {
-    super(message, 401)
-  }
-}
+import type { ErrorResponse } from '../../../contracts/error'
+import { createHttpError } from './errors'
 
 async function readErrorMessage(response: Response): Promise<string> {
-  const body = (await response.json().catch(() => null)) as { error?: unknown } | null
-  return typeof body?.error === 'string' ? body.error : response.statusText
+  const body = (await response.json().catch(() => null)) as Partial<ErrorResponse> | null
+  return typeof body?.errorMessage === 'string' ? body.errorMessage : response.statusText
 }
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
@@ -31,10 +15,7 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   const response = await fetch(`/api${path}`, init)
 
   if (!response.ok) {
-    const message = await readErrorMessage(response)
-    throw response.status === 401
-      ? new UnauthorizedError(message)
-      : new HttpError(message, response.status)
+    throw createHttpError(await readErrorMessage(response), response.status)
   }
 
   return response.status === 204 ? (undefined as T) : ((await response.json()) as T)
