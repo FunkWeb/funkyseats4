@@ -1,6 +1,8 @@
 import type { ErrorResponse } from '../../../contracts/error'
 import { createHttpError } from './errors'
 
+export { UnauthorizedError } from './errors'
+
 async function readErrorMessage(response: Response): Promise<string> {
   const body = (await response.json().catch(() => null)) as Partial<ErrorResponse> | null
   return typeof body?.errorMessage === 'string' ? body.errorMessage : response.statusText
