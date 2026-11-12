@@ -43,6 +43,11 @@ const createBookingQueries = (db: Executor) => {
         seatId,
         date,
       }),
+    findByUserIdAndDate: (userId: number, date: string): Promise<Booking[]> =>
+      selectBookings('WHERE user_id = :userId AND booking_date = :date ORDER BY id', {
+        userId,
+        date,
+      }),
     create: async (booking: CreateBookingRequest): Promise<Booking> => {
       const [result] = await db.execute<ResultSetHeader>(
         `INSERT INTO bookings (seat_id, user_id, status, booking_date, time_period)
@@ -68,14 +73,16 @@ export type BookingQueries = ReturnType<typeof createBookingQueries>
 
 export const createBookingsRepository = (db: Pool) => ({
   ...createBookingQueries(db),
-  withSeatLock: async <T>(
+  withSeatAndUserLock: async <T>(
     seatId: number,
+    userId: number,
     run: (bookings: BookingQueries) => Promise<T>,
   ): Promise<T> => {
     const connection = await db.getConnection()
     try {
       await connection.beginTransaction()
       await connection.execute('SELECT id FROM seats WHERE id = :seatId FOR UPDATE', { seatId })
+      await connection.execute('SELECT id FROM users WHERE id = :userId FOR UPDATE', { userId })
       const result = await run(createBookingQueries(connection))
       await connection.commit()
       return result

@@ -8,7 +8,10 @@ import { addDays, findOrThrow, todayInOffice } from './common.js'
 export type NewBooking = Omit<CreateBookingRequest, 'userId'>
 
 export interface BookingsServiceDeps {
-  bookings: Pick<BookingsRepository, 'findById' | 'findByUserId' | 'updateStatus' | 'withSeatLock'>
+  bookings: Pick<
+    BookingsRepository,
+    'findById' | 'findByUserId' | 'updateStatus' | 'withSeatAndUserLock'
+  >
   seats: Pick<SeatsRepository, 'findById'>
   rooms: Pick<RoomsRepository, 'findById'>
   today?: () => string
@@ -38,10 +41,14 @@ export const createBookingsService = ({
 
     assertWithinBookingWindow(request.bookingDate, today(), room.maxDaysAhead)
 
-    return bookings.withSeatLock(request.seatId, async (lockedBookings) => {
+    return bookings.withSeatAndUserLock(request.seatId, userId, async (lockedBookings) => {
       const sameDay = await lockedBookings.findBySeatAndDate(request.seatId, request.bookingDate)
       if (sameDay.some((booking) => blocksPeriod(booking, request.timePeriod)))
         throw new ConflictError('Seat is already booked for that period')
+
+      const ownSameDay = await lockedBookings.findByUserIdAndDate(userId, request.bookingDate)
+      if (ownSameDay.some((booking) => blocksPeriod(booking, request.timePeriod)))
+        throw new ConflictError('You already have a booking for that period')
 
       return lockedBookings.create({ ...request, userId })
     })

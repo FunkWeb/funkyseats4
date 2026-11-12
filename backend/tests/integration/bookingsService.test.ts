@@ -154,6 +154,38 @@ describe('bookingsService', () => {
     assert.deepEqual(await statusesOf(bob), ['ACTIVE', 'ACTIVE'])
   })
 
+  for (const [existing, requested, conflicts] of overlapCases) {
+    const outcome = conflicts ? 'rejects' : 'allows'
+    it(`create ${outcome} a second seat for ${requested} when the user holds ${existing}`, async () => {
+      await book(alice, { timePeriod: existing })
+      const second = book(alice, { seatId: seatB, timePeriod: requested })
+      if (conflicts) await assert.rejects(second, ConflictError)
+      else await second
+      assert.equal((await statusesOf(alice)).length, conflicts ? 1 : 2)
+    })
+  }
+
+  it('create lets only one of simultaneous bookings by one user on two seats through', async () => {
+    const attempts = await Promise.allSettled(
+      Array.from({ length: 8 }, (_, index) =>
+        book(alice, { seatId: index % 2 === 0 ? seatA : seatB }),
+      ),
+    )
+    const rejected = attempts.filter((attempt) => attempt.status === 'rejected')
+
+    assert.equal(attempts.length - rejected.length, 1)
+    assert.ok(rejected.every((attempt) => attempt.reason instanceof ConflictError))
+    assert.deepEqual(await statusesOf(alice), ['ACTIVE'])
+  })
+
+  for (const status of unbookableStatuses) {
+    it(`create allows a second seat once the user's first booking is ${status}`, async () => {
+      const first = await book(alice)
+      await bookings.updateStatus(first.id, status)
+      assert.partialDeepStrictEqual(await book(alice, { seatId: seatB }), { status: 'ACTIVE' })
+    })
+  }
+
   for (const status of unbookableStatuses) {
     it(`create allows rebooking a slot whose booking is ${status}`, async () => {
       const first = await book(alice)
