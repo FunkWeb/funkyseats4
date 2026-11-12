@@ -57,9 +57,11 @@ const seatsService = createSeatsService({ seats, rooms, features })
 const featuresService = createFeaturesService({ features })
 const usersService = createUsersService({ users })
 
+app.use('/auth/google', authLimiter)
+
 app.use(
   '/auth',
-  authLimiter,
+  apiLimiter,
   createAuthRoutes({
     googleOAuth: { getAuthorizationUrl: buildGoogleAuthUrl },
     authService,
