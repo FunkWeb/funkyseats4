@@ -1,6 +1,7 @@
-import type { ReactNode } from 'react'
-import { Card } from './Card'
+import { useState, type ReactNode } from 'react'
 import type { FeatureDto } from '../../../contracts/feature'
+import { classNames } from '../utils/classNames'
+import { StarIcon } from './icons/StarIcon'
 import styles from './FeatureTile.module.css'
 
 export type ExtendedFeatureDto = FeatureDto & {
@@ -9,24 +10,38 @@ export type ExtendedFeatureDto = FeatureDto & {
 
 export interface FeatureTileProps {
   feature: ExtendedFeatureDto
+  selected?: boolean
+  onClick?: (feature: ExtendedFeatureDto) => void
   className?: string
 }
 
-export function FeatureTile({ feature, className }: FeatureTileProps) {
-  const containerClassName = [styles.tile, className].filter(Boolean).join(' ')
-  const featureIcon = (feature as { icon?: ReactNode }).icon
+function TileIcon({ feature }: { feature: ExtendedFeatureDto }) {
+  const [hasImageError, setHasImageError] = useState(false)
 
+  if (feature.icon) {
+    return feature.icon
+  }
+
+  if (feature.iconPath && !hasImageError) {
+    return <img src={feature.iconPath} alt="" onError={() => setHasImageError(true)} />
+  }
+
+  return <StarIcon />
+}
+
+export function FeatureTile({ feature, selected = false, onClick, className }: FeatureTileProps) {
   return (
-    <Card className={containerClassName}>
-      {featureIcon && (
-        <span className={styles.icon} aria-hidden="true">
-          {featureIcon}
-        </span>
-      )}
-      <div className={styles.content}>
-        <span className={styles.name}>{feature.name}</span>
-        {feature.description && <span className={styles.description}>{feature.description}</span>}
-      </div>
-    </Card>
+    <button
+      type="button"
+      className={classNames(styles.tile, selected && styles.selected, className)}
+      aria-pressed={selected}
+      title={feature.description ?? undefined}
+      onClick={() => onClick?.(feature)}
+    >
+      <span className={styles.icon} aria-hidden="true">
+        <TileIcon feature={feature} />
+      </span>
+      <span className={styles.name}>{feature.name}</span>
+    </button>
   )
 }
