@@ -136,6 +136,17 @@ describe('bookingsService', () => {
     })
   }
 
+  it('create lets only one of several simultaneous bookings for the same slot through', async () => {
+    const attempts = await Promise.allSettled(
+      Array.from({ length: 8 }, (_, index) => book(index % 2 === 0 ? alice : bob)),
+    )
+    const rejected = attempts.filter((attempt) => attempt.status === 'rejected')
+
+    assert.equal(attempts.length - rejected.length, 1)
+    assert.ok(rejected.every((attempt) => attempt.reason instanceof ConflictError))
+    assert.equal((await bookings.findBySeatAndDate(seatA, TODAY)).length, 1)
+  })
+
   it('create allows the same period on another seat or another date', async () => {
     await book(alice)
     await book(bob, { seatId: seatB })

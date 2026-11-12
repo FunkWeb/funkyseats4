@@ -21,7 +21,9 @@ const SELECT_BOOKING = `
     created_at                             AS createdAt
   FROM bookings`
 
-export const createBookingsRepository = (db: Pool) => {
+type Executor = Pick<Pool, 'execute'>
+
+const createBookingQueries = (db: Executor) => {
   const selectBookings = async (clause: string, params: QueryParams): Promise<Booking[]> => {
     const [rows] = await db.execute<BookingRow[]>(`${SELECT_BOOKING} ${clause}`, params)
     return rows
@@ -61,5 +63,29 @@ export const createBookingsRepository = (db: Pool) => {
     },
   }
 }
+
+export type BookingQueries = ReturnType<typeof createBookingQueries>
+
+export const createBookingsRepository = (db: Pool) => ({
+  ...createBookingQueries(db),
+  withSeatLock: async <T>(
+    seatId: number,
+    run: (bookings: BookingQueries) => Promise<T>,
+  ): Promise<T> => {
+    const connection = await db.getConnection()
+    try {
+      await connection.beginTransaction()
+      await connection.execute('SELECT id FROM seats WHERE id = :seatId FOR UPDATE', { seatId })
+      const result = await run(createBookingQueries(connection))
+      await connection.commit()
+      return result
+    } catch (error) {
+      await connection.rollback()
+      throw error
+    } finally {
+      connection.release()
+    }
+  },
+})
 
 export type BookingsRepository = ReturnType<typeof createBookingsRepository>
