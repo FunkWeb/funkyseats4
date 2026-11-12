@@ -1,82 +1,47 @@
 export class HttpError extends Error {
-  readonly status: number
+  name = 'HttpError'
 
-  constructor(message: string, status: number) {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
     super(message)
-    this.name = 'HttpError'
-    this.status = status
   }
 }
 
 export class UnauthorizedError extends HttpError {
+  name = 'UnauthorizedError'
+
   constructor(message: string) {
     super(message, 401)
-    this.name = 'UnauthorizedError'
   }
 }
 
 async function readErrorMessage(response: Response): Promise<string> {
-  try {
-    const body: unknown = await response.json()
-
-    if (
-      typeof body === 'object' &&
-      body !== null &&
-      'error' in body &&
-      typeof body.error === 'string'
-    ) {
-      return body.error
-    }
-  } catch {
-    return response.statusText
-  }
-
-  return response.statusText
+  const body = (await response.json().catch(() => null)) as { error?: unknown } | null
+  return typeof body?.error === 'string' ? body.error : response.statusText
 }
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
-  const init: RequestInit = { method }
-
-  if (body !== undefined) {
-    init.body = JSON.stringify(body)
-    init.headers = { 'Content-Type': 'application/json' }
-  }
+  const init: RequestInit =
+    body === undefined
+      ? { method }
+      : { method, body: JSON.stringify(body), headers: { 'Content-Type': 'application/json' } }
 
   const response = await fetch(`/api${path}`, init)
 
   if (!response.ok) {
     const message = await readErrorMessage(response)
-
-    if (response.status === 401) {
-      throw new UnauthorizedError(message)
-    }
-
-    throw new HttpError(message, response.status)
+    throw response.status === 401
+      ? new UnauthorizedError(message)
+      : new HttpError(message, response.status)
   }
 
-  if (response.status === 204) {
-    return undefined as T
-  }
-
-  return (await response.json()) as T
+  return response.status === 204 ? (undefined as T) : ((await response.json()) as T)
 }
 
-export function get<T>(path: string): Promise<T> {
-  return request<T>('GET', path)
-}
-
-export function post<T>(path: string, body?: unknown): Promise<T> {
-  return request<T>('POST', path, body)
-}
-
-export function put<T>(path: string, body?: unknown): Promise<T> {
-  return request<T>('PUT', path, body)
-}
-
-export function patch<T>(path: string, body?: unknown): Promise<T> {
-  return request<T>('PATCH', path, body)
-}
-
-export function del<T>(path: string): Promise<T> {
-  return request<T>('DELETE', path)
-}
+export const get = <T>(path: string) => request<T>('GET', path)
+export const post = <T>(path: string, body?: unknown) => request<T>('POST', path, body)
+export const put = <T>(path: string, body?: unknown) => request<T>('PUT', path, body)
+export const patch = <T>(path: string, body?: unknown) => request<T>('PATCH', path, body)
+export const del = <T>(path: string) => request<T>('DELETE', path)
