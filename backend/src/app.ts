@@ -24,7 +24,7 @@ import { errorHandler } from './errors/errorHandler.js'
 import { createSession } from './auth/session.js'
 import { createRequireAuth } from './auth/requireAuth.js'
 import { requireRole } from './auth/requireRole.js'
-import { apiLimiter, authLimiter } from './middleware/rateLimit.js'
+import { authLimiter, createApiLimiter } from './middleware/rateLimit.js'
 import { createRequireSameOrigin } from './middleware/requireSameOrigin.js'
 
 export const app = express()
@@ -45,6 +45,7 @@ const features = createFeaturesRepository(pool)
 
 const session = createSession({ ...config.session, secure: config.isProduction })
 const requireAuth = createRequireAuth({ session, users })
+const apiLimiter = createApiLimiter(session.readUserId)
 
 const authService = createAuthService({ users, fetchGoogleProfile })
 const bookingsService = createBookingsService({
