@@ -48,15 +48,9 @@
   block-size: 1.75rem;
 }
 
-.icon > svg,
-.svgMask {
+.icon > span {
   inline-size: 100%;
   block-size: 100%;
-}
-
-.svgMask {
-  background-color: currentColor;
-  mask: var(--icon-url) center / contain no-repeat;
 }
 
 .name {
