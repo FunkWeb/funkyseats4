@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { Link } from 'react-router'
 import { classNames } from '../utils/classNames'
 import styles from './NavItem.module.css'
 
@@ -31,8 +32,8 @@ export function NavItem({ label, href, icon, isCurrent = false, isNested = false
   if (!href) return <span className={className}>{content}</span>
 
   return (
-    <a href={href} className={className} aria-current={isCurrent ? 'page' : undefined}>
+    <Link to={href} className={className} aria-current={isCurrent ? 'page' : undefined}>
       {content}
-    </a>
+    </Link>
   )
 }

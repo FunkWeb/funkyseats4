@@ -21,7 +21,13 @@ export interface NavGroupProps {
 export function NavGroup({ label, items, icon, defaultOpen, currentHref }: NavGroupProps) {
   const containsCurrent: boolean = items.some((item) => item.href === currentHref)
   const [open, setOpen] = useState(defaultOpen ?? containsCurrent)
+  const [prevContainsCurrent, setPrevContainsCurrent] = useState(containsCurrent)
   const listId = useId()
+
+  if (containsCurrent !== prevContainsCurrent) {
+    setPrevContainsCurrent(containsCurrent)
+    if (containsCurrent) setOpen(true)
+  }
 
   return (
     <div className={styles.navGroup}>
