@@ -2,6 +2,8 @@ import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import { createConfig } from '../config/createConfig.js'
 
+const SESSION_SECRET = 'session-secret-of-32-characters!!'
+
 const validEnv = {
   FRONTEND_URL: 'http://localhost:5173',
   DB_HOST: 'db-host',
@@ -12,7 +14,7 @@ const validEnv = {
   GOOGLE_CLIENT_SECRET: 'google-secret',
   GOOGLE_CALLBACK_URL: 'http://localhost/callback',
   GOOGLE_ALLOWED_DOMAIN: 'example.no',
-  SESSION_SECRET: 'session-secret',
+  SESSION_SECRET,
 } as const
 
 type RequiredKey = keyof typeof validEnv
@@ -54,7 +56,7 @@ describe('createConfig', () => {
           callbackUrl: 'http://localhost/callback',
           allowedDomain: 'example.no',
         },
-        sessionSecret: 'session-secret',
+        sessionSecret: SESSION_SECRET,
       },
     )
   })
@@ -90,6 +92,19 @@ describe('createConfig', () => {
       })
     }
   }
+
+  describe('SESSION_SECRET', () => {
+    const secretOfLength = (length: number) =>
+      createConfig({ ...validEnv, SESSION_SECRET: 'x'.repeat(length) }).session.secret
+
+    it('accepts 32 characters', () => {
+      assert.equal(secretOfLength(32).length, 32)
+    })
+
+    it('throws when shorter than 32 characters', () => {
+      assert.throws(() => secretOfLength(31), /SESSION_SECRET must be at least 32 characters/)
+    })
+  })
 
   describe('SESSION_LIFETIME_MINUTES', () => {
     const lifetime = (value?: string) =>

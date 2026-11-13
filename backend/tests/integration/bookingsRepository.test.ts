@@ -87,6 +87,15 @@ describe('bookingsRepository', () => {
     assert.deepEqual(await bookings.findBySeatAndDate(seatA, DATE), [morning, afternoon])
   })
 
+  it('findByUserIdAndDate excludes other users and other dates, ordered by id', async () => {
+    const morning = await book()
+    await book({ userId: bob, seatId: seatB })
+    await book({ bookingDate: OTHER_DATE })
+    const afternoon = await book({ seatId: seatB, timePeriod: 'AFTER_LUNCH' })
+
+    assert.deepEqual(await bookings.findByUserIdAndDate(alice, DATE), [morning, afternoon])
+  })
+
   it('updateStatus persists and returns the new status', async () => {
     const created = await book()
     const cancelled = await bookings.updateStatus(created.id, 'CANCELLED')

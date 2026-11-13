@@ -16,6 +16,8 @@ const toPositiveInt = (name: string, raw: string): number => {
   return value
 }
 
+const SECRET_MIN_LENGTH = 32
+
 export const readEnv = (source: EnvSource) => {
   const required = (name: string): string => {
     const value = source[name]
@@ -25,6 +27,14 @@ export const readEnv = (source: EnvSource) => {
 
   return {
     required,
+    secret: (name: string): string => {
+      const value = required(name)
+      if (value.length < SECRET_MIN_LENGTH)
+        throw new Error(
+          `Environment variable ${name} must be at least ${SECRET_MIN_LENGTH} characters`,
+        )
+      return value
+    },
     port: (name: string, fallback: number): number => {
       const raw = source[name]
       return raw ? toPort(name, raw) : fallback
@@ -62,7 +72,7 @@ export const createConfig = (source: EnvSource) => {
       allowedDomain: env.required('GOOGLE_ALLOWED_DOMAIN'),
     },
     session: {
-      secret: env.required('SESSION_SECRET'),
+      secret: env.secret('SESSION_SECRET'),
       lifetimeMinutes: env.positiveInt('SESSION_LIFETIME_MINUTES', 120),
     },
   } as const

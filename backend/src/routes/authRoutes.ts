@@ -1,6 +1,7 @@
 import { randomBytes } from 'node:crypto'
-import { Router, type RequestHandler, type Response } from 'express'
+import { Router, type RequestHandler } from 'express'
 import type { AuthService } from '../services/authService.js'
+import type { Session } from '../auth/session.js'
 import { ForbiddenError, ValidationError } from '../errors/appErrors.js'
 
 const OAUTH_STATE_COOKIE = 'oauth_state'
@@ -11,11 +12,8 @@ export interface AuthRoutesDeps {
   googleOAuth: {
     getAuthorizationUrl: (state: string) => string
   }
-  authService: Pick<AuthService, 'loginWithGoogle'>
-  session: {
-    setSessionCookie: (res: Response, userId: number) => void
-    clearSessionCookie: (res: Response) => void
-  }
+  authService: Pick<AuthService, 'loginWithGoogle' | 'logout'>
+  session: Pick<Session, 'setSessionCookie' | 'clearSessionCookie' | 'readIdentity'>
   requireAuth: RequestHandler
   frontendUrl: string
   createState?: () => string
@@ -58,8 +56,7 @@ export const createAuthRoutes = ({
       throw new ValidationError('Missing Google OAuth code')
     }
 
-    const user = await authService.loginWithGoogle(code)
-    session.setSessionCookie(res, user.id)
+    session.setSessionCookie(res, await authService.loginWithGoogle(code))
     res.redirect(frontendUrl)
   })
 
@@ -68,7 +65,9 @@ export const createAuthRoutes = ({
     res.json(req.user)
   })
 
-  router.post('/logout', (_req, res) => {
+  router.post('/logout', async (req, res) => {
+    const identity = session.readIdentity(req)
+    if (identity) await authService.logout(identity)
     session.clearSessionCookie(res)
     res.sendStatus(204)
   })
