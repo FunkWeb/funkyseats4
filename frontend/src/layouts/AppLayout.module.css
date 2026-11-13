@@ -1,0 +1,48 @@
+.layout {
+  display: flex;
+  min-height: 100dvh;
+}
+
+.sidebar {
+  position: sticky;
+  top: 0;
+  flex: 0 0 250px;
+  height: 100dvh;
+  overflow-y: auto;
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  padding: var(--space-8);
+}
+
+.footer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.logoutButton {
+  width: 100%;
+}
+
+@media (max-width: 1024px) {
+  .sidebar {
+    flex-basis: 220px;
+  }
+
+  .main {
+    padding: var(--space-6);
+  }
+}
+
+@media (max-width: 767px) {
+  .sidebar {
+    flex-basis: 200px;
+  }
+
+  .main {
+    padding: var(--space-4);
+  }
+}
