@@ -20,6 +20,7 @@ export const buildGoogleAuthUrl = (state: string) =>
     scope: ['openid', 'email', 'profile'],
     state,
     hd: config.google.allowedDomain,
+    prompt: 'select_account',
   })
 
 export const fetchGoogleProfile = async (code: string): Promise<GoogleProfile> => {
