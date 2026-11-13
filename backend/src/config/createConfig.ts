@@ -65,5 +65,6 @@ export const createConfig = (source: EnvSource) => {
       secret: env.required('SESSION_SECRET'),
       lifetimeMinutes: env.positiveInt('SESSION_LIFETIME_MINUTES', 120),
     },
+    uploadsDir: source.UPLOADS_DIR || 'uploads',
   } as const
 }

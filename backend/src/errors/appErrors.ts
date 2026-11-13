@@ -34,3 +34,11 @@ export class NotFoundError extends AppError {
 export class ConflictError extends AppError {
   readonly status = 409
 }
+
+export class PayloadTooLargeError extends AppError {
+  readonly status = 413
+}
+
+export class UnsupportedMediaTypeError extends AppError {
+  readonly status = 415
+}

@@ -26,6 +26,7 @@ import { createRequireAuth } from './auth/requireAuth.js'
 import { requireRole } from './auth/requireRole.js'
 import { apiLimiter, authLimiter } from './middleware/rateLimit.js'
 import { createRequireSameOrigin } from './middleware/requireSameOrigin.js'
+import path from 'node:path'
 
 export const app = express()
 
@@ -71,9 +72,28 @@ app.use(
   }),
 )
 
+app.use(
+  '/uploads/icons',
+  express.static(path.join(config.uploadsDir, 'icons'), {
+    setHeaders: (res) => {
+      res.setHeader('Content-Type', 'image/svg+xml')
+      res.setHeader('X-Content-Type-Options', 'nosniff')
+      res.setHeader(
+        'Content-Security-Policy',
+        "default-src 'none'; style-src 'unsafe-inline'; sandbox",
+      )
+    },
+  }),
+)
+
+app.use(
+  '/features',
+  apiLimiter,
+  createFeaturesRoutes({ featuresService, requireAuth, uploadsDir: config.uploadsDir }),
+)
+
 app.use('/bookings', apiLimiter, createBookingsRoutes({ bookingsService, requireAuth }))
 app.use('/rooms', apiLimiter, createRoomsRoutes({ roomsService, seatsService, requireAuth }))
-app.use('/features', apiLimiter, createFeaturesRoutes({ featuresService, requireAuth }))
 app.use('/users', apiLimiter, createUsersRoutes({ usersService, requireAuth }))
 app.use('/seats', apiLimiter, createSeatsRoutes({ seatsService, requireAuth, requireRole }))
 
