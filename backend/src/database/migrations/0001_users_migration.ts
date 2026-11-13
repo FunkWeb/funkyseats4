@@ -10,6 +10,7 @@ export default {
         email         VARCHAR(255) NOT NULL UNIQUE,
         avatar_path   VARCHAR(255),
         role          ENUM('CANDIDATE', 'SUPERVISOR', 'ADMIN') NOT NULL,
+        session_version INT UNSIGNED NOT NULL DEFAULT 0,
         last_login_at TIMESTAMP NULL,
         updated_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         created_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP

@@ -26,10 +26,13 @@ import { createRequireAuth } from './auth/requireAuth.js'
 import { requireRole } from './auth/requireRole.js'
 import { authLimiter, createApiLimiter } from './middleware/rateLimit.js'
 import { createRequireSameOrigin } from './middleware/requireSameOrigin.js'
+import { securityHeaders } from './middleware/securityHeaders.js'
 
 export const app = express()
 
 app.set('trust proxy', 2)
+app.disable('x-powered-by')
+app.use(securityHeaders)
 app.use(cookieParser())
 app.use(createRequireSameOrigin(new URL(config.frontendUrl).origin))
 app.use(express.json())
