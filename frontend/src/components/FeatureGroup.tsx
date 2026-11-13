@@ -1,13 +1,13 @@
-import type { ExtendedFeatureDto } from './FeatureTile'
+import type { FeatureDto } from '../../../contracts/feature'
 import { FeatureTile } from './FeatureTile'
 import { classNames } from '../utils/classNames'
 import styles from './FeatureGroup.module.css'
 
 export interface FeatureGroupProps {
   title: string
-  features: ExtendedFeatureDto[]
+  features: FeatureDto[]
   selectedIds?: number[]
-  onToggle?: (feature: ExtendedFeatureDto) => void
+  onToggle?: (feature: FeatureDto) => void
   className?: string
 }
 

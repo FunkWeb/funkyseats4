@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type CSSProperties } from 'react'
 import type { FeatureDto } from '../../../contracts/feature'
 import { classNames } from '../utils/classNames'
 import styles from './FeatureIcons.module.css'
@@ -10,12 +10,23 @@ export interface FeatureIconsProps {
   className?: string
 }
 
-function FeatureIcon({ iconPath }: { iconPath: string | null }) {
-  const [hasImageError, setHasImageError] = useState(false)
+export function FeatureIcon({ iconPath }: { iconPath: string | null }) {
+  const [failedIconPath, setFailedIconPath] = useState<string | null>(null)
 
-  if (iconPath && !hasImageError) {
+  if (iconPath && failedIconPath !== iconPath) {
     return (
-      <img className={styles.icon} src={iconPath} alt="" onError={() => setHasImageError(true)} />
+      <>
+        <span
+          className={classNames(styles.icon, styles.maskIcon)}
+          style={{ '--icon-url': `url(${JSON.stringify(iconPath)})` } as CSSProperties}
+        />
+        <img
+          className={styles.loadProbe}
+          src={iconPath}
+          alt=""
+          onError={() => setFailedIconPath(iconPath)}
+        />
+      </>
     )
   }
 

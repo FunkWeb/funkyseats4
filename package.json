@@ -25,6 +25,8 @@
     "migrate": "tsx --env-file=.env backend/src/database/migration-runner/migrationCli.ts",
     "migrate:down": "npm run migrate -- down",
     "migrate:status": "npm run migrate -- status",
+    "seed": "npm run seed:defaults",
+    "seed:defaults": "tsx --env-file=.env backend/src/database/seeding/seedDefaultFeatures.ts",
     "seed:test": "tsx --env-file=.env backend/src/database/seedTestData.ts"
   },
   "dependencies": {
