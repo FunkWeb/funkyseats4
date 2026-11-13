@@ -21,7 +21,9 @@ const SELECT_BOOKING = `
     created_at                             AS createdAt
   FROM bookings`
 
-export const createBookingsRepository = (db: Pool) => {
+type Executor = Pick<Pool, 'execute'>
+
+const createBookingQueries = (db: Executor) => {
   const selectBookings = async (clause: string, params: QueryParams): Promise<Booking[]> => {
     const [rows] = await db.execute<BookingRow[]>(`${SELECT_BOOKING} ${clause}`, params)
     return rows
@@ -39,6 +41,11 @@ export const createBookingsRepository = (db: Pool) => {
     findBySeatAndDate: (seatId: number, date: string): Promise<Booking[]> =>
       selectBookings('WHERE seat_id = :seatId AND booking_date = :date ORDER BY id', {
         seatId,
+        date,
+      }),
+    findByUserIdAndDate: (userId: number, date: string): Promise<Booking[]> =>
+      selectBookings('WHERE user_id = :userId AND booking_date = :date ORDER BY id', {
+        userId,
         date,
       }),
     create: async (booking: CreateBookingRequest): Promise<Booking> => {
@@ -61,5 +68,31 @@ export const createBookingsRepository = (db: Pool) => {
     },
   }
 }
+
+export type BookingQueries = ReturnType<typeof createBookingQueries>
+
+export const createBookingsRepository = (db: Pool) => ({
+  ...createBookingQueries(db),
+  withSeatAndUserLock: async <T>(
+    seatId: number,
+    userId: number,
+    run: (bookings: BookingQueries) => Promise<T>,
+  ): Promise<T> => {
+    const connection = await db.getConnection()
+    try {
+      await connection.beginTransaction()
+      await connection.execute('SELECT id FROM seats WHERE id = :seatId FOR UPDATE', { seatId })
+      await connection.execute('SELECT id FROM users WHERE id = :userId FOR UPDATE', { userId })
+      const result = await run(createBookingQueries(connection))
+      await connection.commit()
+      return result
+    } catch (error) {
+      await connection.rollback()
+      throw error
+    } finally {
+      connection.release()
+    }
+  },
+})
 
 export type BookingsRepository = ReturnType<typeof createBookingsRepository>

@@ -10,7 +10,7 @@ export type NewBooking = Omit<CreateBookingRequest, 'userId'>
 export interface BookingsServiceDeps {
   bookings: Pick<
     BookingsRepository,
-    'findById' | 'findByUserId' | 'findBySeatAndDate' | 'create' | 'updateStatus'
+    'findById' | 'findByUserId' | 'updateStatus' | 'withSeatAndUserLock'
   >
   seats: Pick<SeatsRepository, 'findById'>
   rooms: Pick<RoomsRepository, 'findById'>
@@ -41,11 +41,17 @@ export const createBookingsService = ({
 
     assertWithinBookingWindow(request.bookingDate, today(), room.maxDaysAhead)
 
-    const sameDay = await bookings.findBySeatAndDate(request.seatId, request.bookingDate)
-    if (sameDay.some((booking) => blocksPeriod(booking, request.timePeriod)))
-      throw new ConflictError('Seat is already booked for that period')
+    return bookings.withSeatAndUserLock(request.seatId, userId, async (lockedBookings) => {
+      const sameDay = await lockedBookings.findBySeatAndDate(request.seatId, request.bookingDate)
+      if (sameDay.some((booking) => blocksPeriod(booking, request.timePeriod)))
+        throw new ConflictError('Seat is already booked for that period')
 
-    return bookings.create({ ...request, userId })
+      const ownSameDay = await lockedBookings.findByUserIdAndDate(userId, request.bookingDate)
+      if (ownSameDay.some((booking) => blocksPeriod(booking, request.timePeriod)))
+        throw new ConflictError('You already have a booking for that period')
+
+      return lockedBookings.create({ ...request, userId })
+    })
   }
 
   const cancel = async (userId: number, bookingId: number): Promise<void> => {

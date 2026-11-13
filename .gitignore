@@ -26,5 +26,3 @@ npm-debug.log*
 
 .DS_Store
 Thumbs.db
-
-frontend/src/DevPreview.tsx

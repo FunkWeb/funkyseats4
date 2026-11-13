@@ -10,22 +10,36 @@ interface SessionDeps {
   secure: boolean
 }
 
+export interface SessionIdentity {
+  userId: number
+  sessionVersion: number
+}
+
 export const createSession = ({ secret, lifetimeMinutes, secure }: SessionDeps) => {
   const baseCookieOptions: CookieOptions = { httpOnly: true, sameSite: 'lax', secure }
 
-  const verifiedUserId = (token: string): number | null => {
+  const verifiedIdentity = (token: string): SessionIdentity | null => {
     try {
       const payload = jwt.verify(token, secret, { algorithms: [ALGORITHM] })
-      const userId = typeof payload === 'string' ? NaN : Number(payload.sub)
-      return Number.isInteger(userId) ? userId : null
+      if (typeof payload === 'string') return null
+      const userId = Number(payload.sub)
+      const sessionVersion: unknown = payload.ver
+      return Number.isInteger(userId) && Number.isInteger(sessionVersion)
+        ? { userId, sessionVersion: sessionVersion as number }
+        : null
     } catch {
       return null
     }
   }
 
+  const readIdentity = (req: Request): SessionIdentity | null => {
+    const token: string | undefined = req.cookies[COOKIE_NAME]
+    return token ? verifiedIdentity(token) : null
+  }
+
   return {
-    setSessionCookie: (res: Response, userId: number): void => {
-      const token = jwt.sign({ sub: String(userId) }, secret, {
+    setSessionCookie: (res: Response, { userId, sessionVersion }: SessionIdentity): void => {
+      const token = jwt.sign({ sub: String(userId), ver: sessionVersion }, secret, {
         algorithm: ALGORITHM,
         expiresIn: `${lifetimeMinutes}m`,
       })
@@ -36,10 +50,9 @@ export const createSession = ({ secret, lifetimeMinutes, secure }: SessionDeps) 
       res.clearCookie(COOKIE_NAME, baseCookieOptions)
     },
 
-    readUserId: (req: Request): number | null => {
-      const token: string | undefined = req.cookies[COOKIE_NAME]
-      return token ? verifiedUserId(token) : null
-    },
+    readIdentity,
+
+    readUserId: (req: Request): number | null => readIdentity(req)?.userId ?? null,
   }
 }
 

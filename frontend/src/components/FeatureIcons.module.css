@@ -14,13 +14,26 @@
 }
 
 .icon {
+  display: block;
   flex: 0 0 var(--space-6);
   height: var(--space-6);
-  object-fit: contain;
+}
+
+.maskIcon {
+  background-color: currentColor;
+  mask: var(--icon-url) center / contain no-repeat;
+  -webkit-mask: var(--icon-url) center / contain no-repeat;
+}
+
+.loadProbe {
+  display: none;
 }
 
 .fallbackIcon {
   display: flex;
+}
+
+.feature .fallbackIcon {
   color: var(--color-text-muted);
 }
 
@@ -28,4 +41,45 @@
   color: var(--color-text);
   font-size: var(--font-size-sm);
   line-height: var(--line-height-normal);
+}
+
+.hideLabels .fallbackIcon {
+  color: var(--color-text);
+}
+
+.hideLabels .feature {
+  position: relative;
+}
+
+.hideLabels .label {
+  position: absolute;
+  inset-block-end: calc(100% + var(--space-1));
+  inset-inline-start: 50%;
+  z-index: 1;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-on-secondary);
+  background-color: var(--color-secondary-solid);
+  font-size: var(--font-size-xs);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  translate: -50% 0;
+  transition: opacity var(--duration-fast);
+}
+
+.hideLabels .feature:last-child .label {
+  inset-inline: auto 0;
+  translate: none;
+}
+
+.hideLabels .feature:focus-visible {
+  border-radius: var(--radius-sm);
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.hideLabels .feature:hover .label,
+.hideLabels .feature:focus-visible .label {
+  opacity: 1;
 }

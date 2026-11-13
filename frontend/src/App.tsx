@@ -1,5 +1,6 @@
-import { PageHeader } from './components/PageHeader'
+import { RouterProvider } from 'react-router'
+import { router } from './router'
 
 export default function App() {
-  return <PageHeader title="Funkyseats4" />
+  return <RouterProvider router={router} />
 }

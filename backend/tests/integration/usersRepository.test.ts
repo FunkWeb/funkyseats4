@@ -91,6 +91,37 @@ describe('usersRepository', () => {
     assert.equal(await users.updateRole(UNKNOWN_ID, 'ADMIN'), false)
   })
 
+  it('create starts the user at session version 0', async () => {
+    const stored = await store(alice)
+    assert.equal((await users.findById(stored.id))?.sessionVersion, 0)
+  })
+
+  it('revokeSessions advances the session version when given the current one', async () => {
+    const stored = await store(alice)
+    assert.equal(await users.revokeSessions(stored.id, 0), true)
+    assert.equal((await users.findById(stored.id))?.sessionVersion, 1)
+  })
+
+  it('revokeSessions ignores a stale session version', async () => {
+    const stored = await store(alice)
+    await users.revokeSessions(stored.id, 0)
+    assert.equal(await users.revokeSessions(stored.id, 0), false)
+    assert.equal((await users.findById(stored.id))?.sessionVersion, 1)
+  })
+
+  it('revokeSessions only affects the given user', async () => {
+    const storedAlice = await store(alice)
+    const storedBob = await store(bob)
+    await users.revokeSessions(storedAlice.id, 0)
+    assert.equal((await users.findById(storedBob.id))?.sessionVersion, 0)
+  })
+
+  it('upsertGoogleLogin keeps the session version of an existing user', async () => {
+    const stored = await store(bob)
+    await users.revokeSessions(stored.id, 0)
+    assert.equal((await users.upsertGoogleLogin(bob)).sessionVersion, 1)
+  })
+
   it('upsertGoogleLogin creates a new user with login recorded', async () => {
     const user = await users.upsertGoogleLogin(alice)
     assert.partialDeepStrictEqual(user, alice)

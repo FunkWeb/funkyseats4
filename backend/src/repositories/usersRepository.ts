@@ -9,6 +9,7 @@ export interface User {
   email: string
   avatarPath: string | null
   role: UserRole
+  sessionVersion: number
   lastLoginAt: Date | null
   updatedAt: Date
   createdAt: Date
@@ -26,6 +27,7 @@ const SELECT_USER = `
     email,
     avatar_path   AS avatarPath,
     role,
+    session_version AS sessionVersion,
     last_login_at AS lastLoginAt,
     updated_at    AS updatedAt,
     created_at    AS createdAt
@@ -70,6 +72,14 @@ export const createUsersRepository = (db: Pool) => {
       const [result] = await db.execute<ResultSetHeader>(
         'UPDATE users SET role = :role WHERE id = :id',
         { role, id },
+      )
+      return result.affectedRows === 1
+    },
+    revokeSessions: async (id: number, sessionVersion: number) => {
+      const [result] = await db.execute<ResultSetHeader>(
+        `UPDATE users SET session_version = session_version + 1
+         WHERE id = :id AND session_version = :sessionVersion`,
+        { id, sessionVersion },
       )
       return result.affectedRows === 1
     },

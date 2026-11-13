@@ -25,6 +25,8 @@
     "migrate": "tsx --env-file=.env backend/src/database/migration-runner/migrationCli.ts",
     "migrate:down": "npm run migrate -- down",
     "migrate:status": "npm run migrate -- status",
+    "seed": "npm run seed:defaults",
+    "seed:defaults": "tsx --env-file=.env backend/src/database/seeding/seedDefaultFeatures.ts",
     "seed:test": "tsx --env-file=.env backend/src/database/seedTestData.ts"
   },
   "dependencies": {
@@ -36,6 +38,7 @@
     "mysql2": "^3.24.4"
   },
   "devDependencies": {
+    "@tanstack/react-query": "^5.107.1",
     "@eslint/js": "^10.0.1",
     "@types/cookie-parser": "^1.4.10",
     "@types/express": "^5.0.6",
@@ -49,6 +52,7 @@
     "prettier": "^3.9.8",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
+    "react-router": "^7.18.5",
     "tsx": "^4.23.15",
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.70.1",

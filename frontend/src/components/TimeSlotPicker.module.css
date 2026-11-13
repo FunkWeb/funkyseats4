@@ -1,0 +1,115 @@
+.picker {
+  --picker-focus-ring: var(--color-primary);
+
+  position: relative;
+  min-width: 0;
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  color: var(--color-text-on-secondary);
+  background-color: var(--color-secondary-solid);
+}
+
+.group {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.legend {
+  float: left;
+  width: 100%;
+  margin-block-end: var(--space-2);
+  padding: 0 var(--space-6);
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-bold);
+  text-align: center;
+}
+
+.close {
+  position: absolute;
+  inset-block-start: var(--space-2);
+  inset-inline-end: var(--space-2);
+  display: flex;
+  width: var(--space-6);
+  height: var(--space-6);
+  padding: var(--space-1);
+  border: 0;
+  border-radius: var(--radius-sm);
+  color: inherit;
+  background: none;
+  cursor: pointer;
+}
+
+.close:hover {
+  background-color: color-mix(in srgb, currentColor 15%, transparent);
+}
+
+.close:focus-visible {
+  outline: 2px solid var(--picker-focus-ring);
+  outline-offset: 2px;
+}
+
+.options {
+  clear: both;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+.option {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-md);
+  color: var(--color-secondary);
+  background-color: var(--color-surface);
+  font-weight: var(--font-weight-bold);
+  cursor: pointer;
+  transition-property: background-color, color;
+  transition-duration: var(--duration-fast);
+}
+
+.option:hover:not(.unavailable, .group:disabled *) {
+  background-color: var(--color-secondary-subtle);
+}
+
+.selected,
+.selected:hover {
+  color: var(--color-text-on-primary);
+  background-color: var(--color-primary);
+}
+
+.option:has(.input:focus-visible) {
+  outline: 2px solid var(--picker-focus-ring);
+  outline-offset: 2px;
+}
+
+.input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.label {
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-normal);
+  white-space: nowrap;
+}
+
+.reason {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+}
+
+.unavailable,
+.group:disabled .option {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
