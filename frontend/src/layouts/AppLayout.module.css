@@ -24,6 +24,8 @@
 }
 
 .logoutButton {
+  --button-text: var(--color-text);
+
   width: 100%;
 }
 

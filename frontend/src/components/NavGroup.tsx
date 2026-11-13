@@ -1,4 +1,4 @@
-import { useEffect, useId, useState, type ReactNode } from 'react'
+import { useId, useState, type ReactNode } from 'react'
 import { classNames } from '../utils/classNames'
 import { ChevronIcon } from './icons/ChevronIcon'
 import styles from './NavGroup.module.css'
@@ -21,11 +21,13 @@ export interface NavGroupProps {
 export function NavGroup({ label, items, icon, defaultOpen, currentHref }: NavGroupProps) {
   const containsCurrent: boolean = items.some((item) => item.href === currentHref)
   const [open, setOpen] = useState(defaultOpen ?? containsCurrent)
+  const [prevContainsCurrent, setPrevContainsCurrent] = useState(containsCurrent)
   const listId = useId()
 
-  useEffect(() => {
+  if (containsCurrent !== prevContainsCurrent) {
+    setPrevContainsCurrent(containsCurrent)
     if (containsCurrent) setOpen(true)
-  }, [containsCurrent])
+  }
 
   return (
     <div className={styles.navGroup}>
