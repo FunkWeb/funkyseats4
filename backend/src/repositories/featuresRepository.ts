@@ -24,6 +24,13 @@ export const createFeaturesRepository = (db: Pool) => {
 
   return {
     findAll: () => selectFeatures('ORDER BY features.name'),
+    existsByName: async (name: string): Promise<boolean> => {
+      const [rows] = await db.execute<RowDataPacket[]>(
+        'SELECT 1 FROM features WHERE name = :name LIMIT 1',
+        { name },
+      )
+      return rows.length > 0
+    },
     findById: async (id: number): Promise<FeatureDto | null> => {
       const [feature] = await selectFeatures('WHERE features.id = :id', { id })
       return feature ?? null

@@ -1,0 +1,14 @@
+.list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  gap: var(--space-4);
+  margin: var(--space-6) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.room {
+  padding: var(--space-6);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text);
+}
