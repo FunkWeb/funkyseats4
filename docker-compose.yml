@@ -34,6 +34,11 @@ services:
       FRONTEND_URL: ${FRONTEND_URL}
       SESSION_SECRET: ${SESSION_SECRET}
       SESSION_LIFETIME_MINUTES: ${SESSION_LIFETIME_MINUTES}
+      SESSION_SECRET: ${SESSION_SECRET}
+      SESSION_LIFETIME_MINUTES: ${SESSION_LIFETIME_MINUTES}
+      UPLOADS_DIR: /app/uploads
+    volumes:
+      - uploads-data:/app/uploads
     depends_on:
       database:
         condition: service_healthy
@@ -51,3 +56,4 @@ services:
 
 volumes:
   db-data:
+  uploads-data:

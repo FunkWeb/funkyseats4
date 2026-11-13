@@ -61,6 +61,9 @@ Knapper/tabs for dato
 - Kopier ```.env.example``` filen til ```.env```: ```cp .env.example .env```
 - Sett opp tilkoblingen til databasen i ```.env``` filen
 - Kjør migreringer for å opprette nødvendige databasetabeller: ```migrate```
+- Kopier `.env.example` filen til `.env`: `cp .env.example .env`
+- Sett opp tilkoblingen til databasen og opplastingsmappe (`UPLOADS_DIR`) i `.env` filen
+- Kjør migreringer for å opprette nødvendige databasetabeller: `migrate`
 
 ---
 ### Start applikasjon
