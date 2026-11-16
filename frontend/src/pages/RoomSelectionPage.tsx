@@ -1,21 +1,13 @@
-import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router'
-import { getRooms } from '../api/roomsApi'
 import { Card } from '../components/Card'
 import { Notice } from '../components/Notice'
 import { PageHeader } from '../components/PageHeader'
 import { Spinner } from '../components/Spinner'
+import { useRooms } from '../features/rooms/useRooms'
 import styles from './RoomSelectionPage.module.css'
 
 export default function RoomSelectionPage() {
-  const {
-    data: rooms,
-    isPending,
-    isError,
-  } = useQuery({
-    queryKey: ['rooms'],
-    queryFn: getRooms,
-  })
+  const { data: rooms, isPending, isError } = useRooms()
 
   return (
     <>
