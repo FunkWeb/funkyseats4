@@ -58,9 +58,9 @@ Knapper/tabs for dato
 - Klone repositoryet: ```git clone [https://github.com/FunkWeb/funkyseats4.git](https://github.com/FunkWeb/funkyseats4.git)```
 - Naviger til prosjektmappen: ```cd funkyseats```
 - Installer avhengigheter: ```npm install```
-- Kopier ```.env.example``` filen til ```.env```: ```cp .env.example .env```
-- Sett opp tilkoblingen til databasen i ```.env``` filen
-- Kjør migreringer for å opprette nødvendige databasetabeller: ```migrate```
+- Kopier `.env.example` filen til `.env`: `cp .env.example .env`
+- Sett opp tilkoblingen til databasen og opplastingsmappe (`UPLOADS_DIR`) i `.env` filen
+- Kjør migreringer for å opprette nødvendige databasetabeller: `migrate`
 
 ---
 ### Start applikasjon
