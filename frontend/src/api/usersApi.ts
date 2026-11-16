@@ -1,5 +1,5 @@
-import type { UpdateUserRoleRequest, UserDto } from '../../../contracts/user.js'
-import { get, patch } from './httpClient.js'
+import type { UpdateUserRoleRequest, UserDto } from '../../../contracts/user'
+import { get, patch } from './httpClient'
 
 export function getUsers(): Promise<UserDto[]> {
   return get<UserDto[]>('/users')
