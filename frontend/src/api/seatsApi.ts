@@ -1,6 +1,6 @@
-import type { FeatureDto } from '../../../contracts/feature.js'
-import type { CreateSeatRequest, SeatDto, UpdateSeatRequest } from '../../../contracts/seat.js'
-import { del, get, patch, post, put } from './httpClient.js'
+import type { FeatureDto } from '../../../contracts/feature'
+import type { CreateSeatRequest, SeatDto, UpdateSeatRequest } from '../../../contracts/seat'
+import { del, get, patch, post, put } from './httpClient'
 
 export function getRoomSeats(roomId: number): Promise<SeatDto[]> {
   return get<SeatDto[]>(`/rooms/${roomId}/seats`)
