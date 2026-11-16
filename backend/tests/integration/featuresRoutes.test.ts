@@ -6,6 +6,7 @@ import os from 'node:os'
 import path from 'node:path'
 import express, { type RequestHandler } from 'express'
 import { errorHandler } from '../../src/errors/errorHandler.js'
+import { serveUploadedIcons } from '../../src/middleware/serveUploadedIcons.js'
 import { createFeaturesRoutes } from '../../src/routes/featuresRoutes.js'
 import type { FeaturesService } from '../../src/services/featuresService.js'
 
@@ -42,6 +43,7 @@ describe('featuresRoutes /features/icons', () => {
 
     const app = express()
     app.use(express.json())
+    app.use('/uploads/icons', serveUploadedIcons(uploadsDir))
     app.use(
       '/features',
       createFeaturesRoutes({
@@ -139,6 +141,64 @@ describe('featuresRoutes /features/icons', () => {
     assert.equal(onloadRes.status, 400)
   })
 
+  it('rejects SVGs with foreignObject, javascript: links, slash-separated handlers or encoded payloads with 400', async () => {
+    const unsafeSvgs = [
+      '<svg xmlns="http://www.w3.org/2000/svg"><foreignObject><div/></foreignObject></svg>',
+      '<svg xmlns="http://www.w3.org/2000/svg"><a href="javascript:alert(1)"><circle r="1"/></a></svg>',
+      '<svg/onload="alert(1)"></svg>',
+      '<svg xmlns="http://www.w3.org/2000/svg"><a href="java&#x73;cript:alert(1)"/></svg>',
+    ]
+
+    for (const svg of unsafeSvgs) {
+      const res = await fetch(`${baseUrl}/features/icons`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'image/svg+xml' },
+        body: svg,
+      })
+      assert.equal(res.status, 400, svg)
+    }
+  })
+
+  it('rejects bodies where <svg> is not the root element with 400', async () => {
+    const res = await fetch(`${baseUrl}/features/icons`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'image/svg+xml' },
+      body: '<div><svg xmlns="http://www.w3.org/2000/svg"></svg></div>',
+    })
+
+    assert.equal(res.status, 400)
+  })
+
+  it('accepts an SVG with an XML declaration before the root element', async () => {
+    const res = await fetch(`${baseUrl}/features/icons`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'image/svg+xml' },
+      body: `<?xml version="1.0" encoding="UTF-8"?>\n${VALID_SVG}`,
+    })
+
+    assert.equal(res.status, 201)
+  })
+
+  it('serves uploaded icons with script-blocking headers', async () => {
+    const uploadRes = await fetch(`${baseUrl}/features/icons`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'image/svg+xml' },
+      body: VALID_SVG,
+    })
+    const { iconPath } = (await uploadRes.json()) as { iconPath: string }
+
+    const res = await fetch(`${baseUrl}${iconPath.replace(/^\/api/, '')}`)
+
+    assert.equal(res.status, 200)
+    assert.equal(res.headers.get('content-type'), 'image/svg+xml')
+    assert.equal(res.headers.get('x-content-type-options'), 'nosniff')
+    assert.equal(
+      res.headers.get('content-security-policy'),
+      "default-src 'none'; style-src 'unsafe-inline'; sandbox",
+    )
+    assert.equal(await res.text(), VALID_SVG)
+  })
+
   it('rejects non-admin users with 403', async () => {
     currentRole = 'CANDIDATE'
     const res = await fetch(`${baseUrl}/features/icons`, {
@@ -158,10 +218,55 @@ describe('featuresRoutes /features/icons', () => {
         name: 'Kaffemaskin',
         description: null,
         iconPath: 'https://evil.example.com/icon.svg',
-        category: 'AMENITIES',
+        category: 'OTHER',
       }),
     })
 
     assert.equal(res.status, 400)
+  })
+
+  it('rejects iconPaths that could break out of a CSS url() or escape the folder', async () => {
+    const badPaths = [
+      '/icons/x.svg) ; background:url(//evil.example.com)',
+      '/icons/%2e%2e/secret.svg',
+      '/api/uploads/icons/../../etc/passwd',
+      '/icons/icon.png',
+    ]
+
+    for (const iconPath of badPaths) {
+      const res = await fetch(`${baseUrl}/features`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: 'Kaffemaskin', iconPath, category: 'OTHER' }),
+      })
+      assert.equal(res.status, 400, iconPath)
+    }
+  })
+
+  it('accepts default and uploaded iconPaths when creating a feature', async () => {
+    for (const iconPath of [
+      '/icons/linux.svg',
+      '/api/uploads/icons/3f2a9c1e-1b2c-4d5e.svg',
+      null,
+    ]) {
+      const res = await fetch(`${baseUrl}/features`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: 'Kaffemaskin', iconPath, category: 'OTHER' }),
+      })
+      assert.equal(res.status, 201, String(iconPath))
+    }
+  })
+
+  it('returns 413 with the icon size message for oversized uploads', async () => {
+    const res = await fetch(`${baseUrl}/features/icons`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'image/svg+xml' },
+      body: `<svg>${'a'.repeat(101 * 1024)}</svg>`,
+    })
+    const body = (await res.json()) as { errorMessage: string }
+
+    assert.equal(res.status, 413)
+    assert.equal(body.errorMessage, 'Uploaded icon must be 100 KB or smaller')
   })
 })

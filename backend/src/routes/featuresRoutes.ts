@@ -1,10 +1,11 @@
 import crypto from 'node:crypto'
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import express, { Router, type RequestHandler } from 'express'
+import express, { Router, type ErrorRequestHandler, type RequestHandler } from 'express'
 import type { FeaturesService } from '../services/featuresService.js'
 import { requireRole } from '../auth/requireRole.js'
-import { UnsupportedMediaTypeError } from '../errors/appErrors.js'
+import { PayloadTooLargeError, UnsupportedMediaTypeError } from '../errors/appErrors.js'
+import { isEntityTooLarge } from '../errors/errorHandler.js'
 import { parseCreateFeature, validateSvgContent } from '../validation/featureRequests.js'
 
 export interface FeaturesRoutesDeps {
@@ -14,6 +15,22 @@ export interface FeaturesRoutesDeps {
 }
 
 const MAX_ICON_BYTES = 100 * 1024
+
+const requireSvgContentType: RequestHandler = (req, _res, next) => {
+  if (!req.is('image/svg+xml')) {
+    next(new UnsupportedMediaTypeError('Content-Type must be image/svg+xml'))
+    return
+  }
+  next()
+}
+
+const iconTooLarge: ErrorRequestHandler = (error, _req, _res, next) => {
+  if (isEntityTooLarge(error)) {
+    next(new PayloadTooLargeError('Uploaded icon must be 100 KB or smaller'))
+    return
+  }
+  next(error)
+}
 
 export const createFeaturesRoutes = ({
   featuresService,
@@ -35,15 +52,10 @@ export const createFeaturesRoutes = ({
   router.post(
     '/icons',
     requireRole('ADMIN'),
-    (req, _res, next) => {
-      if (!req.is('image/svg+xml')) {
-        next(new UnsupportedMediaTypeError('Content-Type must be image/svg+xml'))
-        return
-      }
-      next()
-    },
+    requireSvgContentType,
     express.raw({ type: 'image/svg+xml', limit: MAX_ICON_BYTES }),
-    async (req, res) => {
+    iconTooLarge,
+    (async (req, res) => {
       const content = Buffer.isBuffer(req.body) ? req.body.toString('utf8') : ''
       const validSvg = validateSvgContent(content)
 
@@ -54,7 +66,7 @@ export const createFeaturesRoutes = ({
       await fs.writeFile(path.join(iconsDir, filename), validSvg, 'utf8')
 
       res.status(201).json({ iconPath: `/api/uploads/icons/${filename}` })
-    },
+    }) satisfies RequestHandler,
   )
 
   return router

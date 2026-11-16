@@ -2,16 +2,15 @@ import { FEATURE_CATEGORIES, type CreateFeatureRequest } from '../../../contract
 import { ValidationError } from '../errors/appErrors.js'
 import { asRecord, parseNonEmptyString, parseOneOf, parseOptionalString } from './parsers.js'
 
-const ALLOWED_ICON_PREFIXES = ['/icons/', '/api/uploads/icons/']
+const ICON_PATH_PATTERN = /^\/(icons|api\/uploads\/icons)\/[A-Za-z0-9_-]+\.svg$/
 
 const parseIconPath = (value: unknown): string | null => {
   const parsed = parseOptionalString(value, 'iconPath')
   if (parsed === null) {
     return null
   }
-  const hasValidPrefix = ALLOWED_ICON_PREFIXES.some((prefix) => parsed.startsWith(prefix))
-  if (!hasValidPrefix || parsed.includes('..')) {
-    throw new ValidationError('iconPath must start with /icons/ or /api/uploads/icons/')
+  if (!ICON_PATH_PATTERN.test(parsed)) {
+    throw new ValidationError('iconPath must be an .svg file under /icons/ or /api/uploads/icons/')
   }
   return parsed
 }
@@ -29,7 +28,12 @@ export const parseCreateFeature = (body: unknown): CreateFeatureRequest => {
 export const validateSvgContent = (raw: string): string => {
   const trimmed = raw.trim()
 
-  if (!/<svg[\s>]/i.test(trimmed) || !/<\/svg\s*>/i.test(trimmed)) {
+  const withoutProlog = trimmed
+    .replace(/^<\?xml[^>]*\?>\s*/i, '')
+    .replace(/^(<!--[\s\S]*?-->\s*)*/, '')
+    .replace(/^<!DOCTYPE[^>]*>\s*/i, '')
+
+  if (!/^<svg[\s>]/i.test(withoutProlog) || !/<\/svg\s*>$/i.test(withoutProlog)) {
     throw new ValidationError('File must be a valid SVG with an <svg> root element')
   }
 
@@ -41,8 +45,12 @@ export const validateSvgContent = (raw: string): string => {
     throw new ValidationError('SVG must not contain <foreignObject> elements')
   }
 
-  if (/\son[a-z]+\s*=/i.test(trimmed)) {
+  if (/[\s/"']on[a-z]+\s*=/i.test(trimmed)) {
     throw new ValidationError('SVG must not contain inline event handlers')
+  }
+
+  if (/&#/.test(trimmed)) {
+    throw new ValidationError('SVG must not contain numeric character references')
   }
 
   if (/javascript\s*:/i.test(trimmed)) {

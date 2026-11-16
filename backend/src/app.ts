@@ -27,7 +27,7 @@ import { requireRole } from './auth/requireRole.js'
 import { authLimiter, createApiLimiter } from './middleware/rateLimit.js'
 import { createRequireSameOrigin } from './middleware/requireSameOrigin.js'
 import { securityHeaders } from './middleware/securityHeaders.js'
-import path from 'node:path'
+import { serveUploadedIcons } from './middleware/serveUploadedIcons.js'
 
 export const app = express()
 
@@ -76,19 +76,7 @@ app.use(
   }),
 )
 
-app.use(
-  '/uploads/icons',
-  express.static(path.join(config.uploadsDir, 'icons'), {
-    setHeaders: (res) => {
-      res.setHeader('Content-Type', 'image/svg+xml')
-      res.setHeader('X-Content-Type-Options', 'nosniff')
-      res.setHeader(
-        'Content-Security-Policy',
-        "default-src 'none'; style-src 'unsafe-inline'; sandbox",
-      )
-    },
-  }),
-)
+app.use('/uploads/icons', serveUploadedIcons(config.uploadsDir))
 
 app.use(
   '/features',
