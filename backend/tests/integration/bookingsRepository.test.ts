@@ -1,9 +1,9 @@
 import { before, beforeEach, describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import type { CreateBookingRequest } from '../../../contracts/booking.js'
 import {
   createBookingsRepository,
   type Booking,
+  type BookingInsert,
   type BookingsRepository,
 } from '../../src/repositories/bookingsRepository.js'
 import { useMigratedTestDatabase } from '../testDatabase.js'
@@ -22,7 +22,7 @@ describe('bookingsRepository', () => {
   let seatA: number
   let seatB: number
 
-  const request = (overrides: Partial<CreateBookingRequest> = {}): CreateBookingRequest => ({
+  const request = (overrides: Partial<BookingInsert> = {}): BookingInsert => ({
     seatId: seatA,
     userId: alice,
     bookingDate: DATE,
@@ -30,7 +30,7 @@ describe('bookingsRepository', () => {
     ...overrides,
   })
 
-  const book = (overrides?: Partial<CreateBookingRequest>): Promise<Booking> =>
+  const book = (overrides?: Partial<BookingInsert>): Promise<Booking> =>
     bookings.create(request(overrides))
 
   before(() => {

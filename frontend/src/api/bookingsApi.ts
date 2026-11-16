@@ -1,7 +1,5 @@
-import type { BookingDto, CreateBookingRequest } from '../../../contracts/booking'
+import type { BookingDto, NewBooking } from '../../../contracts/booking'
 import { get, post } from './httpClient'
-
-export type NewBooking = Omit<CreateBookingRequest, 'userId'>
 
 export function getMyBookings(): Promise<BookingDto[]> {
   return get<BookingDto[]>('/bookings/me')

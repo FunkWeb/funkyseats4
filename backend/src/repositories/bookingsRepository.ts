@@ -1,11 +1,13 @@
 import type { Pool, ResultSetHeader, RowDataPacket } from 'mysql2/promise'
-import type { BookingDto, BookingStatus, CreateBookingRequest } from '../../../contracts/booking.js'
+import type { BookingDto, BookingStatus, NewBooking } from '../../../contracts/booking.js'
 import type { QueryParams } from '../database/queryParams.js'
 
 export interface Booking extends BookingDto {
   updatedAt: Date
   createdAt: Date
 }
+
+export type BookingInsert = NewBooking & Pick<BookingDto, 'userId'>
 
 type BookingRow = Booking & RowDataPacket
 
@@ -48,7 +50,7 @@ const createBookingQueries = (db: Executor) => {
         userId,
         date,
       }),
-    create: async (booking: CreateBookingRequest): Promise<Booking> => {
+    create: async (booking: BookingInsert): Promise<Booking> => {
       const [result] = await db.execute<ResultSetHeader>(
         `INSERT INTO bookings (seat_id, user_id, status, booking_date, time_period)
          VALUES (:seatId, :userId, 'ACTIVE', :bookingDate, :timePeriod)`,

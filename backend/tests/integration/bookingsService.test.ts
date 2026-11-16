@@ -1,6 +1,6 @@
 import { before, beforeEach, describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import type { BookingStatus, TimePeriod } from '../../../contracts/booking.js'
+import type { BookingStatus, NewBooking, TimePeriod } from '../../../contracts/booking.js'
 import {
   type AppError,
   ConflictError,
@@ -17,7 +17,6 @@ import { createSeatsRepository } from '../../src/repositories/seatsRepository.js
 import {
   createBookingsService,
   type BookingsService,
-  type NewBooking,
 } from '../../src/services/bookingsService.js'
 import { addDays } from '../../src/services/common.js'
 import { useMigratedTestDatabase } from '../testDatabase.js'

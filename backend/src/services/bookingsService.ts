@@ -1,11 +1,9 @@
-import type { BookingDto, CreateBookingRequest, TimePeriod } from '../../../contracts/booking.js'
+import type { BookingDto, NewBooking, TimePeriod } from '../../../contracts/booking.js'
 import { ConflictError, ForbiddenError, ValidationError } from '../errors/appErrors.js'
 import type { BookingsRepository } from '../repositories/bookingsRepository.js'
 import type { RoomsRepository } from '../repositories/roomsRepository.js'
 import type { SeatsRepository } from '../repositories/seatsRepository.js'
 import { addDays, findOrThrow, todayInOffice } from './common.js'
-
-export type NewBooking = Omit<CreateBookingRequest, 'userId'>
 
 export interface BookingsServiceDeps {
   bookings: Pick<
