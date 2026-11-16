@@ -14,10 +14,7 @@ import {
 } from '../../src/repositories/bookingsRepository.js'
 import { createRoomsRepository } from '../../src/repositories/roomsRepository.js'
 import { createSeatsRepository } from '../../src/repositories/seatsRepository.js'
-import {
-  createBookingsService,
-  type BookingsService,
-} from '../../src/services/bookingsService.js'
+import { createBookingsService, type BookingsService } from '../../src/services/bookingsService.js'
 import { addDays } from '../../src/services/common.js'
 import { useMigratedTestDatabase } from '../testDatabase.js'
 import { createFixtures, type Fixtures } from '../testFixtures.js'
