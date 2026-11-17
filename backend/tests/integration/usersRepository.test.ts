@@ -74,7 +74,7 @@ describe('usersRepository', () => {
   it('findAll returns every user ordered by name', async () => {
     await store(bob)
     await store(alice)
-    const all = await users.findAll()
+    const { items: all } = await users.findAll(1, 20)
     assert.deepEqual(
       all.map(({ name }) => name),
       ['Alice', 'Bob'],

@@ -3,7 +3,7 @@ import { Button } from '../../components/Button'
 import { Modal } from '../../components/Modal'
 import { Notice } from '../../components/Notice'
 import { errorMessage } from '../../utils/errorMessage'
-import { RoomForm } from './RoomForm'
+import { RoomForm } from './RoomForm.jsx'
 import { useSaveRoom } from './useRooms'
 
 export type RoomFormMode = { type: 'create' } | { type: 'edit'; room: RoomDto }

@@ -77,12 +77,12 @@ describe('bookingsRepository', () => {
     await book({ userId: bob, timePeriod: 'AFTER_LUNCH' })
     const second = await book({ seatId: seatB })
 
-    assert.deepEqual(await bookings.findByUserId(alice), [first, second])
+    assert.deepEqual((await bookings.findByUserId(alice, 1, 20)).items, [first, second])
   })
 
   it('findByUserId returns an empty list when the user has no bookings', async () => {
     await book()
-    assert.deepEqual(await bookings.findByUserId(bob), [])
+    assert.deepEqual((await bookings.findByUserId(bob, 1, 20)).items, [])
   })
 
   it('findBySeatAndDate excludes other seats and other dates, ordered by id', async () => {

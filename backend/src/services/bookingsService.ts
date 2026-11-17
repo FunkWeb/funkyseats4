@@ -82,7 +82,7 @@ export const createBookingsService = ({
   return {
     create,
     cancel,
-    findForUser: bookings.findByUserId,
+    findForUser,
     findForRoomOnDate: async (roomId: number, date: string): Promise<BookingDto[]> => {
       await findOrThrow(rooms.findById(roomId), 'Room')
       return (await bookings.findActiveByRoomAndDate(roomId, date)).map(
