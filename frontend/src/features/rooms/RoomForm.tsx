@@ -9,7 +9,7 @@ import {
   toRoomRequest,
   validateRoomForm,
   type RoomFormValues,
-} from './roomForm'
+} from './roomFormUtils'
 import styles from './RoomForm.module.css'
 
 export interface RoomFormProps {
