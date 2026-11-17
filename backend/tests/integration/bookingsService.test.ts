@@ -235,7 +235,7 @@ describe('bookingsService', () => {
     await bookings.updateStatus(completed.id, 'COMPLETE')
     await book(alice, { seatId: deletedSeat })
     await seats.delete(deletedSeat)
-    await book(bob, { seatId: otherRoomSeat })
+    await book(bob, { seatId: otherRoomSeat, timePeriod: 'AFTER_LUNCH' })
     await book(alice, { seatId: seatB, bookingDate: addDays(TODAY, 1) })
 
     assert.deepEqual(await service.findForRoomOnDate(roomId, TODAY), [
