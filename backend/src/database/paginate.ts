@@ -1,5 +1,5 @@
 import type { Pool, RowDataPacket } from 'mysql2/promise'
-import type { PaginatedResponse } from '../../../contracts/pagination.js'
+import type { PaginatedResponse, Pagination } from '../../../contracts/pagination.js'
 import type { QueryParams } from './queryParams.js'
 
 type CountRow = { total: number } & RowDataPacket
@@ -17,8 +17,7 @@ interface PageQuery<T> {
 export const paginate = async <T>(
   db: Pick<Pool, 'execute'>,
   { select, table, where = '', orderBy, params = {} }: PageQuery<T>,
-  page: number,
-  pageSize: number,
+  { page, pageSize }: Pagination,
 ): Promise<Page<T>> => {
   const [items, [countRows]] = await Promise.all([
     select(`${where} ORDER BY ${orderBy} LIMIT :limit OFFSET :offset`, {

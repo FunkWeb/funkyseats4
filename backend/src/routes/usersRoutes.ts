@@ -14,8 +14,7 @@ export const createUsersRoutes = ({ usersService, requireAuth }: UsersRoutesDeps
   router.use(requireAuth, requireRole('ADMIN'))
 
   router.get('/', async (req, res) => {
-    const { page, pageSize } = parsePagination(req.query)
-    res.json(await usersService.findAll(page, pageSize))
+    res.json(await usersService.findAll(parsePagination(req.query)))
   })
 
   router.patch('/:id/role', async (req, res) => {

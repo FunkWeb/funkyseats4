@@ -1,3 +1,4 @@
+import type { Pagination } from '../../../contracts/pagination.js'
 import { ValidationError } from '../errors/appErrors.js'
 
 export const parsePositiveInteger = (value: unknown, field: string) => {
@@ -47,7 +48,7 @@ export const asRecord = (body: unknown): Record<string, unknown> =>
 const DEFAULT_PAGE_SIZE = 20
 const MAX_PAGE_SIZE = 100
 
-export const parsePagination = (query: Record<string, unknown>) => {
+export const parsePagination = (query: Record<string, unknown>): Pagination => {
   const page = parseIfPresent(query.page, (value) => parsePositiveInteger(value, 'page')) ?? 1
   const pageSize =
     parseIfPresent(query.pageSize, (value) => parsePositiveInteger(value, 'pageSize')) ??

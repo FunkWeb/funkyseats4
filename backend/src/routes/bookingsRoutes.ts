@@ -14,8 +14,7 @@ export const createBookingsRoutes = ({ bookingsService, requireAuth }: BookingsR
   router.use(requireAuth)
 
   router.get('/me', async (req, res) => {
-    const { page, pageSize } = parsePagination(req.query)
-    res.json(await bookingsService.findForUser(currentUser(req).id, page, pageSize))
+    res.json(await bookingsService.findForUser(currentUser(req).id, parsePagination(req.query)))
   })
 
   router.post('/', async (req, res) => {

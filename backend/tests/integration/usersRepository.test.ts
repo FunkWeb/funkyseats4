@@ -82,7 +82,7 @@ describe('usersRepository', () => {
   it('findAll returns every user ordered by name', async () => {
     await store(bob)
     await store(alice)
-    const { items: all } = await users.findAll(1, 20)
+    const { items: all } = await users.findAll({ page: 1, pageSize: 20 })
     assert.deepEqual(
       all.map(({ name }) => name),
       ['Alice', 'Bob'],
@@ -95,7 +95,7 @@ describe('usersRepository', () => {
     await store(carol)
 
     const namesOnPage = async (page: number) => {
-      const { items, total } = await users.findAll(page, 2)
+      const { items, total } = await users.findAll({ page, pageSize: 2 })
       return { names: items.map(({ name }) => name), total }
     }
 
@@ -105,15 +105,15 @@ describe('usersRepository', () => {
 
   it('findAll returns no items for a page past the last one', async () => {
     await store(alice)
-    assert.deepEqual(await users.findAll(2, 20), { items: [], total: 1 })
+    assert.deepEqual(await users.findAll({ page: 2, pageSize: 20 }), { items: [], total: 1 })
   })
 
   it('findAll orders users with the same name by id so no user appears on two pages', async () => {
     const first = await store(alice)
     const second = await store({ ...bob, name: alice.name })
 
-    const { items: page1 } = await users.findAll(1, 1)
-    const { items: page2 } = await users.findAll(2, 1)
+    const { items: page1 } = await users.findAll({ page: 1, pageSize: 1 })
+    const { items: page2 } = await users.findAll({ page: 2, pageSize: 1 })
 
     assert.deepEqual(
       [...page1, ...page2].map(({ id }) => id),

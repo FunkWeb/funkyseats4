@@ -1,4 +1,5 @@
 import type { Pool, ResultSetHeader, RowDataPacket } from 'mysql2/promise'
+import type { Pagination } from '../../../contracts/pagination.js'
 import type { UserRole } from '../../../contracts/user.js'
 import { paginate, type Page } from '../database/paginate.js'
 import type { QueryParams } from '../database/queryParams.js'
@@ -46,8 +47,8 @@ export const createUsersRepository = (db: Pool) => {
   }
 
   return {
-    findAll: (page: number, pageSize: number): Promise<Page<User>> =>
-      paginate(db, { select: selectUsers, table: 'users', orderBy: 'name, id' }, page, pageSize),
+    findAll: (pagination: Pagination): Promise<Page<User>> =>
+      paginate(db, { select: selectUsers, table: 'users', orderBy: 'name, id' }, pagination),
     findById,
     create: async (user: NewUser) => {
       const [result] = await db.execute<ResultSetHeader>(

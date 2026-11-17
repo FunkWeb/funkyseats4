@@ -68,7 +68,9 @@ describe('bookingsService', () => {
     })
 
   const statusesOf = async (userId: number) =>
-    (await bookings.findByUserId(userId, 1, 100)).items.map(({ status }) => status)
+    (await bookings.findByUserId(userId, { page: 1, pageSize: 100 })).items.map(
+      ({ status }) => status,
+    )
 
   const assertBookingRejected = async (
     userId: number,

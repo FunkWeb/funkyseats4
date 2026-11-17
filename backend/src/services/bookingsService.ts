@@ -1,5 +1,5 @@
 import type { BookingDto, NewBooking, TimePeriod } from '../../../contracts/booking.js'
-import type { PaginatedResponse } from '../../../contracts/pagination.js'
+import type { PaginatedResponse, Pagination } from '../../../contracts/pagination.js'
 import { ConflictError, ForbiddenError, ValidationError } from '../errors/appErrors.js'
 import type { BookingsRepository } from '../repositories/bookingsRepository.js'
 import type { RoomsRepository } from '../repositories/roomsRepository.js'
@@ -63,12 +63,11 @@ export const createBookingsService = ({
 
   const findForUser = async (
     userId: number,
-    page: number,
-    pageSize: number,
-  ): Promise<PaginatedResponse<BookingDto>> => {
-    const { items, total } = await bookings.findByUserId(userId, page, pageSize)
-    return { items, total, page, pageSize }
-  }
+    pagination: Pagination,
+  ): Promise<PaginatedResponse<BookingDto>> => ({
+    ...pagination,
+    ...(await bookings.findByUserId(userId, pagination)),
+  })
 
   return {
     create,

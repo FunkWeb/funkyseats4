@@ -2,7 +2,7 @@ import { after, before, beforeEach, describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import type { Server } from 'node:http'
 import express, { type RequestHandler } from 'express'
-import type { PaginatedResponse } from '../../../contracts/pagination.js'
+import type { PaginatedResponse, Pagination } from '../../../contracts/pagination.js'
 import { errorHandler } from '../../src/errors/errorHandler.js'
 import { createBookingsRoutes } from '../../src/routes/bookingsRoutes.js'
 import { createUsersRoutes } from '../../src/routes/usersRoutes.js'
@@ -14,21 +14,21 @@ const USER_ID = 9
 describe('paginated routes', () => {
   let server: Server
   let baseUrl: string
-  const requested: { page: number; pageSize: number }[] = []
+  const requested: Pagination[] = []
 
-  const respond = <T>(page: number, pageSize: number): PaginatedResponse<T> => {
-    requested.push({ page, pageSize })
-    return { items: [], total: 0, page, pageSize }
+  const respond = <T>(pagination: Pagination): PaginatedResponse<T> => {
+    requested.push(pagination)
+    return { ...pagination, items: [], total: 0 }
   }
 
   const usersService: Pick<UsersService, 'findAll' | 'updateRole'> = {
-    findAll: async (page, pageSize) => respond(page, pageSize),
+    findAll: async (pagination) => respond(pagination),
     updateRole: async () => {},
   }
   const bookingsService: Pick<BookingsService, 'create' | 'cancel' | 'findForUser'> = {
-    findForUser: async (userId, page, pageSize) => {
+    findForUser: async (userId, pagination) => {
       assert.equal(userId, USER_ID)
-      return respond(page, pageSize)
+      return respond(pagination)
     },
     create: async () => {
       throw new Error('not used')

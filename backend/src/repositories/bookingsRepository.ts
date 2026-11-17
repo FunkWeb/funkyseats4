@@ -1,5 +1,6 @@
 import type { Pool, ResultSetHeader, RowDataPacket } from 'mysql2/promise'
 import type { BookingDto, BookingStatus, NewBooking } from '../../../contracts/booking.js'
+import type { Pagination } from '../../../contracts/pagination.js'
 import { paginate, type Page } from '../database/paginate.js'
 import type { QueryParams } from '../database/queryParams.js'
 
@@ -39,7 +40,7 @@ const createBookingQueries = (db: Executor) => {
 
   return {
     findById,
-    findByUserId: (userId: number, page: number, pageSize: number): Promise<Page<Booking>> =>
+    findByUserId: (userId: number, pagination: Pagination): Promise<Page<Booking>> =>
       paginate(
         db,
         {
@@ -49,8 +50,7 @@ const createBookingQueries = (db: Executor) => {
           orderBy: 'id',
           params: { userId },
         },
-        page,
-        pageSize,
+        pagination,
       ),
     findBySeatAndDate: (seatId: number, date: string): Promise<Booking[]> =>
       selectBookings('WHERE seat_id = :seatId AND booking_date = :date ORDER BY id', {

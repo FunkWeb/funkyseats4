@@ -47,7 +47,7 @@ describe('usersService', () => {
     await fixtures.storeUser('carol')
     await fixtures.storeUser('bob')
 
-    const { items: users } = await service.findAll(1, 20)
+    const { items: users } = await service.findAll({ page: 1, pageSize: 20 })
 
     assert.deepEqual(
       users.map(({ name }) => name),
