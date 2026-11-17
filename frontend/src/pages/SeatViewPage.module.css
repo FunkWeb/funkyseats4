@@ -3,6 +3,10 @@
   color: var(--color-text-muted);
 }
 
+.dateNavigator {
+  margin-bottom: var(--space-4);
+}
+
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 12rem), 1fr));
