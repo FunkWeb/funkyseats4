@@ -1,17 +1,24 @@
 import { Router, type RequestHandler } from 'express'
 import { requireRole } from '../auth/requireRole.js'
+import type { BookingsService } from '../services/bookingsService.js'
 import type { RoomsService } from '../services/roomsService.js'
 import type { SeatsService } from '../services/seatsService.js'
 import { parseCreateRoom, parseUpdateRoom } from '../validation/roomRequests.js'
-import { parseId } from '../validation/parsers.js'
+import { parseId, parseIsoDate } from '../validation/parsers.js'
 
 export interface RoomsRoutesDeps {
+  bookingsService: Pick<BookingsService, 'findForRoomOnDate'>
   roomsService: Pick<RoomsService, 'findAll' | 'findById' | 'create' | 'update' | 'delete'>
   seatsService: Pick<SeatsService, 'findByRoom'>
   requireAuth: RequestHandler
 }
 
-export const createRoomsRoutes = ({ roomsService, seatsService, requireAuth }: RoomsRoutesDeps) => {
+export const createRoomsRoutes = ({
+  bookingsService,
+  roomsService,
+  seatsService,
+  requireAuth,
+}: RoomsRoutesDeps) => {
   const router = Router()
   router.use(requireAuth)
 
@@ -25,6 +32,12 @@ export const createRoomsRoutes = ({ roomsService, seatsService, requireAuth }: R
 
   router.get('/:id/seats', async (req, res) => {
     res.json(await seatsService.findByRoom(parseId(req.params.id, 'id')))
+  })
+
+  router.get('/:id/bookings', async (req, res) => {
+    const roomId = parseId(req.params.id, 'id')
+    const date = parseIsoDate(req.query.date, 'date')
+    res.json(await bookingsService.findForRoomOnDate(roomId, date))
   })
 
   router.post('/', requireRole('ADMIN'), async (req, res) => {

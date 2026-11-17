@@ -6,6 +6,7 @@ import {
   type BookingInsert,
   type BookingsRepository,
 } from '../../src/repositories/bookingsRepository.js'
+import { createSeatsRepository } from '../../src/repositories/seatsRepository.js'
 import { useMigratedTestDatabase } from '../testDatabase.js'
 import { createFixtures, type Fixtures } from '../testFixtures.js'
 
@@ -19,8 +20,11 @@ describe('bookingsRepository', () => {
   let bookings: BookingsRepository
   let alice: number
   let bob: number
+  let roomId: number
   let seatA: number
   let seatB: number
+  let otherRoomSeat: number
+  let deletedSeat: number
 
   const request = (overrides: Partial<BookingInsert> = {}): BookingInsert => ({
     seatId: seatA,
@@ -39,7 +43,10 @@ describe('bookingsRepository', () => {
   })
 
   beforeEach(async () => {
-    ;({ alice, bob, seatA, seatB } = await fixtures.seedFreshOffice())
+    ;({ alice, bob, roomId, seatA, seatB } = await fixtures.seedFreshOffice())
+    const otherRoomId = await fixtures.storeRoom('room-b')
+    otherRoomSeat = await fixtures.storeSeat(otherRoomId, 'B1')
+    deletedSeat = await fixtures.storeSeat(roomId, 'A3')
   })
 
   it('create returns an ACTIVE booking matching the request', async () => {
@@ -94,6 +101,21 @@ describe('bookingsRepository', () => {
     const afternoon = await book({ seatId: seatB, timePeriod: 'AFTER_LUNCH' })
 
     assert.deepEqual(await bookings.findByUserIdAndDate(alice, DATE), [morning, afternoon])
+  })
+
+  it('findActiveByRoomAndDate includes only active bookings on active seats in that room and date', async () => {
+    const active = await book()
+    const anotherActive = await book({ seatId: seatB, userId: bob, timePeriod: 'AFTER_LUNCH' })
+    const cancelled = await book({ seatId: seatB, bookingDate: DATE })
+    await bookings.updateStatus(cancelled.id, 'CANCELLED')
+    const completed = await book({ seatId: seatB, bookingDate: DATE })
+    await bookings.updateStatus(completed.id, 'COMPLETE')
+    await book({ bookingDate: OTHER_DATE })
+    await book({ seatId: otherRoomSeat })
+    await book({ seatId: deletedSeat })
+    await createSeatsRepository(db()).delete(deletedSeat)
+
+    assert.deepEqual(await bookings.findActiveByRoomAndDate(roomId, DATE), [active, anotherActive])
   })
 
   it('updateStatus persists and returns the new status', async () => {

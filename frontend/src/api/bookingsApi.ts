@@ -5,6 +5,10 @@ export function getMyBookings(): Promise<BookingDto[]> {
   return get<BookingDto[]>('/bookings/me')
 }
 
+export function getRoomBookings(roomId: number, date: string): Promise<BookingDto[]> {
+  return get<BookingDto[]>(`/rooms/${roomId}/bookings?date=${encodeURIComponent(date)}`)
+}
+
 export function createBooking(input: NewBooking): Promise<BookingDto> {
   return post<BookingDto>('/bookings', input)
 }
