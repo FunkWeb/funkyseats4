@@ -85,7 +85,11 @@ app.use(
 )
 
 app.use('/bookings', apiLimiter, createBookingsRoutes({ bookingsService, requireAuth }))
-app.use('/rooms', apiLimiter, createRoomsRoutes({ roomsService, seatsService, requireAuth }))
+app.use(
+  '/rooms',
+  apiLimiter,
+  createRoomsRoutes({ bookingsService, roomsService, seatsService, requireAuth }),
+)
 app.use('/users', apiLimiter, createUsersRoutes({ usersService, requireAuth }))
 app.use('/seats', apiLimiter, createSeatsRoutes({ seatsService, requireAuth, requireRole }))
 

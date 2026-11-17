@@ -14,14 +14,14 @@ type CountRow = { total: number } & RowDataPacket
 
 const SELECT_BOOKING = `
   SELECT
-    id,
-    seat_id                            AS seatId,
-    user_id                            AS userId,
-    status,
-    DATE_FORMAT(booking_date, '%Y-%m-%d') AS bookingDate,
-    time_period                        AS timePeriod,
-    updated_at                         AS updatedAt,
-    created_at                         AS createdAt
+    bookings.id,
+    bookings.seat_id                       AS seatId,
+    bookings.user_id                       AS userId,
+    bookings.status,
+    DATE_FORMAT(bookings.booking_date, '%Y-%m-%d') AS bookingDate,
+    bookings.time_period                   AS timePeriod,
+    bookings.updated_at                    AS updatedAt,
+    bookings.created_at                    AS createdAt
   FROM bookings`
 
 type Executor = Pick<Pool, 'execute'>
@@ -70,6 +70,14 @@ const createBookingQueries = (db: Executor) => {
         userId,
         date,
       }),
+    findActiveByRoomAndDate: (roomId: number, date: string): Promise<Booking[]> =>
+      selectBookings(
+        `INNER JOIN seats ON seats.id = bookings.seat_id
+         WHERE seats.room_id = :roomId AND seats.deleted_at IS NULL
+           AND bookings.booking_date = :date AND bookings.status = 'ACTIVE'
+         ORDER BY bookings.id`,
+        { roomId, date },
+      ),
     create: async (booking: BookingInsert): Promise<Booking> => {
       const [result] = await db.execute<ResultSetHeader>(
         `INSERT INTO bookings (seat_id, user_id, status, booking_date, time_period)

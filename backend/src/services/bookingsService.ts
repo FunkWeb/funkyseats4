@@ -9,7 +9,7 @@ import { addDays, findOrThrow, todayInOffice } from './common.js'
 export interface BookingsServiceDeps {
   bookings: Pick<
     BookingsRepository,
-    'findById' | 'findByUserId' | 'updateStatus' | 'withSeatAndUserLock'
+    'findById' | 'findByUserId' | 'findActiveByRoomAndDate' | 'updateStatus' | 'withSeatAndUserLock'
   >
   seats: Pick<SeatsRepository, 'findById'>
   rooms: Pick<RoomsRepository, 'findById'>
@@ -82,7 +82,20 @@ export const createBookingsService = ({
   return {
     create,
     cancel,
-    findForUser,
+    findForUser: bookings.findByUserId,
+    findForRoomOnDate: async (roomId: number, date: string): Promise<BookingDto[]> => {
+      await findOrThrow(rooms.findById(roomId), 'Room')
+      return (await bookings.findActiveByRoomAndDate(roomId, date)).map(
+        ({ id, seatId, userId, status, bookingDate, timePeriod }) => ({
+          id,
+          seatId,
+          userId,
+          status,
+          bookingDate,
+          timePeriod,
+        }),
+      )
+    },
   }
 }
 
