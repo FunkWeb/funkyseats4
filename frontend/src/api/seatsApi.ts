@@ -1,9 +1,13 @@
 import type { FeatureDto } from '../../../contracts/feature'
-import type { CreateSeatRequest, SeatDto, UpdateSeatRequest } from '../../../contracts/seat'
+import type {
+  CreateSeatRequest,
+  SeatWithFeaturesDto,
+  UpdateSeatRequest,
+} from '../../../contracts/seat'
 import { del, get, patch, post, put } from './httpClient'
 
-export function getRoomSeats(roomId: number): Promise<SeatDto[]> {
-  return get<SeatDto[]>(`/rooms/${roomId}/seats`)
+export function getRoomSeats(roomId: number): Promise<SeatWithFeaturesDto[]> {
+  return get<SeatWithFeaturesDto[]>(`/rooms/${roomId}/seats`)
 }
 
 export function createSeat(input: CreateSeatRequest): Promise<{ id: number }> {
