@@ -1,5 +1,9 @@
 import type { FeatureDto } from '../../../contracts/feature.js'
-import type { CreateSeatRequest, SeatDto, UpdateSeatRequest } from '../../../contracts/seat.js'
+import type {
+  CreateSeatRequest,
+  SeatWithFeaturesDto,
+  UpdateSeatRequest,
+} from '../../../contracts/seat.js'
 import { ConflictError, NotFoundError } from '../errors/appErrors.js'
 import type { FeaturesRepository } from '../repositories/featuresRepository.js'
 import type { RoomsRepository } from '../repositories/roomsRepository.js'
@@ -11,7 +15,7 @@ export interface SeatsServiceDeps {
   rooms: Pick<RoomsRepository, 'findById'>
   features: Pick<
     FeaturesRepository,
-    'findById' | 'findBySeatId' | 'attachToSeat' | 'detachFromSeat'
+    'findById' | 'findBySeatId' | 'findByRoomId' | 'attachToSeat' | 'detachFromSeat'
   >
 }
 
@@ -30,9 +34,21 @@ export const createSeatsService = ({ seats, rooms, features }: SeatsServiceDeps)
       throw new ConflictError(`Seat ${seatNumber} already exists in this room`)
   }
 
-  const findByRoom = async (roomId: number): Promise<SeatDto[]> => {
+  const findByRoom = async (roomId: number): Promise<SeatWithFeaturesDto[]> => {
     await findRoom(roomId)
-    return seats.findByRoomId(roomId)
+    const [roomSeats, roomFeatures] = await Promise.all([
+      seats.findByRoomId(roomId),
+      features.findByRoomId(roomId),
+    ])
+
+    const featuresBySeat = new Map<number, FeatureDto[]>()
+    for (const { seatId, ...feature } of roomFeatures) {
+      const seatFeatures = featuresBySeat.get(seatId) ?? []
+      seatFeatures.push(feature)
+      featuresBySeat.set(seatId, seatFeatures)
+    }
+
+    return roomSeats.map((seat) => ({ ...seat, features: featuresBySeat.get(seat.id) ?? [] }))
   }
 
   const create = async (input: CreateSeatRequest): Promise<number> => {
