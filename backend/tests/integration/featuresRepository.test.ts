@@ -5,6 +5,7 @@ import {
   createFeaturesRepository,
   type FeaturesRepository,
 } from '../../src/repositories/featuresRepository.js'
+import { createSeatsRepository } from '../../src/repositories/seatsRepository.js'
 import { useMigratedTestDatabase } from '../testDatabase.js'
 import { createFixtures, type Fixtures } from '../testFixtures.js'
 
@@ -93,6 +94,58 @@ describe('featuresRepository', () => {
 
     assert.deepEqual(await features.findBySeatId(seatA), [storedDock, storedLinux])
     assert.deepEqual(await features.findBySeatId(seatB), [storedLinux])
+  })
+
+  it('findByRoomId returns every feature in the room with its seatId, ordered by name', async () => {
+    const [seatA, seatB] = [await storeSeat('A1'), await storeSeat('A2')]
+    const [storedDock, storedLinux] = [await store(dock), await store(linux)]
+    await features.attachToSeat(seatA, storedLinux.id)
+    await features.attachToSeat(seatB, storedDock.id)
+    await features.attachToSeat(seatA, storedDock.id)
+
+    const found = await features.findByRoomId(roomId)
+
+    assert.deepEqual(
+      found.map(({ name }) => name),
+      [dock.name, dock.name, linux.name],
+    )
+    assert.deepEqual(
+      found.filter(({ seatId }) => seatId === seatA),
+      [
+        { ...storedDock, seatId: seatA },
+        { ...storedLinux, seatId: seatA },
+      ],
+    )
+    assert.deepEqual(
+      found.filter(({ seatId }) => seatId === seatB),
+      [{ ...storedDock, seatId: seatB }],
+    )
+  })
+
+  it('findByRoomId ignores seats in another room', async () => {
+    const seatA = await storeSeat('A1')
+    const otherSeat = await fixtures.storeSeat(await fixtures.storeRoom('room-b'), 'B1')
+    const [storedDock, storedLinux] = [await store(dock), await store(linux)]
+    await features.attachToSeat(seatA, storedDock.id)
+    await features.attachToSeat(otherSeat, storedLinux.id)
+
+    assert.deepEqual(await features.findByRoomId(roomId), [{ ...storedDock, seatId: seatA }])
+  })
+
+  it('findByRoomId ignores soft-deleted seats', async () => {
+    const [seatA, seatB] = [await storeSeat('A1'), await storeSeat('A2')]
+    const stored = await store(dock)
+    await features.attachToSeat(seatA, stored.id)
+    await features.attachToSeat(seatB, stored.id)
+    await createSeatsRepository(db()).delete(seatB)
+
+    assert.deepEqual(await features.findByRoomId(roomId), [{ ...stored, seatId: seatA }])
+  })
+
+  it('findByRoomId returns nothing when no seat has features', async () => {
+    await storeSeat('A1')
+    await store(dock)
+    assert.deepEqual(await features.findByRoomId(roomId), [])
   })
 
   it('attachToSeat rejects attaching the same feature twice', async () => {
