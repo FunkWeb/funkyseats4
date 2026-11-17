@@ -1,3 +1,4 @@
+import type { PaginatedResponse } from '../../../contracts/pagination.js'
 import type { UpdateUserRoleRequest, UserDto } from '../../../contracts/user.js'
 import { NotFoundError } from '../errors/appErrors.js'
 import type { User, UsersRepository } from '../repositories/usersRepository.js'
@@ -19,7 +20,15 @@ export const toUserDto = (user: User): UserDto => ({
 })
 
 export const createUsersService = ({ users }: UsersServiceDeps) => {
-  const findAll = async (): Promise<UserDto[]> => (await users.findAll()).map(toUserDto)
+  const findAll = async (page: number, pageSize: number): Promise<PaginatedResponse<UserDto>> => {
+    const { items, total } = await users.findAll(page, pageSize)
+    return {
+      items: items.map(toUserDto),
+      total,
+      page,
+      pageSize,
+    }
+  }
 
   const findById = async (userId: number): Promise<UserDto> =>
     toUserDto(await findOrThrow(users.findById(userId), 'User'))

@@ -18,19 +18,20 @@ export interface User {
 export type NewUser = Pick<User, 'googleId' | 'name' | 'email' | 'avatarPath' | 'role'>
 
 type UserRow = User & RowDataPacket
+type CountRow = { total: number } & RowDataPacket
 
 const SELECT_USER = `
   SELECT
     id,
-    google_id     AS googleId,
+    google_id       AS googleId,
     name,
     email,
-    avatar_path   AS avatarPath,
+    avatar_path     AS avatarPath,
     role,
     session_version AS sessionVersion,
-    last_login_at AS lastLoginAt,
-    updated_at    AS updatedAt,
-    created_at    AS createdAt
+    last_login_at   AS lastLoginAt,
+    updated_at      AS updatedAt,
+    created_at      AS createdAt
   FROM users`
 
 export const createUsersRepository = (db: Pool) => {
@@ -45,7 +46,20 @@ export const createUsersRepository = (db: Pool) => {
   }
 
   return {
-    findAll: () => selectUsers('ORDER BY name'),
+    findAll: async (page: number, pageSize: number): Promise<{ items: User[]; total: number }> => {
+      const offset = (page - 1) * pageSize
+      const [items, [countRows]] = await Promise.all([
+        selectUsers('ORDER BY name, id LIMIT :limit OFFSET :offset', {
+          limit: pageSize,
+          offset,
+        }),
+        db.execute<CountRow[]>('SELECT COUNT(*) AS total FROM users'),
+      ])
+      return {
+        items,
+        total: Number(countRows[0]?.total ?? 0),
+      }
+    },
     findById,
     create: async (user: NewUser) => {
       const [result] = await db.execute<ResultSetHeader>(

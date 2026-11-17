@@ -10,23 +10,24 @@ export interface Booking extends BookingDto {
 export type BookingInsert = NewBooking & Pick<BookingDto, 'userId'>
 
 type BookingRow = Booking & RowDataPacket
+type CountRow = { total: number } & RowDataPacket
 
 const SELECT_BOOKING = `
   SELECT
     id,
-    seat_id                                AS seatId,
-    user_id                                AS userId,
+    seat_id                            AS seatId,
+    user_id                            AS userId,
     status,
-    DATE_FORMAT(booking_date, '%Y-%m-%d')  AS bookingDate,
-    time_period                            AS timePeriod,
-    updated_at                             AS updatedAt,
-    created_at                             AS createdAt
+    DATE_FORMAT(booking_date, '%Y-%m-%d') AS bookingDate,
+    time_period                        AS timePeriod,
+    updated_at                         AS updatedAt,
+    created_at                         AS createdAt
   FROM bookings`
 
 type Executor = Pick<Pool, 'execute'>
 
 const createBookingQueries = (db: Executor) => {
-  const selectBookings = async (clause: string, params: QueryParams): Promise<Booking[]> => {
+  const selectBookings = async (clause: string, params: QueryParams = {}): Promise<Booking[]> => {
     const [rows] = await db.execute<BookingRow[]>(`${SELECT_BOOKING} ${clause}`, params)
     return rows
   }
@@ -38,8 +39,27 @@ const createBookingQueries = (db: Executor) => {
 
   return {
     findById,
-    findByUserId: (userId: number): Promise<Booking[]> =>
-      selectBookings('WHERE user_id = :userId ORDER BY id', { userId }),
+    findByUserId: async (
+      userId: number,
+      page: number,
+      pageSize: number,
+    ): Promise<{ items: Booking[]; total: number }> => {
+      const offset = (page - 1) * pageSize
+      const [items, [countRows]] = await Promise.all([
+        selectBookings('WHERE user_id = :userId ORDER BY id LIMIT :limit OFFSET :offset', {
+          userId,
+          limit: pageSize,
+          offset,
+        }),
+        db.execute<CountRow[]>('SELECT COUNT(*) AS total FROM bookings WHERE user_id = :userId', {
+          userId,
+        }),
+      ])
+      return {
+        items,
+        total: Number(countRows[0]?.total ?? 0),
+      }
+    },
     findBySeatAndDate: (seatId: number, date: string): Promise<Booking[]> =>
       selectBookings('WHERE seat_id = :seatId AND booking_date = :date ORDER BY id', {
         seatId,
@@ -57,8 +77,9 @@ const createBookingQueries = (db: Executor) => {
         booking,
       )
       const createdBooking = await findById(result.insertId)
-      if (!createdBooking)
+      if (!createdBooking) {
         throw new Error(`Booking ${result.insertId} was not found after creation`)
+      }
       return createdBooking
     },
     updateStatus: async (id: number, status: BookingStatus): Promise<Booking | null> => {

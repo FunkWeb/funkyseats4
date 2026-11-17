@@ -1,4 +1,5 @@
 import type { BookingDto, NewBooking, TimePeriod } from '../../../contracts/booking.js'
+import type { PaginatedResponse } from '../../../contracts/pagination.js'
 import { ConflictError, ForbiddenError, ValidationError } from '../errors/appErrors.js'
 import type { BookingsRepository } from '../repositories/bookingsRepository.js'
 import type { RoomsRepository } from '../repositories/roomsRepository.js'
@@ -23,8 +24,9 @@ const blocksPeriod = (booking: BookingDto, period: TimePeriod) =>
 
 const assertWithinBookingWindow = (bookingDate: string, today: string, maxDaysAhead: number) => {
   const lastBookableDate = addDays(today, maxDaysAhead)
-  if (bookingDate < today || bookingDate > lastBookableDate)
+  if (bookingDate < today || bookingDate > lastBookableDate) {
     throw new ValidationError(`Bookings must be between ${today} and ${lastBookableDate}`)
+  }
 }
 
 export const createBookingsService = ({
@@ -41,12 +43,14 @@ export const createBookingsService = ({
 
     return bookings.withSeatAndUserLock(request.seatId, userId, async (lockedBookings) => {
       const sameDay = await lockedBookings.findBySeatAndDate(request.seatId, request.bookingDate)
-      if (sameDay.some((booking) => blocksPeriod(booking, request.timePeriod)))
+      if (sameDay.some((booking) => blocksPeriod(booking, request.timePeriod))) {
         throw new ConflictError('Seat is already booked for that period')
+      }
 
       const ownSameDay = await lockedBookings.findByUserIdAndDate(userId, request.bookingDate)
-      if (ownSameDay.some((booking) => blocksPeriod(booking, request.timePeriod)))
+      if (ownSameDay.some((booking) => blocksPeriod(booking, request.timePeriod))) {
         throw new ConflictError('You already have a booking for that period')
+      }
 
       return lockedBookings.create({ ...request, userId })
     })
@@ -55,15 +59,30 @@ export const createBookingsService = ({
   const cancel = async (userId: number, bookingId: number): Promise<void> => {
     const booking = await findOrThrow(bookings.findById(bookingId), 'Booking')
     if (booking.userId !== userId) throw new ForbiddenError('You can only cancel your own bookings')
-    if (booking.status !== 'ACTIVE')
+    if (booking.status !== 'ACTIVE') {
       throw new ConflictError('Only active bookings can be cancelled')
+    }
     await bookings.updateStatus(bookingId, 'CANCELLED')
+  }
+
+  const findForUser = async (
+    userId: number,
+    page: number,
+    pageSize: number,
+  ): Promise<PaginatedResponse<BookingDto>> => {
+    const { items, total } = await bookings.findByUserId(userId, page, pageSize)
+    return {
+      items,
+      total,
+      page,
+      pageSize,
+    }
   }
 
   return {
     create,
     cancel,
-    findForUser: bookings.findByUserId,
+    findForUser,
   }
 }
 

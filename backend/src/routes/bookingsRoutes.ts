@@ -1,8 +1,9 @@
 import { Router, type RequestHandler } from 'express'
 import { currentUser } from '../auth/requireAuth.js'
+import { ValidationError } from '../errors/appErrors.js'
 import type { BookingsService } from '../services/bookingsService.js'
 import { parseNewBooking } from '../validation/bookingRequests.js'
-import { parseId } from '../validation/parsers.js'
+import { parseId, parsePositiveInteger } from '../validation/parsers.js'
 
 export interface BookingsRoutesDeps {
   bookingsService: Pick<BookingsService, 'create' | 'cancel' | 'findForUser'>
@@ -14,7 +15,15 @@ export const createBookingsRoutes = ({ bookingsService, requireAuth }: BookingsR
   router.use(requireAuth)
 
   router.get('/me', async (req, res) => {
-    res.json(await bookingsService.findForUser(currentUser(req).id))
+    const page = req.query.page !== undefined ? parsePositiveInteger(req.query.page, 'page') : 1
+    const pageSize =
+      req.query.pageSize !== undefined ? parsePositiveInteger(req.query.pageSize, 'pageSize') : 20
+
+    if (pageSize > 100) {
+      throw new ValidationError('pageSize must be at most 100')
+    }
+
+    res.json(await bookingsService.findForUser(currentUser(req).id, page, pageSize))
   })
 
   router.post('/', async (req, res) => {
