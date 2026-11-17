@@ -4,14 +4,14 @@ import { PageHeader } from '../components/PageHeader'
 import { SeatCard } from '../components/SeatCard'
 import { Spinner } from '../components/Spinner'
 import { useRooms } from '../features/rooms/useRooms'
-import { useRoomsSeats } from '../features/seats/useRoomsSeats'
+import { useRoomSeats } from '../features/seats/useRoomSeats'
 import styles from './SeatViewPage.module.css'
 
 export default function SeatViewPage() {
   const { slug } = useParams()
   const roomsQuery = useRooms()
   const room = roomsQuery.data?.find((candidate) => candidate.slug === slug)
-  const seatsQuery = useRoomsSeats(room?.id)
+  const seatsQuery = useRoomSeats(room?.id)
 
   const seats = [...(seatsQuery.data ?? [])].sort((a, b) =>
     a.seatNumber.localeCompare(b.seatNumber, undefined, { numeric: true }),
