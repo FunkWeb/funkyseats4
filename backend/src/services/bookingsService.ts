@@ -67,8 +67,8 @@ export const createBookingsService = ({
 
   const findForUser = async (
     userId: number,
-    page: number,
-    pageSize: number,
+    page = 1,
+    pageSize = 20,
   ): Promise<PaginatedResponse<BookingDto>> => {
     const { items, total } = await bookings.findByUserId(userId, page, pageSize)
     return {
