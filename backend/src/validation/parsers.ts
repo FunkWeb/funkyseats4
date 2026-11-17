@@ -43,3 +43,16 @@ export const parseIfPresent = <T>(value: unknown, parse: (value: unknown) => T) 
 
 export const asRecord = (body: unknown): Record<string, unknown> =>
   typeof body === 'object' && body !== null ? (body as Record<string, unknown>) : {}
+
+const DEFAULT_PAGE_SIZE = 20
+const MAX_PAGE_SIZE = 100
+
+export const parsePagination = (query: Record<string, unknown>) => {
+  const page = parseIfPresent(query.page, (value) => parsePositiveInteger(value, 'page')) ?? 1
+  const pageSize =
+    parseIfPresent(query.pageSize, (value) => parsePositiveInteger(value, 'pageSize')) ??
+    DEFAULT_PAGE_SIZE
+  if (pageSize > MAX_PAGE_SIZE)
+    throw new ValidationError(`pageSize must be at most ${MAX_PAGE_SIZE}`)
+  return { page, pageSize }
+}

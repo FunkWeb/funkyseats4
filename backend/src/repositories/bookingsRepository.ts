@@ -27,7 +27,7 @@ const SELECT_BOOKING = `
 type Executor = Pick<Pool, 'execute'>
 
 const createBookingQueries = (db: Executor) => {
-  const selectBookings = async (clause: string, params: QueryParams = {}): Promise<Booking[]> => {
+  const selectBookings = async (clause: string, params: QueryParams): Promise<Booking[]> => {
     const [rows] = await db.execute<BookingRow[]>(`${SELECT_BOOKING} ${clause}`, params)
     return rows
   }
@@ -85,9 +85,8 @@ const createBookingQueries = (db: Executor) => {
         booking,
       )
       const createdBooking = await findById(result.insertId)
-      if (!createdBooking) {
+      if (!createdBooking)
         throw new Error(`Booking ${result.insertId} was not found after creation`)
-      }
       return createdBooking
     },
     updateStatus: async (id: number, status: BookingStatus): Promise<Booking | null> => {
