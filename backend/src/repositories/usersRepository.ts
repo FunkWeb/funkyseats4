@@ -1,5 +1,6 @@
 import type { Pool, ResultSetHeader, RowDataPacket } from 'mysql2/promise'
 import type { UserRole } from '../../../contracts/user.js'
+import { paginate, type Page } from '../database/paginate.js'
 import type { QueryParams } from '../database/queryParams.js'
 
 export interface User {
@@ -18,7 +19,6 @@ export interface User {
 export type NewUser = Pick<User, 'googleId' | 'name' | 'email' | 'avatarPath' | 'role'>
 
 type UserRow = User & RowDataPacket
-type CountRow = { total: number } & RowDataPacket
 
 const SELECT_USER = `
   SELECT
@@ -46,20 +46,8 @@ export const createUsersRepository = (db: Pool) => {
   }
 
   return {
-    findAll: async (page: number, pageSize: number): Promise<{ items: User[]; total: number }> => {
-      const offset = (page - 1) * pageSize
-      const [items, [countRows]] = await Promise.all([
-        selectUsers('ORDER BY name, id LIMIT :limit OFFSET :offset', {
-          limit: pageSize,
-          offset,
-        }),
-        db.execute<CountRow[]>('SELECT COUNT(*) AS total FROM users'),
-      ])
-      return {
-        items,
-        total: Number(countRows[0]?.total ?? 0),
-      }
-    },
+    findAll: (page: number, pageSize: number): Promise<Page<User>> =>
+      paginate(db, { select: selectUsers, table: 'users', orderBy: 'name, id' }, page, pageSize),
     findById,
     create: async (user: NewUser) => {
       const [result] = await db.execute<ResultSetHeader>(

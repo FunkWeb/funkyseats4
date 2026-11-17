@@ -1,5 +1,6 @@
 import type { Pool, ResultSetHeader, RowDataPacket } from 'mysql2/promise'
 import type { BookingDto, BookingStatus, NewBooking } from '../../../contracts/booking.js'
+import { paginate, type Page } from '../database/paginate.js'
 import type { QueryParams } from '../database/queryParams.js'
 
 export interface Booking extends BookingDto {
@@ -10,7 +11,6 @@ export interface Booking extends BookingDto {
 export type BookingInsert = NewBooking & Pick<BookingDto, 'userId'>
 
 type BookingRow = Booking & RowDataPacket
-type CountRow = { total: number } & RowDataPacket
 
 const SELECT_BOOKING = `
   SELECT
@@ -39,27 +39,19 @@ const createBookingQueries = (db: Executor) => {
 
   return {
     findById,
-    findByUserId: async (
-      userId: number,
-      page: number,
-      pageSize: number,
-    ): Promise<{ items: Booking[]; total: number }> => {
-      const offset = (page - 1) * pageSize
-      const [items, [countRows]] = await Promise.all([
-        selectBookings('WHERE user_id = :userId ORDER BY id LIMIT :limit OFFSET :offset', {
-          userId,
-          limit: pageSize,
-          offset,
-        }),
-        db.execute<CountRow[]>('SELECT COUNT(*) AS total FROM bookings WHERE user_id = :userId', {
-          userId,
-        }),
-      ])
-      return {
-        items,
-        total: Number(countRows[0]?.total ?? 0),
-      }
-    },
+    findByUserId: (userId: number, page: number, pageSize: number): Promise<Page<Booking>> =>
+      paginate(
+        db,
+        {
+          select: selectBookings,
+          table: 'bookings',
+          where: 'WHERE user_id = :userId',
+          orderBy: 'id',
+          params: { userId },
+        },
+        page,
+        pageSize,
+      ),
     findBySeatAndDate: (seatId: number, date: string): Promise<Booking[]> =>
       selectBookings('WHERE seat_id = :seatId AND booking_date = :date ORDER BY id', {
         seatId,
