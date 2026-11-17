@@ -25,7 +25,7 @@ export default function RoomSelectionPage() {
         <ul className={styles.list}>
           {rooms.map((room) => (
             <li key={room.id}>
-              <Link to={`/rooms/${room.id}`} className={styles.link}>
+              <Link to={`/rooms/${room.slug}`} className={styles.link}>
                 <Card className={styles.room}>
                   <span className={styles.name}>{room.name}</span>
                   {room.description && (
