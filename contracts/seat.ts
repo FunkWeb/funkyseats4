@@ -1,3 +1,5 @@
+import type { FeatureDto } from './feature.js'
+
 export interface SeatDto {
   id: number
   roomId: number
@@ -10,3 +12,5 @@ export interface SeatDto {
 
 export type CreateSeatRequest = Omit<SeatDto, 'id' | 'deletedAt' | 'updatedAt' | 'createdAt'>
 export type UpdateSeatRequest = Partial<CreateSeatRequest>
+
+export type SeatWithFeaturesDto = SeatDto & { features: FeatureDto[] }
