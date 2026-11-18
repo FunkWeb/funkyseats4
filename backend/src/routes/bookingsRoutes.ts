@@ -2,7 +2,7 @@ import { Router, type RequestHandler } from 'express'
 import { currentUser } from '../auth/requireAuth.js'
 import type { BookingsService } from '../services/bookingsService.js'
 import { parseNewBooking } from '../validation/bookingRequests.js'
-import { parseId } from '../validation/parsers.js'
+import { parseId, parsePagination } from '../validation/parsers.js'
 
 export interface BookingsRoutesDeps {
   bookingsService: Pick<BookingsService, 'create' | 'cancel' | 'findForUser'>
@@ -14,7 +14,7 @@ export const createBookingsRoutes = ({ bookingsService, requireAuth }: BookingsR
   router.use(requireAuth)
 
   router.get('/me', async (req, res) => {
-    res.json(await bookingsService.findForUser(currentUser(req).id))
+    res.json(await bookingsService.findForUser(currentUser(req).id, parsePagination(req.query)))
   })
 
   router.post('/', async (req, res) => {

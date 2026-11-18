@@ -77,12 +77,39 @@ describe('bookingsRepository', () => {
     await book({ userId: bob, timePeriod: 'AFTER_LUNCH' })
     const second = await book({ seatId: seatB })
 
-    assert.deepEqual(await bookings.findByUserId(alice), [first, second])
+    assert.deepEqual((await bookings.findByUserId(alice, { page: 1, pageSize: 20 })).items, [
+      first,
+      second,
+    ])
   })
 
   it('findByUserId returns an empty list when the user has no bookings', async () => {
     await book()
-    assert.deepEqual(await bookings.findByUserId(bob), [])
+    assert.deepEqual((await bookings.findByUserId(bob, { page: 1, pageSize: 20 })).items, [])
+  })
+
+  it('findByUserId splits bookings into pages and counts only that user’s bookings', async () => {
+    const first = await book()
+    const second = await book({ timePeriod: 'AFTER_LUNCH' })
+    await book({ userId: bob, seatId: seatB })
+    const third = await book({ bookingDate: OTHER_DATE })
+
+    assert.deepEqual(await bookings.findByUserId(alice, { page: 1, pageSize: 2 }), {
+      items: [first, second],
+      total: 3,
+    })
+    assert.deepEqual(await bookings.findByUserId(alice, { page: 2, pageSize: 2 }), {
+      items: [third],
+      total: 3,
+    })
+  })
+
+  it('findByUserId returns no items for a page past the last one', async () => {
+    await book()
+    assert.deepEqual(await bookings.findByUserId(alice, { page: 2, pageSize: 20 }), {
+      items: [],
+      total: 1,
+    })
   })
 
   it('findBySeatAndDate excludes other seats and other dates, ordered by id', async () => {

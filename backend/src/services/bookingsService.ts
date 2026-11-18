@@ -1,4 +1,5 @@
 import type { BookingDto, NewBooking, TimePeriod } from '../../../contracts/booking.js'
+import type { PaginatedResponse, Pagination } from '../../../contracts/pagination.js'
 import { ConflictError, ForbiddenError, ValidationError } from '../errors/appErrors.js'
 import type { BookingsRepository } from '../repositories/bookingsRepository.js'
 import type { RoomsRepository } from '../repositories/roomsRepository.js'
@@ -60,10 +61,18 @@ export const createBookingsService = ({
     await bookings.updateStatus(bookingId, 'CANCELLED')
   }
 
+  const findForUser = async (
+    userId: number,
+    pagination: Pagination,
+  ): Promise<PaginatedResponse<BookingDto>> => ({
+    ...pagination,
+    ...(await bookings.findByUserId(userId, pagination)),
+  })
+
   return {
     create,
     cancel,
-    findForUser: bookings.findByUserId,
+    findForUser,
     findForRoomOnDate: async (roomId: number, date: string): Promise<BookingDto[]> => {
       await findOrThrow(rooms.findById(roomId), 'Room')
       return (await bookings.findActiveByRoomAndDate(roomId, date)).map(
