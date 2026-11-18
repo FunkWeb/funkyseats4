@@ -1,6 +1,6 @@
 import { useRef } from 'react'
 import { classNames } from '../utils/classNames'
-import { formatShortDate, shiftIsoDate } from '../utils/isoDate'
+import { formatShortDate, getLastBookableDate, shiftIsoDate } from '../utils/isoDate'
 import { Button } from './Button'
 import { IconButton } from './IconButton'
 import { ChevronIcon } from './icons/ChevronIcon'
@@ -24,7 +24,7 @@ export function DateNavigator({
   className,
 }: DateNavigatorProps) {
   const pickerRef = useRef<HTMLInputElement>(null)
-  const lastBookableDate = shiftIsoDate(today, maxDaysAhead)
+  const lastBookableDate = getLastBookableDate(today, maxDaysAhead)
 
   return (
     <div

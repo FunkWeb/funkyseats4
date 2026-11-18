@@ -4,7 +4,7 @@
 }
 
 .dateNavigator {
-  margin-bottom: var(--space-4);
+  margin: var(--space-4) 0;
 }
 
 .grid {

@@ -1,5 +1,5 @@
 import { Link, useParams, useSearchParams } from 'react-router'
-import { useEffect } from 'react'
+import { useCallback, useEffect } from 'react'
 import { DateNavigator } from '../components/DateNavigator'
 import { Notice } from '../components/Notice'
 import { PageHeader } from '../components/PageHeader'
@@ -20,18 +20,24 @@ export default function SeatViewPage() {
   const selectedDate = room ? getValidBookingDate(dateParam, today, room.maxDaysAhead) : today
   const seatsQuery = useRoomSeats(room?.id)
 
-  useEffect(() => {
-    if (room && dateParam !== null && dateParam !== selectedDate) {
+  const setDate = useCallback(
+    (date: string) =>
       setSearchParams(
         (currentSearchParams) => {
           const nextSearchParams = new URLSearchParams(currentSearchParams)
-          nextSearchParams.set('date', selectedDate)
+          nextSearchParams.set('date', date)
           return nextSearchParams
         },
         { replace: true },
-      )
+      ),
+    [setSearchParams],
+  )
+
+  useEffect(() => {
+    if (room && dateParam !== null && dateParam !== selectedDate) {
+      setDate(selectedDate)
     }
-  }, [dateParam, room, selectedDate, setSearchParams])
+  }, [dateParam, room, selectedDate, setDate])
 
   const seats = [...(seatsQuery.data ?? [])].sort((a, b) =>
     a.seatNumber.localeCompare(b.seatNumber, undefined, { numeric: true }),
@@ -68,16 +74,7 @@ export default function SeatViewPage() {
         value={selectedDate}
         today={today}
         maxDaysAhead={room.maxDaysAhead}
-        onDateChange={(date) =>
-          setSearchParams(
-            (currentSearchParams) => {
-              const nextSearchParams = new URLSearchParams(currentSearchParams)
-              nextSearchParams.set('date', date)
-              return nextSearchParams
-            },
-            { replace: true },
-          )
-        }
+        onDateChange={setDate}
       />
 
       {seatsQuery.isPending && <Spinner label="Laster plasser" />}

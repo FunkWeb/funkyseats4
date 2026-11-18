@@ -2,7 +2,7 @@ const officeTimeZone = 'Europe/Oslo'
 
 const isoDateFormatter = new Intl.DateTimeFormat('en-CA', { timeZone: officeTimeZone })
 
-const shortDateFormatter = new Intl.DateTimeFormat(undefined, {
+const shortDateFormatter = new Intl.DateTimeFormat('nb-NO', {
   weekday: 'short',
   day: 'numeric',
   month: 'short',
@@ -22,8 +22,11 @@ export function isValidIsoDate(isoDate: string) {
   return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === isoDate
 }
 
+export const getLastBookableDate = (today: string, maxDaysAhead: number) =>
+  shiftIsoDate(today, maxDaysAhead)
+
 export function getValidBookingDate(date: string | null, today: string, maxDaysAhead: number) {
-  const lastBookableDate = shiftIsoDate(today, maxDaysAhead)
+  const lastBookableDate = getLastBookableDate(today, maxDaysAhead)
   return date && isValidIsoDate(date) && date >= today && date <= lastBookableDate ? date : today
 }
 
