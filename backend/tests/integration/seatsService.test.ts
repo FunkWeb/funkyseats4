@@ -1,6 +1,5 @@
 import { before, beforeEach, describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import type { CreateFeatureRequest, FeatureDto } from '../../../contracts/feature.js'
 import { NotFoundError } from '../../src/errors/appErrors.js'
 import {
   createFeaturesRepository,
@@ -13,23 +12,9 @@ import {
 } from '../../src/repositories/seatsRepository.js'
 import { createSeatsService, type SeatsService } from '../../src/services/seatsService.js'
 import { useMigratedTestDatabase } from '../testDatabase.js'
-import { createFixtures, type Fixtures } from '../testFixtures.js'
+import { createFixtures, dock, linux, type Fixtures } from '../testFixtures.js'
 
 const UNKNOWN_ID = 0
-
-const dock: CreateFeatureRequest = {
-  name: 'Docking station',
-  description: null,
-  iconPath: '/icons/dock.svg',
-  category: 'HARDWARE',
-}
-
-const linux: CreateFeatureRequest = {
-  name: 'Linux',
-  description: null,
-  iconPath: null,
-  category: 'OS',
-}
 
 describe('seatsService', () => {
   const db = useMigratedTestDatabase()
@@ -39,11 +24,6 @@ describe('seatsService', () => {
   let service: SeatsService
   let featureQueries: number
   let roomId: number
-
-  const store = async (feature: CreateFeatureRequest): Promise<FeatureDto> => ({
-    ...feature,
-    id: await features.create(feature),
-  })
 
   const storeSeat = (seatNumber: string) => fixtures.storeSeat(roomId, seatNumber)
 
@@ -80,7 +60,10 @@ describe('seatsService', () => {
       await storeSeat('A2'),
       await storeSeat('A3'),
     ]
-    const [storedDock, storedLinux] = [await store(dock), await store(linux)]
+    const [storedDock, storedLinux] = [
+      await fixtures.storeFeature(dock),
+      await fixtures.storeFeature(linux),
+    ]
     await features.attachToSeat(seatA, storedLinux.id)
     await features.attachToSeat(seatA, storedDock.id)
     await features.attachToSeat(seatB, storedLinux.id)
@@ -110,7 +93,7 @@ describe('seatsService', () => {
   })
 
   it('findByRoom fetches features with one query for the whole room', async () => {
-    const stored = await store(dock)
+    const stored = await fixtures.storeFeature(dock)
     for (const seatNumber of ['A1', 'A2', 'A3'])
       await features.attachToSeat(await storeSeat(seatNumber), stored.id)
 
@@ -121,7 +104,7 @@ describe('seatsService', () => {
 
   it('findByRoom leaves out soft-deleted seats', async () => {
     const [seatA, seatB] = [await storeSeat('A1'), await storeSeat('A2')]
-    const stored = await store(dock)
+    const stored = await fixtures.storeFeature(dock)
     await features.attachToSeat(seatA, stored.id)
     await features.attachToSeat(seatB, stored.id)
     await seats.delete(seatB)
@@ -140,7 +123,7 @@ describe('seatsService', () => {
 
   it('findFeatures still returns a single seat’s features', async () => {
     const seatId = await storeSeat('A1')
-    const stored = await store(dock)
+    const stored = await fixtures.storeFeature(dock)
     await features.attachToSeat(seatId, stored.id)
 
     assert.deepEqual(await service.findFeatures(seatId), [stored])
