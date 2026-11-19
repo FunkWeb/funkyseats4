@@ -1,7 +1,7 @@
 import type { BookingDto, NewBooking, TimePeriod } from '../../../contracts/booking.js'
 import type { PaginatedResponse, Pagination } from '../../../contracts/pagination.js'
 import { ConflictError, ForbiddenError, ValidationError } from '../errors/appErrors.js'
-import type { BookingsRepository } from '../repositories/bookingsRepository.js'
+import type { Booking, BookingsRepository } from '../repositories/bookingsRepository.js'
 import type { RoomsRepository } from '../repositories/roomsRepository.js'
 import type { SeatsRepository } from '../repositories/seatsRepository.js'
 import { addDays, findOrThrow, todayInOffice } from './common.js'
@@ -16,11 +16,32 @@ export interface BookingsServiceDeps {
   today?: () => string
 }
 
-const periodsOverlap = (a: TimePeriod, b: TimePeriod) =>
-  a === b || a === 'ALL_DAY' || b === 'ALL_DAY'
+const toBookingDto = ({
+  id,
+  seatId,
+  userId,
+  status,
+  bookingDate,
+  timePeriod,
+}: Booking): BookingDto => ({
+  id,
+  seatId,
+  userId,
+  status,
+  bookingDate,
+  timePeriod,
+})
 
-const blocksPeriod = (booking: BookingDto, period: TimePeriod) =>
-  booking.status === 'ACTIVE' && periodsOverlap(booking.timePeriod, period)
+const isActive = (booking: BookingDto) => booking.status === 'ACTIVE'
+
+const hasActiveOverlap = (existing: BookingDto[], requested: TimePeriod) =>
+  existing.some(
+    (booking) =>
+      isActive(booking) &&
+      (booking.timePeriod === requested ||
+        booking.timePeriod === 'ALL_DAY' ||
+        requested === 'ALL_DAY'),
+  )
 
 const assertWithinBookingWindow = (bookingDate: string, today: string, maxDaysAhead: number) => {
   const lastBookableDate = addDays(today, maxDaysAhead)
@@ -34,59 +55,55 @@ export const createBookingsService = ({
   rooms,
   today = todayInOffice,
 }: BookingsServiceDeps) => {
+  const findRoom = (roomId: number) => findOrThrow(rooms.findById(roomId), 'Room')
+
   const create = async (userId: number, request: NewBooking): Promise<BookingDto> => {
-    const seat = await findOrThrow(seats.findById(request.seatId), 'Seat')
-    const room = await findOrThrow(rooms.findById(seat.roomId), 'Room')
+    const { seatId, bookingDate, timePeriod } = request
+    const seat = await findOrThrow(seats.findById(seatId), 'Seat')
+    const room = await findRoom(seat.roomId)
 
-    assertWithinBookingWindow(request.bookingDate, today(), room.maxDaysAhead)
+    //Rule: Booking must be between the current date and the room's maxDaysAhead
+    assertWithinBookingWindow(bookingDate, today(), room.maxDaysAhead)
 
-    return bookings.withSeatAndUserLock(request.seatId, userId, async (lockedBookings) => {
-      const sameDay = await lockedBookings.findBySeatAndDate(request.seatId, request.bookingDate)
-      if (sameDay.some((booking) => blocksPeriod(booking, request.timePeriod)))
+    return bookings.withSeatAndUserLock(seatId, userId, async (locked) => {
+      //Rule: A seat can only have one active booking per time period
+      if (hasActiveOverlap(await locked.findBySeatAndDate(seatId, bookingDate), timePeriod))
         throw new ConflictError('Seat is already booked for that period')
 
-      const ownSameDay = await lockedBookings.findByUserIdAndDate(userId, request.bookingDate)
-      if (ownSameDay.some((booking) => blocksPeriod(booking, request.timePeriod)))
+      //Rule: The user can NOT have multiple bookings in the same time period
+      if (hasActiveOverlap(await locked.findByUserIdAndDate(userId, bookingDate), timePeriod))
         throw new ConflictError('You already have a booking for that period')
 
-      return lockedBookings.create({ ...request, userId })
+      return toBookingDto(await locked.create({ ...request, userId }))
     })
   }
 
   const cancel = async (userId: number, bookingId: number): Promise<void> => {
     const booking = await findOrThrow(bookings.findById(bookingId), 'Booking')
+
+    //Rule: Users can only cancel their own bookings
     if (booking.userId !== userId) throw new ForbiddenError('You can only cancel your own bookings')
-    if (booking.status !== 'ACTIVE')
-      throw new ConflictError('Only active bookings can be cancelled')
+
+    //Rule: Only bookings with "ACTIVE" status can be cancelled
+    if (!isActive(booking)) throw new ConflictError('Only active bookings can be cancelled')
     await bookings.updateStatus(bookingId, 'CANCELLED')
   }
 
   const findForUser = async (
     userId: number,
     pagination: Pagination,
-  ): Promise<PaginatedResponse<BookingDto>> => ({
-    ...pagination,
-    ...(await bookings.findByUserId(userId, pagination)),
-  })
-
-  return {
-    create,
-    cancel,
-    findForUser,
-    findForRoomOnDate: async (roomId: number, date: string): Promise<BookingDto[]> => {
-      await findOrThrow(rooms.findById(roomId), 'Room')
-      return (await bookings.findActiveByRoomAndDate(roomId, date)).map(
-        ({ id, seatId, userId, status, bookingDate, timePeriod }) => ({
-          id,
-          seatId,
-          userId,
-          status,
-          bookingDate,
-          timePeriod,
-        }),
-      )
-    },
+  ): Promise<PaginatedResponse<BookingDto>> => {
+    const { items, total } = await bookings.findByUserId(userId, pagination)
+    return { ...pagination, items: items.map(toBookingDto), total }
   }
+
+  const findForRoomOnDate = async (roomId: number, date: string): Promise<BookingDto[]> => {
+    await findRoom(roomId)
+    const roomBookings = await bookings.findActiveByRoomAndDate(roomId, date)
+    return roomBookings.map(toBookingDto)
+  }
+
+  return { create, cancel, findForUser, findForRoomOnDate }
 }
 
 export type BookingsService = ReturnType<typeof createBookingsService>
