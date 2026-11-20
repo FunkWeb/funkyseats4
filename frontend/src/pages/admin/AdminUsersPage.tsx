@@ -124,7 +124,7 @@ export default function AdminUsersPage() {
         ) : (
           <DataTable
             columns={columns}
-            data={usersQuery.data ?? []}
+            data={usersQuery.data?.items ?? []}
             getRowKey={(row) => String(row.id)}
             isLoading={usersQuery.isPending}
             emptyMessage="Ingen brukere funnet."
