@@ -1,0 +1,28 @@
+.description {
+  margin: var(--space-2) 0 var(--space-6);
+  color: var(--color-text-muted);
+}
+
+.dateNavigator {
+  margin: var(--space-4) 0;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 12rem), 1fr));
+  gap: var(--space-4);
+  margin: var(--space-6) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.notFound {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.backLink {
+  color: var(--color-primary);
+}

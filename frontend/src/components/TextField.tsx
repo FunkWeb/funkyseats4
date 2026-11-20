@@ -1,23 +1,16 @@
-import { useId, type ChangeEvent } from 'react'
+import { useId, type InputHTMLAttributes } from 'react'
 import styles from './TextField.module.css'
 
-export interface TextFieldProps {
+export interface TextFieldProps extends Omit<
+  InputHTMLAttributes<HTMLInputElement>,
+  'id' | 'className'
+> {
   label: string
-  value: string
-  onChange: (event: ChangeEvent<HTMLInputElement>) => void
   error?: string
   helperText?: string
-  placeholder?: string
 }
 
-export function TextField({
-  label,
-  value,
-  onChange,
-  error,
-  helperText,
-  placeholder,
-}: TextFieldProps) {
+export function TextField({ label, error, helperText, ...inputProps }: TextFieldProps) {
   const id = useId()
   const helperId = `${id}-helper`
   const errorId = `${id}-error`
@@ -28,15 +21,14 @@ export function TextField({
     <div className={styles.field}>
       <label className={styles.label} htmlFor={id}>
         {label}
+        {inputProps.required && <span aria-hidden="true"> *</span>}
       </label>
       <input
+        {...inputProps}
         className={`${styles.input}${error ? ` ${styles.invalid}` : ''}`}
         id={id}
         aria-invalid={Boolean(error)}
         aria-describedby={describedBy}
-        value={value}
-        onChange={onChange}
-        placeholder={placeholder}
       />
       {helperText && (
         <span className={styles.helper} id={helperId}>

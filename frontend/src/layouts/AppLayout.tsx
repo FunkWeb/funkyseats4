@@ -6,17 +6,16 @@ import { useAuth } from '../features/auth/useAuth'
 import styles from './AppLayout.module.css'
 
 const userItems: SidebarItem[] = [
-  { label: 'Seat map', href: '/rooms' },
-  { label: 'Your bookings', href: '/profile' },
+  { label: 'Rom', href: '/rooms' },
+  { label: 'Mine reservasjoner', href: '/profile' },
 ]
 
 const adminItem: SidebarItem = {
-  label: 'Admin panel',
+  label: 'Administrasjon',
   items: [
-    { label: 'Edit rooms', href: '/admin/rooms' },
-    { label: 'Edit seats in room', href: '/admin/seats' },
-    { label: 'Edit seat types', href: '/admin/seat-types' },
-    { label: 'User profiles', href: '/admin/users' },
+    { label: 'Rediger rom', href: '/admin/rooms' },
+    { label: 'Rediger plasser i rom', href: '/admin/seats' },
+    { label: 'Brukerprofiler', href: '/admin/users' },
   ],
 }
 
@@ -56,7 +55,7 @@ export default function AppLayout() {
               disabled={isLoggingOut}
               className={styles.logoutButton}
             >
-              Log out
+              Logg ut
             </Button>
           </div>
         }

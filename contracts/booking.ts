@@ -13,7 +13,4 @@ export interface BookingDto {
   timePeriod: TimePeriod
 }
 
-export type CreateBookingRequest = Pick<
-  BookingDto,
-  'seatId' | 'userId' | 'bookingDate' | 'timePeriod'
->
+export type NewBooking = Pick<BookingDto, 'seatId' | 'bookingDate' | 'timePeriod'>

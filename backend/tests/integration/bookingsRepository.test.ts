@@ -1,11 +1,12 @@
 import { before, beforeEach, describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import type { CreateBookingRequest } from '../../../contracts/booking.js'
 import {
   createBookingsRepository,
   type Booking,
+  type BookingInsert,
   type BookingsRepository,
 } from '../../src/repositories/bookingsRepository.js'
+import { createSeatsRepository } from '../../src/repositories/seatsRepository.js'
 import { useMigratedTestDatabase } from '../testDatabase.js'
 import { createFixtures, type Fixtures } from '../testFixtures.js'
 
@@ -19,10 +20,13 @@ describe('bookingsRepository', () => {
   let bookings: BookingsRepository
   let alice: number
   let bob: number
+  let roomId: number
   let seatA: number
   let seatB: number
+  let otherRoomSeat: number
+  let deletedSeat: number
 
-  const request = (overrides: Partial<CreateBookingRequest> = {}): CreateBookingRequest => ({
+  const request = (overrides: Partial<BookingInsert> = {}): BookingInsert => ({
     seatId: seatA,
     userId: alice,
     bookingDate: DATE,
@@ -30,7 +34,7 @@ describe('bookingsRepository', () => {
     ...overrides,
   })
 
-  const book = (overrides?: Partial<CreateBookingRequest>): Promise<Booking> =>
+  const book = (overrides?: Partial<BookingInsert>): Promise<Booking> =>
     bookings.create(request(overrides))
 
   before(() => {
@@ -39,7 +43,10 @@ describe('bookingsRepository', () => {
   })
 
   beforeEach(async () => {
-    ;({ alice, bob, seatA, seatB } = await fixtures.seedFreshOffice())
+    ;({ alice, bob, roomId, seatA, seatB } = await fixtures.seedFreshOffice())
+    const otherRoomId = await fixtures.storeRoom('room-b')
+    otherRoomSeat = await fixtures.storeSeat(otherRoomId, 'B1')
+    deletedSeat = await fixtures.storeSeat(roomId, 'A3')
   })
 
   it('create returns an ACTIVE booking matching the request', async () => {
@@ -70,12 +77,39 @@ describe('bookingsRepository', () => {
     await book({ userId: bob, timePeriod: 'AFTER_LUNCH' })
     const second = await book({ seatId: seatB })
 
-    assert.deepEqual(await bookings.findByUserId(alice), [first, second])
+    assert.deepEqual((await bookings.findByUserId(alice, { page: 1, pageSize: 20 })).items, [
+      first,
+      second,
+    ])
   })
 
   it('findByUserId returns an empty list when the user has no bookings', async () => {
     await book()
-    assert.deepEqual(await bookings.findByUserId(bob), [])
+    assert.deepEqual((await bookings.findByUserId(bob, { page: 1, pageSize: 20 })).items, [])
+  })
+
+  it('findByUserId splits bookings into pages and counts only that user’s bookings', async () => {
+    const first = await book()
+    const second = await book({ timePeriod: 'AFTER_LUNCH' })
+    await book({ userId: bob, seatId: seatB })
+    const third = await book({ bookingDate: OTHER_DATE })
+
+    assert.deepEqual(await bookings.findByUserId(alice, { page: 1, pageSize: 2 }), {
+      items: [first, second],
+      total: 3,
+    })
+    assert.deepEqual(await bookings.findByUserId(alice, { page: 2, pageSize: 2 }), {
+      items: [third],
+      total: 3,
+    })
+  })
+
+  it('findByUserId returns no items for a page past the last one', async () => {
+    await book()
+    assert.deepEqual(await bookings.findByUserId(alice, { page: 2, pageSize: 20 }), {
+      items: [],
+      total: 1,
+    })
   })
 
   it('findBySeatAndDate excludes other seats and other dates, ordered by id', async () => {
@@ -94,6 +128,21 @@ describe('bookingsRepository', () => {
     const afternoon = await book({ seatId: seatB, timePeriod: 'AFTER_LUNCH' })
 
     assert.deepEqual(await bookings.findByUserIdAndDate(alice, DATE), [morning, afternoon])
+  })
+
+  it('findActiveByRoomAndDate includes only active bookings on active seats in that room and date', async () => {
+    const active = await book()
+    const anotherActive = await book({ seatId: seatB, userId: bob, timePeriod: 'AFTER_LUNCH' })
+    const cancelled = await book({ seatId: seatB, bookingDate: DATE })
+    await bookings.updateStatus(cancelled.id, 'CANCELLED')
+    const completed = await book({ seatId: seatB, bookingDate: DATE })
+    await bookings.updateStatus(completed.id, 'COMPLETE')
+    await book({ bookingDate: OTHER_DATE })
+    await book({ seatId: otherRoomSeat })
+    await book({ seatId: deletedSeat })
+    await createSeatsRepository(db()).delete(deletedSeat)
+
+    assert.deepEqual(await bookings.findActiveByRoomAndDate(roomId, DATE), [active, anotherActive])
   })
 
   it('updateStatus persists and returns the new status', async () => {
