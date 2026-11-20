@@ -2,13 +2,16 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { USER_ROLES, type UserDto, type UserRole } from '../../../../contracts/user'
 import { getUsers, updateUserRole } from '../../api/usersApi'
+import { Button } from '../../components/Button'
 import { DataTable, type Column } from '../../components/DataTable'
+import { Modal } from '../../components/Modal'
 import { Notice } from '../../components/Notice'
 import { PageHeader } from '../../components/PageHeader'
 import { SectionHeader } from '../../components/SectionHeader'
 import { Select } from '../../components/Select'
 import { UserIdentity } from '../../components/UserIdentity'
 import { useAuth } from '../../features/auth/useAuth'
+import { errorMessage } from '../../utils/errorMessage'
 import styles from './AdminUsersPage.module.css'
 
 const ROLE_LABELS: Record<UserRole, string> = {
@@ -21,6 +24,11 @@ const ROLE_OPTIONS = USER_ROLES.map((role) => ({
   value: role,
   label: ROLE_LABELS[role],
 }))
+
+interface PendingRoleChange {
+  user: UserDto
+  role: UserRole
+}
 
 function formatLastLogin(lastLoginAt: string | null): string {
   if (!lastLoginAt) {
@@ -36,8 +44,7 @@ function formatLastLogin(lastLoginAt: string | null): string {
 export default function AdminUsersPage() {
   const { user: currentUser } = useAuth()
   const queryClient = useQueryClient()
-  const [roleError, setRoleError] = useState<string | null>(null)
-  const [pendingUserId, setPendingUserId] = useState<number | null>(null)
+  const [pendingChange, setPendingChange] = useState<PendingRoleChange | null>(null)
 
   const usersQuery = useQuery({
     queryKey: ['users'],
@@ -46,20 +53,23 @@ export default function AdminUsersPage() {
 
   const updateRoleMutation = useMutation({
     mutationFn: ({ id, role }: { id: number; role: UserRole }) => updateUserRole(id, { role }),
-    onMutate: ({ id }) => {
-      setRoleError(null)
-      setPendingUserId(id)
-    },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['users'] })
     },
-    onError: () => {
-      setRoleError('Kunne ikke oppdatere brukerrollen. Prøv igjen.')
-    },
-    onSettled: () => {
-      setPendingUserId(null)
-    },
   })
+
+  function closeConfirm() {
+    updateRoleMutation.reset()
+    setPendingChange(null)
+  }
+
+  function confirmRoleChange() {
+    if (!pendingChange) return
+    updateRoleMutation.mutate(
+      { id: pendingChange.user.id, role: pendingChange.role },
+      { onSuccess: closeConfirm },
+    )
+  }
 
   const columns: Column<UserDto>[] = [
     {
@@ -76,26 +86,21 @@ export default function AdminUsersPage() {
     {
       key: 'role',
       header: 'Rolle',
-      render: (row) => {
-        const isSelf = currentUser?.id === row.id
-        const isUpdating = updateRoleMutation.isPending && pendingUserId === row.id
-
-        return (
-          <Select
-            className={styles.roleSelect}
-            label={`Rolle for ${row.name}`}
-            options={ROLE_OPTIONS}
-            value={row.role}
-            disabled={isSelf || isUpdating}
-            onChange={(value) => {
-              const nextRole = value as UserRole
-              if (nextRole !== row.role) {
-                updateRoleMutation.mutate({ id: row.id, role: nextRole })
-              }
-            }}
-          />
-        )
-      },
+      render: (row) => (
+        <Select
+          className={styles.roleSelect}
+          label={`Rolle for ${row.name}`}
+          options={ROLE_OPTIONS}
+          value={row.role}
+          disabled={currentUser?.id === row.id}
+          onChange={(value) => {
+            const nextRole = value as UserRole
+            if (nextRole !== row.role) {
+              setPendingChange({ user: row, role: nextRole })
+            }
+          }}
+        />
+      ),
     },
     {
       key: 'lastLoginAt',
@@ -110,10 +115,6 @@ export default function AdminUsersPage() {
 
       <section className={styles.section} aria-label="Brukere">
         <SectionHeader title="Brukere" />
-
-        {roleError && (
-          <Notice variant="danger" title="Kunne ikke endre rolle" description={roleError} />
-        )}
 
         {usersQuery.isError ? (
           <Notice
@@ -131,6 +132,44 @@ export default function AdminUsersPage() {
           />
         )}
       </section>
+
+      <Modal
+        open={pendingChange !== null}
+        title="Endre rolle?"
+        onClose={closeConfirm}
+        footer={
+          <>
+            <Button disabled={updateRoleMutation.isPending} onClick={confirmRoleChange}>
+              {updateRoleMutation.isPending ? 'Lagrer…' : 'Endre rolle'}
+            </Button>
+            <Button
+              variant="outline"
+              disabled={updateRoleMutation.isPending}
+              onClick={closeConfirm}
+            >
+              Avbryt
+            </Button>
+          </>
+        }
+      >
+        {pendingChange && (
+          <p>
+            Er du sikker på at du vil endre rollen til <strong>{pendingChange.user.name}</strong>{' '}
+            fra <strong>{ROLE_LABELS[pendingChange.user.role]}</strong> til{' '}
+            <strong>{ROLE_LABELS[pendingChange.role]}</strong>?
+          </p>
+        )}
+        {updateRoleMutation.isError && (
+          <Notice
+            variant="danger"
+            title="Kunne ikke endre rolle"
+            description={errorMessage(
+              updateRoleMutation.error,
+              'Kunne ikke oppdatere brukerrollen. Prøv igjen.',
+            )}
+          />
+        )}
+      </Modal>
     </>
   )
 }
