@@ -45,7 +45,7 @@ export function FeatureIcons({ features, hideLabels = false, className }: Featur
   return (
     <ul
       className={classNames(styles.list, hideLabels && styles.hideLabels, className)}
-      aria-label="Utstyr"
+      aria-label="Funksjoner"
     >
       {features.map((feature) => (
         <li
