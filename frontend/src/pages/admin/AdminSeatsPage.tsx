@@ -79,7 +79,7 @@ export default function AdminSeatsPage() {
     },
     {
       key: 'features',
-      header: 'Utstyr',
+      header: 'Funksjoner',
       render: (seat) => <FeatureIcons features={seat.features} hideLabels />,
     },
     {

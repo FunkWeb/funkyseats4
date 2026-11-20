@@ -52,9 +52,13 @@ export function SeatFormModal({ mode, onClose }: SeatFormModalProps) {
         </>
       }
     >
-      {isFeatureLoading && <Spinner label="Laster utstyr" />}
+      {isFeatureLoading && <Spinner label="Laster funksjoner" />}
       {hasFeatureError && (
-        <Notice variant="danger" title="Kunne ikke hente utstyr" description="Prøv igjen senere." />
+        <Notice
+          variant="danger"
+          title="Kunne ikke hente funksjoner"
+          description="Prøv igjen senere."
+        />
       )}
       {saveMutation.isError && (
         <Notice
