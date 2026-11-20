@@ -1,12 +1,18 @@
 import { Link, useParams, useSearchParams } from 'react-router'
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import type { SeatDto } from '../../../contracts/seat'
 import type { TimePeriod } from '../../../contracts/booking'
+import { Button } from '../components/Button'
 import { DateNavigator } from '../components/DateNavigator'
+import { Modal } from '../components/Modal'
 import { Notice } from '../components/Notice'
 import { PageHeader } from '../components/PageHeader'
 import { SeatCard } from '../components/SeatCard'
 import { Spinner } from '../components/Spinner'
+import { TimeSlotPicker } from '../components/TimeSlotPicker'
 import { useAuth } from '../features/auth/useAuth'
+import { useCancelBooking } from '../features/bookings/useCancelBooking'
+import { useCreateBooking } from '../features/bookings/useCreateBooking'
 import { useRoomBookings } from '../features/bookings/useRoomBookings'
 import { useRooms } from '../features/rooms/useRooms'
 import { getSeatAvailability } from '../features/seats/seatAvailability'
@@ -20,6 +26,15 @@ const PERIOD_LABELS: Record<TimePeriod, string> = {
   ALL_DAY: 'Hele dagen',
 }
 
+function isConflictError(error: unknown): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'status' in error &&
+    (error as { status?: unknown }).status === 409
+  )
+}
+
 export default function SeatViewPage() {
   const { slug } = useParams()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -31,6 +46,14 @@ export default function SeatViewPage() {
   const selectedDate = room ? getValidBookingDate(dateParam, today, room.maxDaysAhead) : today
   const seatsQuery = useRoomSeats(room?.id)
   const bookingsQuery = useRoomBookings(room?.id, selectedDate)
+  const createBookingMutation = useCreateBooking(room?.id, selectedDate)
+  const cancelBookingMutation = useCancelBooking(room?.id, selectedDate)
+
+  const [bookingSeat, setBookingSeat] = useState<SeatDto | null>(null)
+  const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod | null>(null)
+  const [bookingError, setBookingError] = useState<string | null>(null)
+  const [cancelError, setCancelError] = useState<string | null>(null)
+  const [cancellingBookingId, setCancellingBookingId] = useState<number | null>(null)
 
   const setDate = useCallback(
     (date: string) => {
@@ -56,6 +79,63 @@ export default function SeatViewPage() {
     a.seatNumber.localeCompare(b.seatNumber, undefined, { numeric: true }),
   )
 
+  function openBookingModal(seat: SeatDto) {
+    setBookingSeat(seat)
+    setSelectedPeriod(null)
+    setBookingError(null)
+    createBookingMutation.reset()
+  }
+
+  function closeBookingModal() {
+    if (createBookingMutation.isPending) return
+    setBookingSeat(null)
+    setSelectedPeriod(null)
+    setBookingError(null)
+  }
+
+  function handleConfirmBooking() {
+    if (!bookingSeat || !selectedPeriod) return
+    setBookingError(null)
+
+    createBookingMutation.mutate(
+      {
+        seatId: bookingSeat.id,
+        bookingDate: selectedDate,
+        timePeriod: selectedPeriod,
+      },
+      {
+        onSuccess: () => {
+          setBookingSeat(null)
+          setSelectedPeriod(null)
+          setBookingError(null)
+        },
+        onError: (error) => {
+          if (isConflictError(error)) {
+            setBookingError(
+              'Plassen er allerede reservert, eller du har allerede en reservasjon i dette tidsrommet.',
+            )
+          } else {
+            setBookingError('Kunne ikke opprette reservasjon. Prøv igjen senere.')
+          }
+        },
+      },
+    )
+  }
+
+  function handleCancelBooking(bookingId: number) {
+    setCancelError(null)
+    setCancellingBookingId(bookingId)
+
+    cancelBookingMutation.mutate(bookingId, {
+      onError: () => {
+        setCancelError('Kunne ikke avbestille reservasjonen. Prøv igjen senere.')
+      },
+      onSettled: () => {
+        setCancellingBookingId(null)
+      },
+    })
+  }
+
   if (roomsQuery.isPending) {
     return <Spinner label="Laster rom" />
   }
@@ -77,6 +157,10 @@ export default function SeatViewPage() {
       </div>
     )
   }
+
+  const bookingSeatAvailability = bookingSeat
+    ? getSeatAvailability(bookingSeat.id, bookingsQuery.data ?? [], user?.id ?? -1)
+    : null
 
   return (
     <>
@@ -112,6 +196,9 @@ export default function SeatViewPage() {
                 description="Prøv igjen senere."
               />
             )}
+            {cancelError && (
+              <Notice variant="danger" title="Avbestilling feilet" description={cancelError} />
+            )}
             <ul className={styles.grid}>
               {seats.map((seat) => {
                 if (bookingsQuery.isPending) {
@@ -129,6 +216,10 @@ export default function SeatViewPage() {
                 )
 
                 if (availability.status === 'yours') {
+                  const bookingId = availability.yourBookingId
+                  const isCancelling =
+                    cancelBookingMutation.isPending && cancellingBookingId === bookingId
+
                   return (
                     <li key={seat.id}>
                       <SeatCard
@@ -141,6 +232,17 @@ export default function SeatViewPage() {
                           availability.yourPeriod
                             ? `Din reservasjon (${PERIOD_LABELS[availability.yourPeriod]})`
                             : 'Din reservasjon'
+                        }
+                        actions={
+                          bookingId !== undefined ? (
+                            <Button
+                              variant="ghost"
+                              disabled={isCancelling}
+                              onClick={() => handleCancelBooking(bookingId)}
+                            >
+                              Avbestill
+                            </Button>
+                          ) : undefined
                         }
                       />
                     </li>
@@ -173,6 +275,11 @@ export default function SeatViewPage() {
                         features={[]}
                         freeLabel="Delvis ledig"
                         status={freeHalfLabel}
+                        actions={
+                          <Button variant="primary" onClick={() => openBookingModal(seat)}>
+                            Reserver
+                          </Button>
+                        }
                       />
                     </li>
                   )
@@ -180,13 +287,58 @@ export default function SeatViewPage() {
 
                 return (
                   <li key={seat.id}>
-                    <SeatCard seatName={seat.seatNumber} features={[]} freeLabel="Ledig" />
+                    <SeatCard
+                      seatName={seat.seatNumber}
+                      features={[]}
+                      freeLabel="Ledig"
+                      actions={
+                        <Button variant="primary" onClick={() => openBookingModal(seat)}>
+                          Reserver
+                        </Button>
+                      }
+                    />
                   </li>
                 )
               })}
             </ul>
           </>
         ))}
+
+      <Modal
+        open={bookingSeat !== null}
+        title={bookingSeat ? bookingSeat.seatNumber : ''}
+        onClose={closeBookingModal}
+        footer={
+          <>
+            <Button
+              variant="ghost"
+              disabled={createBookingMutation.isPending}
+              onClick={closeBookingModal}
+            >
+              Avbryt
+            </Button>
+            <Button
+              variant="primary"
+              disabled={selectedPeriod === null || createBookingMutation.isPending}
+              onClick={handleConfirmBooking}
+            >
+              Bekreft reservasjon
+            </Button>
+          </>
+        }
+      >
+        {bookingError && (
+          <Notice variant="danger" title="Kunne ikke reservere" description={bookingError} />
+        )}
+        {bookingSeatAvailability && (
+          <TimeSlotPicker
+            value={selectedPeriod}
+            availablePeriods={bookingSeatAvailability.availablePeriods}
+            onChange={setSelectedPeriod}
+            disabled={createBookingMutation.isPending}
+          />
+        )}
+      </Modal>
     </>
   )
 }
