@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router'
 import type { RoomDto } from '../../../../contracts/room'
 import { Button } from '../../components/Button'
 import { PlusIcon } from '../../components/icons/PlusIcon'
@@ -13,6 +14,7 @@ import styles from './AdminRoomsPage.module.css'
 
 export default function AdminRoomsPage() {
   const { data: rooms, isPending, isError } = useRooms()
+  const navigate = useNavigate()
   const [formMode, setFormMode] = useState<RoomFormMode | null>(null)
   const [deletingRoom, setDeletingRoom] = useState<RoomDto | null>(null)
 
@@ -46,6 +48,7 @@ export default function AdminRoomsPage() {
                   room={room}
                   onEdit={() => setFormMode({ type: 'edit', room })}
                   onDelete={() => setDeletingRoom(room)}
+                  onManageSeats={() => navigate(`/admin/seats?room=${room.id}`)}
                 />
               </li>
             ))}

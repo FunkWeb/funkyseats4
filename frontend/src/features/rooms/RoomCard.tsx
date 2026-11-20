@@ -9,9 +9,10 @@ export interface RoomCardProps {
   room: RoomDto
   onEdit: () => void
   onDelete: () => void
+  onManageSeats: () => void
 }
 
-export function RoomCard({ room, onEdit, onDelete }: RoomCardProps) {
+export function RoomCard({ room, onEdit, onDelete, onManageSeats }: RoomCardProps) {
   return (
     <Card className={styles.card}>
       <div className={styles.heading}>
@@ -26,6 +27,9 @@ export function RoomCard({ room, onEdit, onDelete }: RoomCardProps) {
       {room.description && <p className={styles.description}>{room.description}</p>}
       <Button variant="outline" onClick={onEdit}>
         Rediger rom
+      </Button>
+      <Button variant="outline" onClick={onManageSeats}>
+        Rediger plasser
       </Button>
     </Card>
   )
