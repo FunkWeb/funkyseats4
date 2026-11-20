@@ -118,6 +118,7 @@ export default function AdminSeatsPage() {
   return (
     <>
       <PageHeader title="Admin panel" />
+
       <section className={styles.section} aria-label="Plasser">
         <SectionHeader
           title="Plasser"
@@ -153,25 +154,21 @@ export default function AdminSeatsPage() {
               onChange={changeRoom}
             />
 
-            {seatsQuery.isPending && <Spinner label="Laster plasser" />}
-            {seatsQuery.isError && (
+            {seatsQuery.isError ? (
               <Notice
                 variant="danger"
                 title="Kunne ikke hente plasser"
                 description="Prøv igjen senere."
               />
+            ) : (
+              <DataTable
+                columns={columns}
+                data={seats}
+                getRowKey={(seat) => String(seat.id)}
+                isLoading={seatsQuery.isPending}
+                emptyMessage="Dette rommet har ingen plasser ennå."
+              />
             )}
-            {seatsQuery.isSuccess &&
-              (seats.length === 0 ? (
-                <Notice title="Ingen plasser" description="Dette rommet har ingen plasser ennå." />
-              ) : (
-                <DataTable
-                  columns={columns}
-                  data={seats}
-                  getRowKey={(seat) => String(seat.id)}
-                  emptyMessage="Ingen plasser."
-                />
-              ))}
           </>
         )}
       </section>
