@@ -6,6 +6,7 @@ export interface SeatAvailability {
   status: SeatAvailabilityStatus
   availablePeriods: TimePeriod[]
   yourPeriod?: TimePeriod
+  yourBookingId?: number
 }
 
 export function getSeatAvailability(
@@ -41,6 +42,7 @@ export function getSeatAvailability(
       status: 'yours',
       availablePeriods,
       yourPeriod: yourBooking.timePeriod,
+      yourBookingId: yourBooking.id,
     }
   }
 
