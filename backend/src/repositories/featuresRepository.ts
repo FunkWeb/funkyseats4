@@ -1,5 +1,10 @@
 import type { Pool, ResultSetHeader, RowDataPacket } from 'mysql2/promise'
-import type { CreateFeatureRequest, FeatureDto } from '../../../contracts/feature.js'
+import type {
+  CreateFeatureRequest,
+  FeatureDto,
+  UpdateFeatureRequest,
+} from '../../../contracts/feature.js'
+import { pickColumns } from '../database/columns.js'
 import type { QueryParams } from '../database/queryParams.js'
 
 type FeatureRow = FeatureDto & RowDataPacket
@@ -15,6 +20,7 @@ const FEATURE_COLUMNS = `
     features.category`
 
 const SELECT_FEATURE = `SELECT ${FEATURE_COLUMNS} FROM features`
+const WRITABLE_FIELDS = ['name', 'description', 'iconPath', 'category'] as const
 
 export const createFeaturesRepository = (db: Pool) => {
   const selectFeatures = async (
@@ -64,6 +70,21 @@ export const createFeaturesRepository = (db: Pool) => {
         feature,
       )
       return result.insertId
+    },
+    update: async (id: number, input: UpdateFeatureRequest): Promise<boolean> => {
+      const { assignments, params } = pickColumns(WRITABLE_FIELDS, input)
+      if (assignments.length === 0) return false
+      const [result] = await db.execute<ResultSetHeader>(
+        `UPDATE features SET ${assignments.join(', ')} WHERE id = :id`,
+        { ...params, id },
+      )
+      return result.affectedRows === 1
+    },
+    delete: async (id: number): Promise<boolean> => {
+      const [result] = await db.execute<ResultSetHeader>('DELETE FROM features WHERE id = :id', {
+        id,
+      })
+      return result.affectedRows === 1
     },
     attachToSeat: async (seatId: number, featureId: number) => {
       await db.execute(

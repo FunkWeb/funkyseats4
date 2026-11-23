@@ -2,9 +2,16 @@ import {
   FEATURE_CATEGORIES,
   isValidIconPath,
   type CreateFeatureRequest,
+  type UpdateFeatureRequest,
 } from '../../../contracts/feature.js'
 import { ValidationError } from '../errors/appErrors.js'
-import { asRecord, parseNonEmptyString, parseOneOf, parseOptionalString } from './parsers.js'
+import {
+  asRecord,
+  parseIfPresent,
+  parseNonEmptyString,
+  parseOneOf,
+  parseOptionalString,
+} from './parsers.js'
 
 const parseIconPath = (value: unknown): string | null => {
   const parsed = parseOptionalString(value, 'iconPath')
@@ -24,6 +31,20 @@ export const parseCreateFeature = (body: unknown): CreateFeatureRequest => {
     description: parseOptionalString(description, 'description'),
     iconPath: parseIconPath(iconPath),
     category: parseOneOf(FEATURE_CATEGORIES, category, 'category'),
+  }
+}
+
+export const parseUpdateFeature = (body: unknown): UpdateFeatureRequest => {
+  const fields = asRecord(body)
+  return {
+    name: parseIfPresent(fields.name, (value) => parseNonEmptyString(value, 'name')),
+    description: parseIfPresent(fields.description, (value) =>
+      parseOptionalString(value, 'description'),
+    ),
+    iconPath: parseIfPresent(fields.iconPath, parseIconPath),
+    category: parseIfPresent(fields.category, (value) =>
+      parseOneOf(FEATURE_CATEGORIES, value, 'category'),
+    ),
   }
 }
 

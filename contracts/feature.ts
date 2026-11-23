@@ -11,6 +11,7 @@ export interface FeatureDto {
 }
 
 export type CreateFeatureRequest = Omit<FeatureDto, 'id'>
+export type UpdateFeatureRequest = Partial<CreateFeatureRequest>
 
 export const ICON_PATH_PATTERN = /^\/icons\/[A-Za-z0-9_-]+\.svg$/
 

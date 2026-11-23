@@ -6,15 +6,52 @@ import type { FeaturesService } from '../services/featuresService.js'
 import { requireRole } from '../auth/requireRole.js'
 import { PayloadTooLargeError, UnsupportedMediaTypeError } from '../errors/appErrors.js'
 import { isEntityTooLarge } from '../errors/errorHandler.js'
-import { parseCreateFeature, validateSvgContent } from '../validation/featureRequests.js'
+import { parseId } from '../validation/parsers.js'
+import {
+  parseCreateFeature,
+  parseUpdateFeature,
+  validateSvgContent,
+} from '../validation/featureRequests.js'
 
 export interface FeaturesRoutesDeps {
-  featuresService: Pick<FeaturesService, 'findAll' | 'create'>
+  featuresService: Pick<FeaturesService, 'findAll' | 'create' | 'update' | 'delete'>
   requireAuth: RequestHandler
   uploadsDir: string
 }
 
 const MAX_ICON_BYTES = 100 * 1024
+const UPLOADED_ICON_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.svg$/i
+
+const isMissingPath = (error: unknown) =>
+  typeof error === 'object' && error !== null && 'code' in error && error.code === 'ENOENT'
+
+const removeUploadedIcon = async (uploadsDir: string, iconPath: string | null) => {
+  if (!iconPath) return
+  const filename = path.basename(iconPath)
+  if (!UPLOADED_ICON_PATTERN.test(filename)) return
+
+  const iconsDir = path.resolve(uploadsDir, 'icons')
+  const shippedIconsDir = path.resolve(process.cwd(), 'backend', 'assets', 'icons')
+  if (iconsDir.toLowerCase() === shippedIconsDir.toLowerCase()) return
+
+  let realIconsDir: string
+  try {
+    realIconsDir = await fs.realpath(iconsDir)
+  } catch (error) {
+    if (isMissingPath(error)) return
+    throw error
+  }
+
+  let realShippedIconsDir = shippedIconsDir
+  try {
+    realShippedIconsDir = await fs.realpath(shippedIconsDir)
+  } catch (error) {
+    if (!isMissingPath(error)) throw error
+  }
+  if (realIconsDir.toLowerCase() === realShippedIconsDir.toLowerCase()) return
+
+  await fs.rm(path.join(realIconsDir, filename), { force: true })
+}
 
 const requireSvgContentType: RequestHandler = (req, _res, next) => {
   if (!req.is('image/svg+xml')) {
@@ -47,6 +84,21 @@ export const createFeaturesRoutes = ({
   router.post('/', requireRole('ADMIN'), async (req, res) => {
     const id = await featuresService.create(parseCreateFeature(req.body))
     res.status(201).json({ id })
+  })
+
+  router.patch('/:id', requireRole('ADMIN'), async (req, res) => {
+    const featureId = parseId(req.params.id, 'id')
+    const oldIconPath = await featuresService.update(featureId, parseUpdateFeature(req.body))
+    if (req.body?.iconPath !== undefined && req.body.iconPath !== oldIconPath) {
+      await removeUploadedIcon(uploadsDir, oldIconPath)
+    }
+    res.sendStatus(204)
+  })
+
+  router.delete('/:id', requireRole('ADMIN'), async (req, res) => {
+    const oldIconPath = await featuresService.delete(parseId(req.params.id, 'id'))
+    await removeUploadedIcon(uploadsDir, oldIconPath)
+    res.sendStatus(204)
   })
 
   router.post(
