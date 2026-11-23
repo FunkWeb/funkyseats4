@@ -244,11 +244,7 @@ describe('featuresRoutes /features/icons', () => {
   })
 
   it('accepts default and uploaded iconPaths when creating a feature', async () => {
-    for (const iconPath of [
-      '/icons/linux.svg',
-      '/icons/3f2a9c1e-1b2c-4d5e.svg',
-      null,
-    ]) {
+    for (const iconPath of ['/icons/linux.svg', '/icons/3f2a9c1e-1b2c-4d5e.svg', null]) {
       const res = await fetch(`${baseUrl}/features`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
