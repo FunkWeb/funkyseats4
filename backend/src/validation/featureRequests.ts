@@ -2,7 +2,7 @@ import { FEATURE_CATEGORIES, type CreateFeatureRequest } from '../../../contract
 import { ValidationError } from '../errors/appErrors.js'
 import { asRecord, parseNonEmptyString, parseOneOf, parseOptionalString } from './parsers.js'
 
-const ICON_PATH_PATTERN = /^\/(icons|api\/uploads\/icons)\/[A-Za-z0-9_-]+\.svg$/
+const ICON_PATH_PATTERN = /^\/icons\/[A-Za-z0-9_-]+\.svg$/
 
 const parseIconPath = (value: unknown): string | null => {
   const parsed = parseOptionalString(value, 'iconPath')
@@ -10,7 +10,7 @@ const parseIconPath = (value: unknown): string | null => {
     return null
   }
   if (!ICON_PATH_PATTERN.test(parsed)) {
-    throw new ValidationError('iconPath must be an .svg file under /icons/ or /api/uploads/icons/')
+    throw new ValidationError('iconPath must be an .svg file under /icons/')
   }
   return parsed
 }

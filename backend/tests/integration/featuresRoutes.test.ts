@@ -43,7 +43,7 @@ describe('featuresRoutes /features/icons', () => {
 
     const app = express()
     app.use(express.json())
-    app.use('/uploads/icons', serveUploadedIcons(uploadsDir))
+    app.use('/icons', serveUploadedIcons(uploadsDir))
     app.use(
       '/features',
       createFeaturesRoutes({
@@ -85,7 +85,7 @@ describe('featuresRoutes /features/icons', () => {
 
     assert.equal(res.status, 201)
     const body = (await res.json()) as { iconPath: string }
-    assert.match(body.iconPath, /^\/api\/uploads\/icons\/[a-f0-9-]+\.svg$/)
+    assert.match(body.iconPath, /^\/icons\/[a-f0-9-]+\.svg$/)
 
     const filename = path.basename(body.iconPath)
     const savedContent = await fs.readFile(path.join(uploadsDir, 'icons', filename), 'utf8')
@@ -187,7 +187,7 @@ describe('featuresRoutes /features/icons', () => {
     })
     const { iconPath } = (await uploadRes.json()) as { iconPath: string }
 
-    const res = await fetch(`${baseUrl}${iconPath.replace(/^\/api/, '')}`)
+    const res = await fetch(`${baseUrl}${iconPath}`)
 
     assert.equal(res.status, 200)
     assert.equal(res.headers.get('content-type'), 'image/svg+xml')
@@ -229,7 +229,7 @@ describe('featuresRoutes /features/icons', () => {
     const badPaths = [
       '/icons/x.svg) ; background:url(//evil.example.com)',
       '/icons/%2e%2e/secret.svg',
-      '/api/uploads/icons/../../etc/passwd',
+      '/icons/../../etc/passwd',
       '/icons/icon.png',
     ]
 
@@ -246,7 +246,7 @@ describe('featuresRoutes /features/icons', () => {
   it('accepts default and uploaded iconPaths when creating a feature', async () => {
     for (const iconPath of [
       '/icons/linux.svg',
-      '/api/uploads/icons/3f2a9c1e-1b2c-4d5e.svg',
+      '/icons/3f2a9c1e-1b2c-4d5e.svg',
       null,
     ]) {
       const res = await fetch(`${baseUrl}/features`, {

@@ -1,3 +1,4 @@
+import path from 'node:path'
 import express from 'express'
 import cookieParser from 'cookie-parser'
 import { config } from './config/index.js'
@@ -76,7 +77,8 @@ app.use(
   }),
 )
 
-app.use('/uploads/icons', serveUploadedIcons(config.uploadsDir))
+app.use('/icons', serveUploadedIcons(config.uploadsDir))
+app.use('/icons', serveUploadedIcons(path.resolve('backend/assets')))
 
 app.use(
   '/features',
