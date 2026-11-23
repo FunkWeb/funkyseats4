@@ -125,4 +125,21 @@ describe('createConfig', () => {
       })
     }
   })
+
+  describe('devLogin', () => {
+    it('is disabled by default', () => {
+      assert.equal(createConfig(validEnv).devLogin, false)
+    })
+
+    it('is enabled when DEV_LOGIN is true outside production', () => {
+      assert.equal(createConfig({ ...validEnv, DEV_LOGIN: 'true' }).devLogin, true)
+    })
+
+    it('stays disabled in production even when DEV_LOGIN is true', () => {
+      assert.equal(
+        createConfig({ ...validEnv, NODE_ENV: 'production', DEV_LOGIN: 'true' }).devLogin,
+        false,
+      )
+    })
+  })
 })

@@ -16,6 +16,7 @@ import { createSeatsService } from './services/seatsService.js'
 import { createUsersService } from './services/usersService.js'
 import { buildGoogleAuthUrl, fetchGoogleProfile } from './auth/googleOAuth.js'
 import { createAuthRoutes } from './routes/authRoutes.js'
+import { createDevAuthRoutes } from './routes/devAuthRoutes.js'
 import { createBookingsRoutes } from './routes/bookingsRoutes.js'
 import { createFeaturesRoutes } from './routes/featuresRoutes.js'
 import { createRoomsRoutes } from './routes/roomsRoutes.js'
@@ -77,6 +78,10 @@ app.use(
     callbackPath: new URL(config.google.callbackUrl).pathname,
   }),
 )
+
+if (config.devLogin) {
+  app.use('/auth', apiLimiter, createDevAuthRoutes({ users, session }))
+}
 
 app.use('/icons', serveUploadedIcons(config.uploadsDir))
 app.use('/icons', serveUploadedIcons(path.resolve('backend/assets')))

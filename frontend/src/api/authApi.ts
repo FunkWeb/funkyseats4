@@ -1,4 +1,4 @@
-import type { UserDto } from '../../../contracts/user'
+import type { UserDto, UserRole } from '../../../contracts/user'
 import { get, post, UnauthorizedError } from './httpClient'
 
 export const googleLoginUrl = '/api/auth/google'
@@ -12,4 +12,15 @@ export function getMe(): Promise<UserDto | null> {
 
 export function logout(): Promise<void> {
   return post<void>('/auth/logout')
+}
+
+export function isDevLoginEnabled(): Promise<boolean> {
+  return get<void>('/auth/dev-login').then(
+    () => true,
+    () => false,
+  )
+}
+
+export function devLogin(role: UserRole): Promise<void> {
+  return post<void>('/auth/dev-login', { role })
 }
