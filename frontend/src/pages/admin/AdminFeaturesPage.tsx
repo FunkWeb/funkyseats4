@@ -53,7 +53,7 @@ export default function AdminFeaturesPage() {
               return (
                 <div key={category} className={styles.categorySection}>
                   <SectionHeader title={CATEGORY_TITLES[category]} />
-                  <FeatureGroup title="" features={categoryFeatures} />
+                  <FeatureGroup features={categoryFeatures} />
                 </div>
               )
             })}
