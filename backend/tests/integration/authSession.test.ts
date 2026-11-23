@@ -72,6 +72,7 @@ describe('auth session', () => {
         session,
         requireAuth: createRequireAuth({ session, users }),
         frontendUrl: 'http://frontend.example',
+        callbackPath: '/auth/google/callback',
       }),
     )
     app.use(errorHandler)
@@ -143,4 +144,63 @@ describe('auth session', () => {
   it('logout without a session succeeds', async () => {
     assert.equal((await logout()).status, 204)
   })
+})
+
+describe('oauth state cookie path', () => {
+  const startAuthServer = async (callbackPath: string) => {
+    const session = createSession({
+      secret: 'session-secret-of-32-characters!!',
+      lifetimeMinutes: 5,
+      secure: false,
+    })
+    const app = express()
+    app.use(cookieParser())
+    app.use(
+      '/auth',
+      createAuthRoutes({
+        googleOAuth: { getAuthorizationUrl: (state) => `https://accounts.example/?state=${state}` },
+        authService: {
+          loginWithGoogle: async () => assert.fail('login should not be reached'),
+          logout: async () => {},
+        },
+        session,
+        requireAuth: (_req, _res, next) => next(),
+        frontendUrl: 'http://frontend.example',
+        callbackPath,
+      }),
+    )
+    app.use(errorHandler)
+
+    const server = app.listen(0)
+    await new Promise((resolve) => server.once('listening', resolve))
+    return {
+      baseUrl: `http://127.0.0.1:${(server.address() as AddressInfo).port}`,
+      close: () => new Promise((resolve) => server.close(resolve)),
+    }
+  }
+
+  const oauthStateCookie = (response: Response) => {
+    const cookie = response.headers.getSetCookie().find((value) => value.startsWith('oauth_state='))
+    assert.ok(cookie, 'response should set the oauth_state cookie')
+    return cookie
+  }
+
+  for (const callbackPath of ['/auth/google/callback', '/api/auth/google/callback']) {
+    it(`is set and cleared on ${callbackPath}`, async () => {
+      const server = await startAuthServer(callbackPath)
+      try {
+        const start = await fetch(`${server.baseUrl}/auth/google`, { redirect: 'manual' })
+        assert.match(oauthStateCookie(start), new RegExp(`; Path=${callbackPath}(;|$)`))
+
+        const callback = await fetch(`${server.baseUrl}/auth/google/callback?state=wrong&code=x`, {
+          redirect: 'manual',
+          headers: { cookie: 'oauth_state=other' },
+        })
+        assert.equal(callback.status, 403)
+        assert.match(oauthStateCookie(callback), new RegExp(`; Path=${callbackPath}(;|$)`))
+      } finally {
+        await server.close()
+      }
+    })
+  }
 })

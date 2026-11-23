@@ -73,6 +73,7 @@ app.use(
     session,
     requireAuth,
     frontendUrl: config.frontendUrl,
+    callbackPath: new URL(config.google.callbackUrl).pathname,
   }),
 )
 
