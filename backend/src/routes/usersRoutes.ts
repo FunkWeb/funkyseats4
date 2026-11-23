@@ -1,7 +1,7 @@
 import { Router, type RequestHandler } from 'express'
 import { requireRole } from '../auth/requireRole.js'
 import type { UsersService } from '../services/usersService.js'
-import { parseId } from '../validation/parsers.js'
+import { parseId, parsePagination } from '../validation/parsers.js'
 import { parseUpdateUserRole } from '../validation/userRequests.js'
 
 export interface UsersRoutesDeps {
@@ -13,8 +13,8 @@ export const createUsersRoutes = ({ usersService, requireAuth }: UsersRoutesDeps
   const router = Router()
   router.use(requireAuth, requireRole('ADMIN'))
 
-  router.get('/', async (_req, res) => {
-    res.json(await usersService.findAll())
+  router.get('/', async (req, res) => {
+    res.json(await usersService.findAll(parsePagination(req.query)))
   })
 
   router.patch('/:id/role', async (req, res) => {

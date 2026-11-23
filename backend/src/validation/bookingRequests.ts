@@ -1,5 +1,4 @@
-import { TIME_PERIODS } from '../../../contracts/booking.js'
-import type { NewBooking } from '../services/bookingsService.js'
+import { TIME_PERIODS, type NewBooking } from '../../../contracts/booking.js'
 import { asRecord, parseId, parseIsoDate, parseOneOf } from './parsers.js'
 
 export const parseNewBooking = (body: unknown): NewBooking => {

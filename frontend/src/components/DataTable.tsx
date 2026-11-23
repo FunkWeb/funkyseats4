@@ -23,7 +23,7 @@ export function DataTable<T>({
   data,
   getRowKey,
   isLoading = false,
-  emptyMessage = 'No results',
+  emptyMessage = 'Ingen resultater',
   className,
 }: DataTableProps<T>) {
   const containerClassName = classNames(styles.container, className)

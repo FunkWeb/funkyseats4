@@ -16,9 +16,9 @@ export interface TimeSlotPickerProps {
 }
 
 const periodLabels: Record<TimePeriod, string> = {
-  BEFORE_LUNCH: 'Before lunch',
-  AFTER_LUNCH: 'After lunch',
-  ALL_DAY: 'All day',
+  BEFORE_LUNCH: 'Før lunsj',
+  AFTER_LUNCH: 'Etter lunsj',
+  ALL_DAY: 'Hele dagen',
 }
 
 export function TimeSlotPicker({
@@ -26,7 +26,7 @@ export function TimeSlotPicker({
   availablePeriods,
   onChange,
   onClose,
-  label = 'Booking period',
+  label = 'Tidsrom',
   disabled = false,
   unavailableReason,
   className,
@@ -75,7 +75,7 @@ export function TimeSlotPicker({
         </div>
       </fieldset>
       {onClose && (
-        <button type="button" className={styles.close} aria-label="Close" onClick={onClose}>
+        <button type="button" className={styles.close} aria-label="Lukk" onClick={onClose}>
           <CloseIcon />
         </button>
       )}

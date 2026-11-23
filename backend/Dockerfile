@@ -20,7 +20,9 @@ COPY package*.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 
 COPY --from=build /app/dist ./dist
+COPY backend/assets ./backend/assets
 
+RUN mkdir -p /app/uploads/icons && chown -R node:node /app/uploads
 USER node
 
 CMD ["node", "dist/backend/src/server.js"]

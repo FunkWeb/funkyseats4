@@ -1,6 +1,6 @@
 import { before, beforeEach, describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import type { BookingStatus, TimePeriod } from '../../../contracts/booking.js'
+import type { BookingStatus, NewBooking, TimePeriod } from '../../../contracts/booking.js'
 import {
   type AppError,
   ConflictError,
@@ -14,11 +14,7 @@ import {
 } from '../../src/repositories/bookingsRepository.js'
 import { createRoomsRepository } from '../../src/repositories/roomsRepository.js'
 import { createSeatsRepository } from '../../src/repositories/seatsRepository.js'
-import {
-  createBookingsService,
-  type BookingsService,
-  type NewBooking,
-} from '../../src/services/bookingsService.js'
+import { createBookingsService, type BookingsService } from '../../src/services/bookingsService.js'
 import { addDays } from '../../src/services/common.js'
 import { useMigratedTestDatabase } from '../testDatabase.js'
 import { createFixtures, type Fixtures } from '../testFixtures.js'
@@ -55,9 +51,13 @@ describe('bookingsService', () => {
   let service: BookingsService
   let alice: number
   let bob: number
+  let roomId: number
   let seatA: number
   let seatB: number
+  let otherRoomSeat: number
+  let deletedSeat: number
   let seatInDeletedRoom: number
+  let seats: ReturnType<typeof createSeatsRepository>
 
   const book = (userId: number, overrides: Partial<NewBooking> = {}) =>
     service.create(userId, {
@@ -68,7 +68,9 @@ describe('bookingsService', () => {
     })
 
   const statusesOf = async (userId: number) =>
-    (await bookings.findByUserId(userId)).map(({ status }) => status)
+    (await bookings.findByUserId(userId, { page: 1, pageSize: 100 })).items.map(
+      ({ status }) => status,
+    )
 
   const assertBookingRejected = async (
     userId: number,
@@ -82,16 +84,20 @@ describe('bookingsService', () => {
   before(() => {
     fixtures = createFixtures(db())
     bookings = createBookingsRepository(db())
+    seats = createSeatsRepository(db())
     service = createBookingsService({
       bookings,
-      seats: createSeatsRepository(db()),
+      seats,
       rooms: createRoomsRepository(db()),
       today: () => TODAY,
     })
   })
 
   beforeEach(async () => {
-    ;({ alice, bob, seatA, seatB } = await fixtures.seedFreshOffice(MAX_DAYS_AHEAD))
+    ;({ alice, bob, roomId, seatA, seatB } = await fixtures.seedFreshOffice(MAX_DAYS_AHEAD))
+    const otherRoomId = await fixtures.storeRoom('other-room', MAX_DAYS_AHEAD)
+    otherRoomSeat = await fixtures.storeSeat(otherRoomId, 'B1')
+    deletedSeat = await fixtures.storeSeat(roomId, 'A3')
     const deletedRoom = await fixtures.storeRoom('deleted-room')
     seatInDeletedRoom = await fixtures.storeSeat(deletedRoom, 'D1')
     await fixtures.deleteRoom(deletedRoom)
@@ -221,5 +227,36 @@ describe('bookingsService', () => {
 
   it('cancel rejects an unknown booking', async () => {
     await assert.rejects(service.cancel(alice, UNKNOWN_ID), NotFoundError)
+  })
+
+  it('findForRoomOnDate returns only active bookings on active seats in the requested room and date', async () => {
+    const cancelled = await book(alice)
+    await service.cancel(alice, cancelled.id)
+    const active = await book(bob)
+    const completed = await book(alice, { seatId: seatB, timePeriod: 'AFTER_LUNCH' })
+    await bookings.updateStatus(completed.id, 'COMPLETE')
+    await book(alice, { seatId: deletedSeat })
+    await seats.delete(deletedSeat)
+    await book(bob, { seatId: otherRoomSeat, timePeriod: 'AFTER_LUNCH' })
+    await book(alice, { seatId: seatB, bookingDate: addDays(TODAY, 1) })
+
+    assert.deepEqual(await service.findForRoomOnDate(roomId, TODAY), [
+      {
+        id: active.id,
+        seatId: seatA,
+        userId: bob,
+        status: 'ACTIVE',
+        bookingDate: TODAY,
+        timePeriod: 'BEFORE_LUNCH',
+      },
+    ])
+  })
+
+  it('findForRoomOnDate returns an empty list when the room has no bookings on that date', async () => {
+    assert.deepEqual(await service.findForRoomOnDate(roomId, TODAY), [])
+  })
+
+  it('findForRoomOnDate rejects an unknown room', async () => {
+    await assert.rejects(service.findForRoomOnDate(UNKNOWN_ID, TODAY), NotFoundError)
   })
 })

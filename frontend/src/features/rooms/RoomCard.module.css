@@ -1,0 +1,26 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-4);
+  height: 100%;
+  padding: var(--space-4);
+}
+
+.heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.name {
+  margin: var(--space-2) 0 0;
+  font-size: var(--font-size-md);
+}
+
+.description {
+  flex: 1;
+  margin: 0;
+  color: var(--color-text-muted);
+}

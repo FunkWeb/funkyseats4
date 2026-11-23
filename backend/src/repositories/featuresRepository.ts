@@ -4,14 +4,17 @@ import type { QueryParams } from '../database/queryParams.js'
 
 type FeatureRow = FeatureDto & RowDataPacket
 
-const SELECT_FEATURE = `
-  SELECT
+export type SeatFeatureDto = FeatureDto & { seatId: number }
+type SeatFeatureRow = SeatFeatureDto & RowDataPacket
+
+const FEATURE_COLUMNS = `
     features.id,
     features.name,
     features.description,
     features.icon_path AS iconPath,
-    features.category
-  FROM features`
+    features.category`
+
+const SELECT_FEATURE = `SELECT ${FEATURE_COLUMNS} FROM features`
 
 export const createFeaturesRepository = (db: Pool) => {
   const selectFeatures = async (
@@ -42,6 +45,18 @@ export const createFeaturesRepository = (db: Pool) => {
          ORDER BY features.name`,
         { seatId },
       ),
+    findByRoomId: async (roomId: number): Promise<SeatFeatureDto[]> => {
+      const [rows] = await db.execute<SeatFeatureRow[]>(
+        `SELECT seat_features.seat_id AS seatId, ${FEATURE_COLUMNS}
+         FROM features
+         JOIN seat_features ON seat_features.feature_id = features.id
+         JOIN seats ON seats.id = seat_features.seat_id
+         WHERE seats.room_id = :roomId AND seats.deleted_at IS NULL
+         ORDER BY features.name`,
+        { roomId },
+      )
+      return rows
+    },
     create: async (feature: CreateFeatureRequest) => {
       const [result] = await db.execute<ResultSetHeader>(
         `INSERT INTO features (name, description, icon_path, category)

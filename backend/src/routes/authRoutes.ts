@@ -6,7 +6,6 @@ import { ForbiddenError, ValidationError } from '../errors/appErrors.js'
 
 const OAUTH_STATE_COOKIE = 'oauth_state'
 const OAUTH_STATE_MAX_AGE = 10 * 60 * 1000
-const OAUTH_STATE_COOKIE_PATH = '/auth/google/callback'
 
 export interface AuthRoutesDeps {
   googleOAuth: {
@@ -16,6 +15,7 @@ export interface AuthRoutesDeps {
   session: Pick<Session, 'setSessionCookie' | 'clearSessionCookie' | 'readIdentity'>
   requireAuth: RequestHandler
   frontendUrl: string
+  callbackPath: string
   createState?: () => string
 }
 
@@ -25,6 +25,7 @@ export const createAuthRoutes = ({
   session,
   requireAuth,
   frontendUrl,
+  callbackPath,
   createState = () => randomBytes(32).toString('hex'),
 }: AuthRoutesDeps) => {
   const router = Router()
@@ -32,7 +33,7 @@ export const createAuthRoutes = ({
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax' as const,
-    path: OAUTH_STATE_COOKIE_PATH,
+    path: callbackPath,
     maxAge: OAUTH_STATE_MAX_AGE,
   }
 

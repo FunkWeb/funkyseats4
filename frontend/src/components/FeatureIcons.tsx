@@ -1,5 +1,5 @@
 import { useState, type CSSProperties } from 'react'
-import type { FeatureDto } from '../../../contracts/feature'
+import { isValidIconPath, type FeatureDto } from '../../../contracts/feature'
 import { classNames } from '../utils/classNames'
 import styles from './FeatureIcons.module.css'
 import { StarIcon } from './icons/StarIcon'
@@ -10,21 +10,33 @@ export interface FeatureIconsProps {
   className?: string
 }
 
+const BLOB_ID_PATTERN = /^[A-Za-z0-9-]+$/
+
+function isLocalBlobUrl(url: string): boolean {
+  const prefix = `blob:${window.location.origin}/`
+  return url.startsWith(prefix) && BLOB_ID_PATTERN.test(url.slice(prefix.length))
+}
+
+function isSafeIconUrl(url: string): boolean {
+  return isValidIconPath(url) || isLocalBlobUrl(url)
+}
+
 export function FeatureIcon({ iconPath }: { iconPath: string | null }) {
   const [failedIconPath, setFailedIconPath] = useState<string | null>(null)
+  const safeIconPath = iconPath && isSafeIconUrl(iconPath) ? iconPath : null
 
-  if (iconPath && failedIconPath !== iconPath) {
+  if (safeIconPath && failedIconPath !== safeIconPath) {
     return (
       <>
         <span
           className={classNames(styles.icon, styles.maskIcon)}
-          style={{ '--icon-url': `url(${JSON.stringify(iconPath)})` } as CSSProperties}
+          style={{ '--icon-url': `url(${JSON.stringify(safeIconPath)})` } as CSSProperties}
         />
         <img
           className={styles.loadProbe}
-          src={iconPath}
+          src={safeIconPath}
           alt=""
-          onError={() => setFailedIconPath(iconPath)}
+          onError={() => setFailedIconPath(safeIconPath)}
         />
       </>
     )
@@ -45,7 +57,7 @@ export function FeatureIcons({ features, hideLabels = false, className }: Featur
   return (
     <ul
       className={classNames(styles.list, hideLabels && styles.hideLabels, className)}
-      aria-label="Features"
+      aria-label="Funksjoner"
     >
       {features.map((feature) => (
         <li

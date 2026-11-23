@@ -4,7 +4,7 @@ import { classNames } from '../utils/classNames'
 import styles from './FeatureGroup.module.css'
 
 export interface FeatureGroupProps {
-  title: string
+  title?: string
   features: FeatureDto[]
   selectedIds?: number[]
   onToggle?: (feature: FeatureDto) => void
@@ -24,7 +24,7 @@ export function FeatureGroup({
 
   return (
     <section className={classNames(styles.group, className)}>
-      <h3 className={styles.title}>{title}</h3>
+      {title && <h3 className={styles.title}>{title}</h3>}
       <div className={styles.grid}>
         {features.map((feature) => (
           <FeatureTile

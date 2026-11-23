@@ -1,3 +1,4 @@
+import path from 'node:path'
 import express from 'express'
 import cookieParser from 'cookie-parser'
 import { config } from './config/index.js'
@@ -27,6 +28,7 @@ import { requireRole } from './auth/requireRole.js'
 import { authLimiter, createApiLimiter } from './middleware/rateLimit.js'
 import { createRequireSameOrigin } from './middleware/requireSameOrigin.js'
 import { securityHeaders } from './middleware/securityHeaders.js'
+import { serveUploadedIcons } from './middleware/serveUploadedIcons.js'
 
 export const app = express()
 
@@ -72,12 +74,25 @@ app.use(
     session,
     requireAuth,
     frontendUrl: config.frontendUrl,
+    callbackPath: new URL(config.google.callbackUrl).pathname,
   }),
 )
 
+app.use('/icons', serveUploadedIcons(config.uploadsDir))
+app.use('/icons', serveUploadedIcons(path.resolve('backend/assets')))
+
+app.use(
+  '/features',
+  apiLimiter,
+  createFeaturesRoutes({ featuresService, requireAuth, uploadsDir: config.uploadsDir }),
+)
+
 app.use('/bookings', apiLimiter, createBookingsRoutes({ bookingsService, requireAuth }))
-app.use('/rooms', apiLimiter, createRoomsRoutes({ roomsService, seatsService, requireAuth }))
-app.use('/features', apiLimiter, createFeaturesRoutes({ featuresService, requireAuth }))
+app.use(
+  '/rooms',
+  apiLimiter,
+  createRoomsRoutes({ bookingsService, roomsService, seatsService, requireAuth }),
+)
 app.use('/users', apiLimiter, createUsersRoutes({ usersService, requireAuth }))
 app.use('/seats', apiLimiter, createSeatsRoutes({ seatsService, requireAuth, requireRole }))
 
