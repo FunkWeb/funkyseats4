@@ -1,5 +1,5 @@
 import { useState, type CSSProperties } from 'react'
-import type { FeatureDto } from '../../../contracts/feature'
+import { isValidIconPath, type FeatureDto } from '../../../contracts/feature'
 import { classNames } from '../utils/classNames'
 import styles from './FeatureIcons.module.css'
 import { StarIcon } from './icons/StarIcon'
@@ -10,13 +10,15 @@ export interface FeatureIconsProps {
   className?: string
 }
 
+const BLOB_ID_PATTERN = /^[A-Za-z0-9-]+$/
+
+function isLocalBlobUrl(url: string): boolean {
+  const prefix = `blob:${window.location.origin}/`
+  return url.startsWith(prefix) && BLOB_ID_PATTERN.test(url.slice(prefix.length))
+}
+
 function isSafeIconUrl(url: string): boolean {
-  return (
-    url.startsWith('/') ||
-    url.startsWith('blob:') ||
-    url.startsWith('http://') ||
-    url.startsWith('https://')
-  )
+  return isValidIconPath(url) || isLocalBlobUrl(url)
 }
 
 export function FeatureIcon({ iconPath }: { iconPath: string | null }) {

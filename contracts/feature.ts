@@ -11,3 +11,7 @@ export interface FeatureDto {
 }
 
 export type CreateFeatureRequest = Omit<FeatureDto, 'id'>
+
+export const ICON_PATH_PATTERN = /^\/icons\/[A-Za-z0-9_-]+\.svg$/
+
+export const isValidIconPath = (value: string): boolean => ICON_PATH_PATTERN.test(value)

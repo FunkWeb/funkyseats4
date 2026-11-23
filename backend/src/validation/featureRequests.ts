@@ -1,15 +1,17 @@
-import { FEATURE_CATEGORIES, type CreateFeatureRequest } from '../../../contracts/feature.js'
+import {
+  FEATURE_CATEGORIES,
+  isValidIconPath,
+  type CreateFeatureRequest,
+} from '../../../contracts/feature.js'
 import { ValidationError } from '../errors/appErrors.js'
 import { asRecord, parseNonEmptyString, parseOneOf, parseOptionalString } from './parsers.js'
-
-const ICON_PATH_PATTERN = /^\/icons\/[A-Za-z0-9_-]+\.svg$/
 
 const parseIconPath = (value: unknown): string | null => {
   const parsed = parseOptionalString(value, 'iconPath')
   if (parsed === null) {
     return null
   }
-  if (!ICON_PATH_PATTERN.test(parsed)) {
+  if (!isValidIconPath(parsed)) {
     throw new ValidationError('iconPath must be an .svg file under /icons/')
   }
   return parsed
