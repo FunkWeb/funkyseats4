@@ -117,7 +117,11 @@ export default function SeatViewPage() {
                 if (bookingsQuery.isPending) {
                   return (
                     <li key={seat.id}>
-                      <SeatCard seatName={seat.seatNumber} features={[]} freeLabel="Laster..." />
+                      <SeatCard
+                        seatName={seat.seatNumber}
+                        features={seat.features}
+                        freeLabel="Laster..."
+                      />
                     </li>
                   )
                 }
@@ -133,7 +137,7 @@ export default function SeatViewPage() {
                     <li key={seat.id}>
                       <SeatCard
                         seatName={seat.seatNumber}
-                        features={[]}
+                        features={seat.features}
                         occupant={
                           user ? { name: user.name, avatarPath: user.avatarPath } : undefined
                         }
@@ -152,7 +156,7 @@ export default function SeatViewPage() {
                     <li key={seat.id}>
                       <SeatCard
                         seatName={seat.seatNumber}
-                        features={[]}
+                        features={seat.features}
                         freeLabel="Opptatt"
                         muted
                         status="Opptatt hele dagen"
@@ -170,7 +174,7 @@ export default function SeatViewPage() {
                     <li key={seat.id}>
                       <SeatCard
                         seatName={seat.seatNumber}
-                        features={[]}
+                        features={seat.features}
                         freeLabel="Delvis ledig"
                         status={freeHalfLabel}
                       />
@@ -180,7 +184,11 @@ export default function SeatViewPage() {
 
                 return (
                   <li key={seat.id}>
-                    <SeatCard seatName={seat.seatNumber} features={[]} freeLabel="Ledig" />
+                    <SeatCard
+                      seatName={seat.seatNumber}
+                      features={seat.features}
+                      freeLabel="Ledig"
+                    />
                   </li>
                 )
               })}

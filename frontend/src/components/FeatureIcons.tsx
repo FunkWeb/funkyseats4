@@ -51,6 +51,7 @@ export function FeatureIcons({ features, hideLabels = false, className }: Featur
         <li
           className={styles.feature}
           key={`${feature.id}:${feature.iconPath ?? ''}`}
+          aria-label={feature.name}
           tabIndex={hideLabels ? 0 : undefined}
         >
           <FeatureIcon iconPath={feature.iconPath} />
