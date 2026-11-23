@@ -34,9 +34,9 @@ function isFeatureCategory(value: string): value is FeatureCategory {
 }
 
 function isValidSvgFile(file: File): boolean {
-  const hasSvgMime = file.type === 'image/svg+xml'
+  const hasSvgMime = file.type === 'image/svg+xml' || file.type === ''
   const hasSvgExtension = file.name.toLowerCase().endsWith('.svg')
-  return hasSvgMime || hasSvgExtension
+  return hasSvgMime && hasSvgExtension
 }
 
 export function FeatureForm({ isSaving = false, onCancel, onSubmit }: FeatureFormProps) {
