@@ -232,11 +232,6 @@ export default function SeatViewPage() {
                         occupant={
                           user ? { name: user.name, avatarPath: user.avatarPath } : undefined
                         }
-                        status={
-                          availability.yourPeriod
-                            ? `Din reservasjon (${PERIOD_LABELS[availability.yourPeriod]})`
-                            : 'Din reservasjon'
-                        }
                         actions={
                           bookingId !== undefined ? (
                             <Button
@@ -277,8 +272,7 @@ export default function SeatViewPage() {
                       <SeatCard
                         seatName={seat.seatNumber}
                         features={seat.features}
-                        freeLabel="Delvis ledig"
-                        status={freeHalfLabel}
+                        freeLabel={freeHalfLabel}
                         actions={
                           <Button variant="primary" onClick={() => openBookingModal(seat)}>
                             Reserver
