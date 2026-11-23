@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import type { FeatureCategory } from '../../../../contracts/feature'
-import { createFeature, uploadFeatureIcon } from '../../api/featuresApi'
+import { ConflictError } from '../../api/errors'
+import { createFeature, getFeatures, uploadFeatureIcon } from '../../api/featuresApi'
 import { featuresQueryKey } from './useFeatures'
 
 export interface CreateFeatureInput {
@@ -18,6 +19,16 @@ export function useCreateFeature() {
       let iconPath: string | null = null
 
       if (iconFile) {
+        const existing = await queryClient.fetchQuery({
+          queryKey: featuresQueryKey,
+          queryFn: getFeatures,
+          staleTime: 0,
+        })
+        const normalizedName = name.toLowerCase()
+        if (existing.some((feature) => feature.name.toLowerCase() === normalizedName)) {
+          throw new ConflictError(`Feature ${name} already exists`)
+        }
+
         const uploaded = await uploadFeatureIcon(iconFile)
         iconPath = uploaded.iconPath
       }
