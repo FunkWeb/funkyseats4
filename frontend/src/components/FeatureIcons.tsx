@@ -10,21 +10,31 @@ export interface FeatureIconsProps {
   className?: string
 }
 
+function isSafeIconUrl(url: string): boolean {
+  return (
+    url.startsWith('/') ||
+    url.startsWith('blob:') ||
+    url.startsWith('http://') ||
+    url.startsWith('https://')
+  )
+}
+
 export function FeatureIcon({ iconPath }: { iconPath: string | null }) {
   const [failedIconPath, setFailedIconPath] = useState<string | null>(null)
+  const safeIconPath = iconPath && isSafeIconUrl(iconPath) ? iconPath : null
 
-  if (iconPath && failedIconPath !== iconPath) {
+  if (safeIconPath && failedIconPath !== safeIconPath) {
     return (
       <>
         <span
           className={classNames(styles.icon, styles.maskIcon)}
-          style={{ '--icon-url': `url(${JSON.stringify(iconPath)})` } as CSSProperties}
+          style={{ '--icon-url': `url(${JSON.stringify(safeIconPath)})` } as CSSProperties}
         />
         <img
           className={styles.loadProbe}
-          src={iconPath}
+          src={safeIconPath}
           alt=""
-          onError={() => setFailedIconPath(iconPath)}
+          onError={() => setFailedIconPath(safeIconPath)}
         />
       </>
     )
