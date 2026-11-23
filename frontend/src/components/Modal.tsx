@@ -1,4 +1,12 @@
-import { useEffect, useId, useRef, type MouseEvent, type ReactNode } from 'react'
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type MouseEvent,
+  type ReactNode,
+  type SyntheticEvent,
+} from 'react'
 import { classNames } from '../utils/classNames'
 import { IconButton } from './IconButton'
 import styles from './Modal.module.css'
@@ -15,6 +23,7 @@ export interface ModalProps {
 export function Modal({ open, title, onClose, children, footer, className }: ModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)
   const titleId = useId()
+  const [nativeCloseCount, setNativeCloseCount] = useState(0)
 
   useEffect(() => {
     const dialog = dialogRef.current
@@ -22,10 +31,17 @@ export function Modal({ open, title, onClose, children, footer, className }: Mod
 
     if (open && !dialog.open) dialog.showModal()
     if (!open && dialog.open) dialog.close()
-  }, [open])
+  }, [open, nativeCloseCount])
+
+  function handleCancel(event: SyntheticEvent<HTMLDialogElement>) {
+    event.preventDefault()
+    onClose()
+  }
 
   function handleNativeClose() {
-    if (open) onClose()
+    if (!open) return
+    setNativeCloseCount((count) => count + 1)
+    onClose()
   }
 
   function handleBackdropClick(event: MouseEvent<HTMLDialogElement>) {
@@ -37,6 +53,7 @@ export function Modal({ open, title, onClose, children, footer, className }: Mod
       ref={dialogRef}
       className={styles.dialog}
       aria-labelledby={titleId}
+      onCancel={handleCancel}
       onClose={handleNativeClose}
       onClick={handleBackdropClick}
     >
