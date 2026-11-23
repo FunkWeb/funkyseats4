@@ -15,6 +15,7 @@ const adminItem: SidebarItem = {
   items: [
     { label: 'Rediger rom', href: '/admin/rooms' },
     { label: 'Rediger plasser i rom', href: '/admin/seats' },
+    { label: 'Rediger funksjoner', href: '/admin/features' },
     { label: 'Brukerprofiler', href: '/admin/users' },
   ],
 }

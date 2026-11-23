@@ -4,14 +4,8 @@ import type { SeatWithFeaturesDto } from '../../../../contracts/seat'
 import { FeatureGroup } from '../../components/FeatureGroup'
 import { TextArea } from '../../components/TextArea'
 import { TextField } from '../../components/TextField'
+import { CATEGORY_TITLES } from '../features/featureCategories'
 import styles from './SeatForm.module.css'
-
-const CATEGORY_TITLES: Record<FeatureCategory, string> = {
-  OS: 'Operativsystem',
-  SOFTWARE: 'Programvare',
-  HARDWARE: 'Maskinvare',
-  OTHER: 'Annet',
-}
 
 export interface SeatFormProps {
   id: string
@@ -27,7 +21,7 @@ export interface SeatFormProps {
 export function SeatForm({ id, seat, features, onSubmit }: SeatFormProps) {
   const [seatNumber, setSeatNumber] = useState(seat?.seatNumber ?? '')
   const [description, setDescription] = useState(seat?.description ?? '')
-  const [selectedFeatureIds, setSelectedFeatureIds] = useState(
+  const [selectedFeatureIds, setSelectedFeatureIds] = useState<number[]>(
     () => seat?.features.map((feature) => feature.id) ?? [],
   )
   const [hasSubmitted, setHasSubmitted] = useState(false)

@@ -6,6 +6,7 @@ import NotFoundPage from './pages/NotFoundPage'
 import ProfilePage from './pages/ProfilePage'
 import RoomSelectionPage from './pages/RoomSelectionPage'
 import SeatViewPage from './pages/SeatViewPage'
+import AdminFeaturesPage from './pages/admin/AdminFeaturesPage'
 import AdminRoomsPage from './pages/admin/AdminRoomsPage'
 import AdminSeatTypesPage from './pages/admin/AdminSeatTypesPage'
 import AdminSeatsPage from './pages/admin/AdminSeatsPage'
@@ -31,6 +32,7 @@ export const router = createBrowserRouter([
               { path: 'rooms', element: <AdminRoomsPage /> },
               { path: 'seats', element: <AdminSeatsPage /> },
               { path: 'seat-types', element: <AdminSeatTypesPage /> },
+              { path: 'features', element: <AdminFeaturesPage /> },
               { path: 'users', element: <AdminUsersPage /> },
             ],
           },

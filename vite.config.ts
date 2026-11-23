@@ -14,6 +14,7 @@ export default defineConfig(({ mode }) => {
           target: `http://localhost:${PORT}`,
           rewrite: (path) => path.replace(/^\/api/, ''),
         },
+        '/icons': `http://localhost:${PORT}`,
       },
     },
   }

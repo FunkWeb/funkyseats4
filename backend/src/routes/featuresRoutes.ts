@@ -65,7 +65,7 @@ export const createFeaturesRoutes = ({
       const filename = `${crypto.randomUUID()}.svg`
       await fs.writeFile(path.join(iconsDir, filename), validSvg, 'utf8')
 
-      res.status(201).json({ iconPath: `/api/uploads/icons/${filename}` })
+      res.status(201).json({ iconPath: `/icons/${filename}` })
     }) satisfies RequestHandler,
   )
 
