@@ -23,8 +23,9 @@ export function getInitialPeriod(
   seatBookings: RoomBookingDto[],
   currentUserId: number,
 ): TimePeriod {
-  const ownBooking = seatBookings.find((booking) => booking.userId === currentUserId)
-  if (ownBooking) return ownBooking.timePeriod
+  const ownBookings = seatBookings.filter((booking) => booking.userId === currentUserId)
+  if (ownBookings.length > 1) return 'ALL_DAY'
+  if (ownBookings.length === 1) return ownBookings[0].timePeriod
 
   return (
     INITIAL_PERIOD_ORDER.find((period) => !isPeriodTaken(period, seatBookings, currentUserId)) ??

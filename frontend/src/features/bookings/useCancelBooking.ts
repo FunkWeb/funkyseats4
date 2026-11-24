@@ -7,12 +7,17 @@ export function useCancelBooking(roomId: number | undefined, date: string) {
 
   return useMutation<void, Error, number[]>({
     mutationFn: async (bookingIds) => {
-      await Promise.all(bookingIds.map((bookingId) => cancelBooking(bookingId)))
+      const results = await Promise.allSettled(
+        bookingIds.map((bookingId) => cancelBooking(bookingId)),
+      )
+      const failure = results.find(
+        (result): result is PromiseRejectedResult => result.status === 'rejected',
+      )
+      if (failure) throw failure.reason
     },
-    onSettled: () => {
-      void queryClient.invalidateQueries({
+    onSettled: () =>
+      queryClient.invalidateQueries({
         queryKey: roomBookingsQueryKey(roomId, date),
-      })
-    },
+      }),
   })
 }

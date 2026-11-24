@@ -5,6 +5,7 @@ import styles from './PeriodToggle.module.css'
 export interface PeriodToggleOption<T extends string> {
   value: T
   label: string
+  ariaLabel?: string
   taken?: boolean
 }
 
@@ -48,6 +49,7 @@ export function PeriodToggle<T extends string>({
     >
       {options.map((option, index) => {
         const checked = option.value === value
+        const accessibleName = option.ariaLabel ?? option.label
 
         return (
           <button
@@ -58,6 +60,7 @@ export function PeriodToggle<T extends string>({
             type="button"
             role="radio"
             aria-checked={checked}
+            aria-label={option.taken ? `${accessibleName}, opptatt` : accessibleName}
             tabIndex={checked ? 0 : -1}
             className={classNames(
               styles.segment,

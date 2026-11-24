@@ -48,21 +48,15 @@
   font-size: var(--font-size-sm);
 }
 
-.status {
+.error {
   margin: 0;
   padding: var(--space-2);
-  color: var(--color-secondary);
-  font-weight: var(--font-weight-bold);
-  text-align: center;
-  text-transform: uppercase;
-}
-
-.unavailable {
+  border: 1px solid var(--color-danger);
   border-radius: var(--radius-sm);
-  color: light-dark(var(--gray-0), var(--gray-400));
-  background-color: light-dark(var(--gray-600), var(--gray-800));
-  font-weight: var(--font-weight-medium);
-  text-transform: none;
+  color: var(--color-text);
+  background-color: var(--color-danger-subtle);
+  font-size: var(--font-size-xs);
+  line-height: var(--line-height-normal);
 }
 
 .actions {
@@ -80,7 +74,7 @@
   font-weight: var(--font-weight-bold);
 }
 
-.actions > button:disabled {
+.mutedActions > button:disabled {
   --button-background: var(--seat-booked);
   --button-text: var(--color-text-muted);
   --button-border: transparent;

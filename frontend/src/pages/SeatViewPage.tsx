@@ -37,6 +37,8 @@ const PERIOD_SHORT_LABELS: Record<TimePeriod, string> = {
   ALL_DAY: 'Hele dagen',
 }
 
+const CANCEL_ERROR_MESSAGE = 'Kunne ikke avbestille reservasjonen. Prøv igjen senere.'
+
 interface PeriodSelection {
   date: string
   bySeat: Record<number, TimePeriod>
@@ -101,23 +103,13 @@ export default function SeatViewPage() {
   }
 
   function handleBook(seatId: number, period: TimePeriod) {
-    cancelBookingMutation.reset()
+    selectPeriod(seatId, period)
     createBookingMutation.mutate({ seatId, bookingDate: selectedDate, timePeriod: period })
   }
 
-  function handleCancelBookings(bookingIds: number[]) {
-    createBookingMutation.reset()
-    cancelBookingMutation.mutate(bookingIds)
-  }
-
-  const bookingError = createBookingMutation.isError
-    ? isConflictError(createBookingMutation.error)
-      ? 'Plassen er allerede reservert, eller du har allerede en reservasjon i dette tidsrommet.'
-      : 'Kunne ikke opprette reservasjon. Prøv igjen senere.'
-    : null
-  const cancelError = cancelBookingMutation.isError
-    ? 'Kunne ikke avbestille reservasjonen. Prøv igjen senere.'
-    : null
+  const bookingErrorMessage = isConflictError(createBookingMutation.error)
+    ? 'Plassen er allerede reservert, eller du har allerede en reservasjon i dette tidsrommet.'
+    : 'Kunne ikke opprette reservasjon. Prøv igjen senere.'
 
   if (roomsQuery.isPending) {
     return <Spinner label="Laster rom" />
@@ -153,6 +145,19 @@ export default function SeatViewPage() {
     const seatBookings = getActiveSeatBookings(seat.id, bookingsQuery.data ?? [])
     const period = selectedPeriods[seat.id] ?? getInitialPeriod(seatBookings, currentUserId)
     const occupant = getPeriodOccupant(period, seatBookings, currentUserId)
+    const bookingFailed =
+      createBookingMutation.isError &&
+      createBookingMutation.variables.seatId === seat.id &&
+      createBookingMutation.variables.bookingDate === selectedDate &&
+      createBookingMutation.variables.timePeriod === period
+    const cancelFailed =
+      cancelBookingMutation.isError &&
+      seatBookings.some((booking) => cancelBookingMutation.variables.includes(booking.id))
+    const error = bookingFailed
+      ? bookingErrorMessage
+      : cancelFailed
+        ? CANCEL_ERROR_MESSAGE
+        : undefined
     const periodControl = (
       <PeriodToggle
         label={`Tidsrom for ${seat.seatNumber}`}
@@ -161,6 +166,7 @@ export default function SeatViewPage() {
         options={TIME_PERIODS.map((option) => ({
           value: option,
           label: PERIOD_SHORT_LABELS[option],
+          ariaLabel: PERIOD_LABELS[option],
           taken: isPeriodTaken(option, seatBookings, currentUserId),
         }))}
       />
@@ -182,14 +188,15 @@ export default function SeatViewPage() {
           occupantDetail={
             ownBookingIds.length > 1 ? PERIOD_LABELS.ALL_DAY : PERIOD_LABELS[occupant.timePeriod]
           }
+          error={error}
           periodControl={periodControl}
           actions={
             <Button
               variant="outline"
               disabled={isCancelling}
-              onClick={() => handleCancelBookings(ownBookingIds)}
+              onClick={() => cancelBookingMutation.mutate(ownBookingIds)}
             >
-              Avbestill reservasjon
+              {isCancelling ? 'Avbestiller...' : 'Avbestill reservasjon'}
             </Button>
           }
         />
@@ -204,6 +211,7 @@ export default function SeatViewPage() {
           occupant={occupant.user}
           occupantDetail={PERIOD_LABELS[occupant.timePeriod]}
           muted
+          error={error}
           periodControl={periodControl}
           actions={<Button disabled>Opptatt</Button>}
         />
@@ -217,6 +225,7 @@ export default function SeatViewPage() {
       <SeatCard
         seatName={seat.seatNumber}
         features={seat.features}
+        error={error}
         periodControl={periodControl}
         actions={
           <Button
@@ -264,12 +273,6 @@ export default function SeatViewPage() {
                 title="Kunne ikke hente reservasjoner"
                 description="Prøv igjen senere."
               />
-            )}
-            {bookingError && (
-              <Notice variant="danger" title="Kunne ikke reservere" description={bookingError} />
-            )}
-            {cancelError && (
-              <Notice variant="danger" title="Avbestilling feilet" description={cancelError} />
             )}
             <ul className={styles.grid}>
               {seats.map((seat) => (

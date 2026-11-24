@@ -16,7 +16,7 @@ export interface SeatCardProps {
   occupantDetail?: string
   freeLabel?: string
   muted?: boolean
-  status?: string
+  error?: string
   periodControl?: ReactNode
   actions?: ReactNode
   className?: string
@@ -29,7 +29,7 @@ export function SeatCard({
   occupantDetail,
   freeLabel = 'Ledig',
   muted = false,
-  status,
+  error,
   periodControl,
   actions,
   className,
@@ -60,13 +60,19 @@ export function SeatCard({
         className={styles.features}
       />
 
-      {(periodControl || status || actions) && (
+      {(periodControl || error || actions) && (
         <div className={styles.footer}>
           {periodControl}
-          {status && (
-            <p className={classNames(styles.status, muted && styles.unavailable)}>{status}</p>
+          {error && (
+            <p className={styles.error} role="alert">
+              {error}
+            </p>
           )}
-          {actions && <div className={styles.actions}>{actions}</div>}
+          {actions && (
+            <div className={classNames(styles.actions, muted && styles.mutedActions)}>
+              {actions}
+            </div>
+          )}
         </div>
       )}
     </Card>
