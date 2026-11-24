@@ -1,6 +1,7 @@
 import {
   periodsOverlap,
   type BookingDto,
+  type MyBookingDto,
   type NewBooking,
   type RoomBookingDto,
   type TimePeriod,
@@ -10,6 +11,7 @@ import { ConflictError, ForbiddenError, ValidationError } from '../errors/appErr
 import type {
   Booking,
   BookingsRepository,
+  MyBooking,
   RoomBooking,
 } from '../repositories/bookingsRepository.js'
 import type { RoomsRepository } from '../repositories/roomsRepository.js'
@@ -40,6 +42,28 @@ const toBookingDto = ({
   status,
   bookingDate,
   timePeriod,
+})
+
+const toMyBookingDto = ({
+  id,
+  seatId,
+  userId,
+  status,
+  bookingDate,
+  timePeriod,
+  roomName,
+  roomSlug,
+  seatNumber,
+}: MyBooking): MyBookingDto => ({
+  id,
+  seatId,
+  userId,
+  status,
+  bookingDate,
+  timePeriod,
+  roomName,
+  roomSlug,
+  seatNumber,
 })
 
 const toRoomBookingDto = ({
@@ -105,9 +129,9 @@ export const createBookingsService = ({
   const findForUser = async (
     userId: number,
     pagination: Pagination,
-  ): Promise<PaginatedResponse<BookingDto>> => {
+  ): Promise<PaginatedResponse<MyBookingDto>> => {
     const { items, total } = await bookings.findByUserId(userId, pagination)
-    return { ...pagination, items: items.map(toBookingDto), total }
+    return { ...pagination, items: items.map(toMyBookingDto), total }
   }
 
   const findForRoomOnDate = async (roomId: number, date: string): Promise<RoomBookingDto[]> => {

@@ -1,5 +1,10 @@
 import type { Pool, ResultSetHeader, RowDataPacket } from 'mysql2/promise'
-import type { BookingDto, BookingStatus, NewBooking } from '../../../contracts/booking.js'
+import type {
+  BookingDto,
+  BookingStatus,
+  MyBookingDto,
+  NewBooking,
+} from '../../../contracts/booking.js'
 import type { Pagination } from '../../../contracts/pagination.js'
 import { paginate, type Page } from '../database/paginate.js'
 import type { QueryParams } from '../database/queryParams.js'
@@ -14,10 +19,16 @@ export interface RoomBooking extends Booking {
   userAvatarPath: string | null
 }
 
+export interface MyBooking extends MyBookingDto {
+  updatedAt: Date
+  createdAt: Date
+}
+
 export type BookingInsert = NewBooking & Pick<BookingDto, 'userId'>
 
 type BookingRow = Booking & RowDataPacket
 type RoomBookingRow = RoomBooking & RowDataPacket
+type MyBookingRow = MyBooking & RowDataPacket
 
 const BOOKING_COLUMNS = `
     bookings.id,
@@ -44,16 +55,31 @@ const createBookingQueries = (db: Executor) => {
     return booking ?? null
   }
 
+  const selectMyBookings = async (clause: string, params: QueryParams): Promise<MyBooking[]> => {
+    const [rows] = await db.execute<MyBookingRow[]>(
+      `SELECT ${BOOKING_COLUMNS},
+        rooms.name AS roomName,
+        rooms.slug AS roomSlug,
+        seats.seat_number AS seatNumber
+       FROM bookings
+       INNER JOIN seats ON seats.id = bookings.seat_id
+       INNER JOIN rooms ON rooms.id = seats.room_id
+       ${clause}`,
+      params,
+    )
+    return rows
+  }
+
   return {
     findById,
-    findByUserId: (userId: number, pagination: Pagination): Promise<Page<Booking>> =>
+    findByUserId: (userId: number, pagination: Pagination): Promise<Page<MyBooking>> =>
       paginate(
         db,
         {
-          select: selectBookings,
+          select: selectMyBookings,
           table: 'bookings',
-          where: 'WHERE user_id = :userId',
-          orderBy: 'id',
+          where: 'WHERE bookings.user_id = :userId',
+          orderBy: 'bookings.booking_date DESC, bookings.id DESC',
           params: { userId },
         },
         pagination,

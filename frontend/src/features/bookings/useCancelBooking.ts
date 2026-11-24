@@ -16,8 +16,13 @@ export function useCancelBooking(roomId: number | undefined, date: string) {
       if (failure) throw failure.reason
     },
     onSettled: () =>
-      queryClient.invalidateQueries({
-        queryKey: roomBookingsQueryKey(roomId, date),
-      }),
+      Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: roomBookingsQueryKey(roomId, date),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['bookings', 'me'],
+        }),
+      ]),
   })
 }

@@ -260,4 +260,23 @@ describe('bookingsService', () => {
   it('findForRoomOnDate rejects an unknown room', async () => {
     await assert.rejects(service.findForRoomOnDate(UNKNOWN_ID, TODAY), NotFoundError)
   })
+
+  it('findForUser returns paginated bookings with room and seat details', async () => {
+    await book(alice)
+    await book(bob)
+
+    assert.partialDeepStrictEqual(await service.findForUser(alice, { page: 1, pageSize: 20 }), {
+      page: 1,
+      pageSize: 20,
+      total: 1,
+      items: [
+        {
+          userId: alice,
+          roomName: 'room-a',
+          roomSlug: 'room-a',
+          seatNumber: 'A1',
+        },
+      ],
+    })
+  })
 })
