@@ -1,5 +1,6 @@
 import { useId } from 'react'
 import { TIME_PERIODS, type TimePeriod } from '../../../contracts/booking'
+import { PERIOD_LABELS } from '../features/bookings/bookingLabels'
 import { classNames } from '../utils/classNames'
 import styles from './TimeSlotPicker.module.css'
 import { CloseIcon } from './icons/CloseIcon'
@@ -13,12 +14,6 @@ export interface TimeSlotPickerProps {
   disabled?: boolean
   unavailableReason?: (period: TimePeriod) => string | undefined
   className?: string
-}
-
-const periodLabels: Record<TimePeriod, string> = {
-  BEFORE_LUNCH: 'Før lunsj',
-  AFTER_LUNCH: 'Etter lunsj',
-  ALL_DAY: 'Hele dagen',
 }
 
 export function TimeSlotPicker({
@@ -63,7 +58,7 @@ export function TimeSlotPicker({
                   aria-describedby={reason ? reasonId : undefined}
                   onChange={() => onChange(period)}
                 />
-                <span className={styles.label}>{periodLabels[period]}</span>
+                <span className={styles.label}>{PERIOD_LABELS[period]}</span>
                 {reason && (
                   <span className={styles.reason} id={reasonId} aria-hidden>
                     {reason}

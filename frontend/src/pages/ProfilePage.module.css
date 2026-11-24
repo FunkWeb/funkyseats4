@@ -1,0 +1,10 @@
+.identity {
+  margin: var(--space-6) 0 0;
+  padding: var(--space-4) var(--space-6);
+  border-color: var(--color-border-muted);
+  box-shadow: var(--shadow-sm);
+}
+
+.cancelError {
+  margin-top: var(--space-4);
+}

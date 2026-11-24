@@ -1,8 +1,9 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { cancelBooking } from '../../api/bookingsApi'
-import { roomBookingsQueryKey } from './useRoomBookings'
+import { myBookingsBaseQueryKey } from './useMyBookings'
+import { isRoomBookingsQuery } from './useRoomBookings'
 
-export function useCancelBooking(roomId: number | undefined, date: string) {
+export function useCancelBooking() {
   const queryClient = useQueryClient()
 
   return useMutation<void, Error, number[]>({
@@ -16,8 +17,11 @@ export function useCancelBooking(roomId: number | undefined, date: string) {
       if (failure) throw failure.reason
     },
     onSettled: () =>
-      queryClient.invalidateQueries({
-        queryKey: roomBookingsQueryKey(roomId, date),
-      }),
+      Promise.all([
+        queryClient.invalidateQueries({ predicate: isRoomBookingsQuery }),
+        queryClient.invalidateQueries({
+          queryKey: myBookingsBaseQueryKey,
+        }),
+      ]),
   })
 }
