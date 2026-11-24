@@ -66,15 +66,16 @@ body {
 }
 
 .question:hover {
-  color: var(--color-text-on-primary);
+  background-color: var(--color-primary-hover);
   cursor: pointer;
   transition: var(--duration-fast);
 }
 
 .question {
-  transition: var(--duration-fast);
+  transition: background-color var(--duration-fast);
   font-weight: var(--font-weight-medium);
   font-size: var(--font-size-md);
+  border-radius: var(--radius-sm);
 }
 
 .answer {
