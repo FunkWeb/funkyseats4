@@ -142,7 +142,10 @@ describe('bookingsRepository', () => {
     await book({ seatId: deletedSeat })
     await createSeatsRepository(db()).delete(deletedSeat)
 
-    assert.deepEqual(await bookings.findActiveByRoomAndDate(roomId, DATE), [active, anotherActive])
+    assert.deepEqual(await bookings.findActiveByRoomAndDate(roomId, DATE), [
+      { ...active, userName: 'alice', userAvatarPath: null },
+      { ...anotherActive, userName: 'bob', userAvatarPath: null },
+    ])
   })
 
   it('updateStatus persists and returns the new status', async () => {

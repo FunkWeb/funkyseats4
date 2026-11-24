@@ -14,7 +14,6 @@ export interface SeatCardProps {
   features: FeatureIconsProps['features']
   occupant?: Pick<UserDto, 'name' | 'avatarPath'>
   occupantDetail?: string
-  mine?: boolean
   freeLabel?: string
   muted?: boolean
   status?: string
@@ -28,7 +27,6 @@ export function SeatCard({
   features,
   occupant,
   occupantDetail,
-  mine = false,
   freeLabel = 'Ledig',
   muted = false,
   status,
@@ -45,7 +43,6 @@ export function SeatCard({
             name={occupant.name}
             subtitle={occupantDetail}
             avatarSrc={occupant.avatarPath ?? undefined}
-            className={classNames(mine && styles.mine)}
           />
         ) : (
           <span className={classNames(styles.freeLabel, muted && styles.freeLabelMuted)}>

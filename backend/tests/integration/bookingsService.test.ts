@@ -248,6 +248,7 @@ describe('bookingsService', () => {
         status: 'ACTIVE',
         bookingDate: TODAY,
         timePeriod: 'BEFORE_LUNCH',
+        user: { name: 'bob', avatarPath: null },
       },
     ])
   })

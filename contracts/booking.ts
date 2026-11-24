@@ -1,3 +1,5 @@
+import type { UserDto } from './user.js'
+
 export type BookingStatus = 'ACTIVE' | 'COMPLETE' | 'CANCELLED'
 
 export const TIME_PERIODS = ['BEFORE_LUNCH', 'AFTER_LUNCH', 'ALL_DAY'] as const
@@ -15,6 +17,10 @@ export interface BookingDto {
   status: BookingStatus
   bookingDate: string
   timePeriod: TimePeriod
+}
+
+export interface RoomBookingDto extends BookingDto {
+  user: Pick<UserDto, 'name' | 'avatarPath'>
 }
 
 export type NewBooking = Pick<BookingDto, 'seatId' | 'bookingDate' | 'timePeriod'>

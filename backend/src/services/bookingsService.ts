@@ -2,11 +2,16 @@ import {
   periodsOverlap,
   type BookingDto,
   type NewBooking,
+  type RoomBookingDto,
   type TimePeriod,
 } from '../../../contracts/booking.js'
 import type { PaginatedResponse, Pagination } from '../../../contracts/pagination.js'
 import { ConflictError, ForbiddenError, ValidationError } from '../errors/appErrors.js'
-import type { Booking, BookingsRepository } from '../repositories/bookingsRepository.js'
+import type {
+  Booking,
+  BookingsRepository,
+  RoomBooking,
+} from '../repositories/bookingsRepository.js'
 import type { RoomsRepository } from '../repositories/roomsRepository.js'
 import type { SeatsRepository } from '../repositories/seatsRepository.js'
 import { addDays, findOrThrow, todayInOffice } from './common.js'
@@ -35,6 +40,15 @@ const toBookingDto = ({
   status,
   bookingDate,
   timePeriod,
+})
+
+const toRoomBookingDto = ({
+  userName,
+  userAvatarPath,
+  ...booking
+}: RoomBooking): RoomBookingDto => ({
+  ...toBookingDto(booking),
+  user: { name: userName, avatarPath: userAvatarPath },
 })
 
 const isActive = (booking: BookingDto) => booking.status === 'ACTIVE'
@@ -96,10 +110,10 @@ export const createBookingsService = ({
     return { ...pagination, items: items.map(toBookingDto), total }
   }
 
-  const findForRoomOnDate = async (roomId: number, date: string): Promise<BookingDto[]> => {
+  const findForRoomOnDate = async (roomId: number, date: string): Promise<RoomBookingDto[]> => {
     await findRoom(roomId)
     const roomBookings = await bookings.findActiveByRoomAndDate(roomId, date)
-    return roomBookings.map(toBookingDto)
+    return roomBookings.map(toRoomBookingDto)
   }
 
   return { create, cancel, findForUser, findForRoomOnDate }

@@ -178,11 +178,10 @@ export default function SeatViewPage() {
         <SeatCard
           seatName={seat.seatNumber}
           features={seat.features}
-          occupant={{ name: 'Din reservasjon', avatarPath: user?.avatarPath ?? null }}
+          occupant={user ?? undefined}
           occupantDetail={
             ownBookingIds.length > 1 ? PERIOD_LABELS.ALL_DAY : PERIOD_LABELS[occupant.timePeriod]
           }
-          mine
           periodControl={periodControl}
           actions={
             <Button
@@ -202,7 +201,7 @@ export default function SeatViewPage() {
         <SeatCard
           seatName={seat.seatNumber}
           features={seat.features}
-          occupant={{ name: 'Opptatt', avatarPath: null }}
+          occupant={occupant.user}
           occupantDetail={PERIOD_LABELS[occupant.timePeriod]}
           muted
           periodControl={periodControl}

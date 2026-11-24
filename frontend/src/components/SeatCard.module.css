@@ -28,11 +28,6 @@
   color: var(--color-text-muted);
 }
 
-.mine > :first-child {
-  color: var(--color-text-on-primary);
-  background-color: var(--seat-mine);
-}
-
 .title {
   margin: 0;
   font-size: var(--font-size-2xl);

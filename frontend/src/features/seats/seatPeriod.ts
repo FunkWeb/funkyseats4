@@ -1,14 +1,17 @@
-import { periodsOverlap, type BookingDto, type TimePeriod } from '../../../../contracts/booking'
+import { periodsOverlap, type RoomBookingDto, type TimePeriod } from '../../../../contracts/booking'
 
 const INITIAL_PERIOD_ORDER: TimePeriod[] = ['ALL_DAY', 'BEFORE_LUNCH', 'AFTER_LUNCH']
 
-export function getActiveSeatBookings(seatId: number, bookings: BookingDto[]): BookingDto[] {
+export function getActiveSeatBookings(
+  seatId: number,
+  bookings: RoomBookingDto[],
+): RoomBookingDto[] {
   return bookings.filter((booking) => booking.seatId === seatId && booking.status === 'ACTIVE')
 }
 
 export function isPeriodTaken(
   period: TimePeriod,
-  seatBookings: BookingDto[],
+  seatBookings: RoomBookingDto[],
   currentUserId: number,
 ): boolean {
   return seatBookings.some(
@@ -16,7 +19,10 @@ export function isPeriodTaken(
   )
 }
 
-export function getInitialPeriod(seatBookings: BookingDto[], currentUserId: number): TimePeriod {
+export function getInitialPeriod(
+  seatBookings: RoomBookingDto[],
+  currentUserId: number,
+): TimePeriod {
   const ownBooking = seatBookings.find((booking) => booking.userId === currentUserId)
   if (ownBooking) return ownBooking.timePeriod
 
@@ -28,9 +34,9 @@ export function getInitialPeriod(seatBookings: BookingDto[], currentUserId: numb
 
 export function getOwnPeriodBookings(
   period: TimePeriod,
-  seatBookings: BookingDto[],
+  seatBookings: RoomBookingDto[],
   currentUserId: number,
-): BookingDto[] {
+): RoomBookingDto[] {
   return seatBookings.filter(
     (booking) => booking.userId === currentUserId && periodsOverlap(booking.timePeriod, period),
   )
@@ -38,9 +44,9 @@ export function getOwnPeriodBookings(
 
 export function getPeriodOccupant(
   period: TimePeriod,
-  seatBookings: BookingDto[],
+  seatBookings: RoomBookingDto[],
   currentUserId: number,
-): BookingDto | undefined {
+): RoomBookingDto | undefined {
   const overlapping = seatBookings.filter((booking) => periodsOverlap(booking.timePeriod, period))
 
   return (
