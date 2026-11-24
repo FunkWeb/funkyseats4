@@ -263,7 +263,7 @@ describe('bookingsService', () => {
 
   it('findForUser returns paginated bookings with room and seat details', async () => {
     await book(alice)
-    await book(bob)
+    await book(bob, { seatId: seatB, timePeriod: 'AFTER_LUNCH' })
 
     assert.partialDeepStrictEqual(await service.findForUser(alice, { page: 1, pageSize: 20 }), {
       page: 1,
