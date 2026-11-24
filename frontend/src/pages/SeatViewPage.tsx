@@ -10,6 +10,7 @@ import { PeriodToggle } from '../components/PeriodToggle'
 import { SeatCard } from '../components/SeatCard'
 import { Spinner } from '../components/Spinner'
 import { useAuth } from '../features/auth/useAuth'
+import { CANCEL_ERROR_MESSAGE, PERIOD_LABELS } from '../features/bookings/bookingLabels'
 import { useCancelBooking } from '../features/bookings/useCancelBooking'
 import { useCreateBooking } from '../features/bookings/useCreateBooking'
 import { useRoomBookings } from '../features/bookings/useRoomBookings'
@@ -25,19 +26,11 @@ import { useRoomSeats } from '../features/seats/useRoomSeats'
 import { getTodayIsoDate, getValidBookingDate } from '../utils/isoDate'
 import styles from './SeatViewPage.module.css'
 
-const PERIOD_LABELS: Record<TimePeriod, string> = {
-  BEFORE_LUNCH: 'Før lunsj',
-  AFTER_LUNCH: 'Etter lunsj',
-  ALL_DAY: 'Hele dagen',
-}
-
 const PERIOD_SHORT_LABELS: Record<TimePeriod, string> = {
   BEFORE_LUNCH: 'FM',
   AFTER_LUNCH: 'EM',
   ALL_DAY: 'Hele dagen',
 }
-
-const CANCEL_ERROR_MESSAGE = 'Kunne ikke avbestille reservasjonen. Prøv igjen senere.'
 
 interface PeriodSelection {
   date: string

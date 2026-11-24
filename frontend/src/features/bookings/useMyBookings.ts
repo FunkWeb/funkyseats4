@@ -1,7 +1,9 @@
 import { useQuery } from '@tanstack/react-query'
 import { getMyBookings } from '../../api/bookingsApi'
 
-export const myBookingsQueryKey = (page: number) => ['bookings', 'me', page] as const
+export const myBookingsBaseQueryKey = ['bookings', 'me'] as const
+
+export const myBookingsQueryKey = (page: number) => [...myBookingsBaseQueryKey, page] as const
 
 export function useMyBookings(page: number) {
   return useQuery({

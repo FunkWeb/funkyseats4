@@ -42,6 +42,15 @@ const BOOKING_COLUMNS = `
 
 const SELECT_BOOKING = `SELECT ${BOOKING_COLUMNS} FROM bookings`
 
+const SELECT_MY_BOOKING = `
+  SELECT ${BOOKING_COLUMNS},
+    rooms.name                             AS roomName,
+    rooms.slug                             AS roomSlug,
+    seats.seat_number                      AS seatNumber
+  FROM bookings
+  INNER JOIN seats ON seats.id = bookings.seat_id
+  INNER JOIN rooms ON rooms.id = seats.room_id`
+
 type Executor = Pick<Pool, 'execute'>
 
 const createBookingQueries = (db: Executor) => {
@@ -56,17 +65,7 @@ const createBookingQueries = (db: Executor) => {
   }
 
   const selectMyBookings = async (clause: string, params: QueryParams): Promise<MyBooking[]> => {
-    const [rows] = await db.execute<MyBookingRow[]>(
-      `SELECT ${BOOKING_COLUMNS},
-        rooms.name AS roomName,
-        rooms.slug AS roomSlug,
-        seats.seat_number AS seatNumber
-       FROM bookings
-       INNER JOIN seats ON seats.id = bookings.seat_id
-       INNER JOIN rooms ON rooms.id = seats.room_id
-       ${clause}`,
-      params,
-    )
+    const [rows] = await db.execute<MyBookingRow[]>(`${SELECT_MY_BOOKING} ${clause}`, params)
     return rows
   }
 

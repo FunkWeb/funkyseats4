@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
-import type { BookingStatus, MyBookingDto, TimePeriod } from '../../../contracts/booking'
+import type { BookingStatus, MyBookingDto } from '../../../contracts/booking'
 import { Button } from '../components/Button'
 import { Card } from '../components/Card'
 import { Notice } from '../components/Notice'
@@ -8,16 +8,11 @@ import { PageHeader } from '../components/PageHeader'
 import { Spinner } from '../components/Spinner'
 import { UserIdentity } from '../components/UserIdentity'
 import { useAuth } from '../features/auth/useAuth'
+import { CANCEL_ERROR_MESSAGE, PERIOD_LABELS } from '../features/bookings/bookingLabels'
 import { useCancelBooking } from '../features/bookings/useCancelBooking'
 import { useMyBookings } from '../features/bookings/useMyBookings'
 import { formatShortDate, getTodayIsoDate } from '../utils/isoDate'
 import styles from './ProfilePage.module.css'
-
-const PERIOD_LABELS: Record<TimePeriod, string> = {
-  BEFORE_LUNCH: 'Før lunsj',
-  AFTER_LUNCH: 'Etter lunsj',
-  ALL_DAY: 'Hele dagen',
-}
 
 const STATUS_LABELS: Record<BookingStatus, string> = {
   ACTIVE: 'Aktiv',
@@ -41,7 +36,7 @@ export default function ProfilePage() {
     setCancelError(null)
     setCancellingId(booking.id)
     cancelMutation.mutate([booking.id], {
-      onError: () => setCancelError('Kunne ikke avbestille reservasjonen. Prøv igjen senere.'),
+      onError: () => setCancelError(CANCEL_ERROR_MESSAGE),
       onSettled: () => setCancellingId(null),
     })
   }

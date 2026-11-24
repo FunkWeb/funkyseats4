@@ -45,22 +45,12 @@ const toBookingDto = ({
 })
 
 const toMyBookingDto = ({
-  id,
-  seatId,
-  userId,
-  status,
-  bookingDate,
-  timePeriod,
   roomName,
   roomSlug,
   seatNumber,
+  ...booking
 }: MyBooking): MyBookingDto => ({
-  id,
-  seatId,
-  userId,
-  status,
-  bookingDate,
-  timePeriod,
+  ...toBookingDto(booking),
   roomName,
   roomSlug,
   seatNumber,
