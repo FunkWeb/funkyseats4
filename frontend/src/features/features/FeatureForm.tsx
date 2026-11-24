@@ -1,5 +1,6 @@
-import { useEffect, useId, useState, type ChangeEvent, type FormEvent } from 'react'
-import type { FeatureCategory } from '../../../../contracts/feature'
+import { useEffect, useId, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
+import type { FeatureCategory, FeatureDto } from '../../../../contracts/feature'
+import { Button } from '../../components/Button'
 import { FeatureIcon } from '../../components/FeatureIcons'
 import { FormActions } from '../../components/FormActions'
 import { Select, type SelectOption } from '../../components/Select'
@@ -20,10 +21,12 @@ export interface FeatureFormValues {
   name: string
   category: FeatureCategory
   description: string | null
+  iconPath: string | null
   iconFile: File | null
 }
 
 export interface FeatureFormProps {
+  initialValues?: Pick<FeatureDto, 'name' | 'category' | 'description' | 'iconPath'>
   isSaving?: boolean
   onCancel: () => void
   onSubmit: (values: FeatureFormValues) => void
@@ -39,11 +42,18 @@ function isValidSvgFile(file: File): boolean {
   return hasSvgMime && hasSvgExtension
 }
 
-export function FeatureForm({ isSaving = false, onCancel, onSubmit }: FeatureFormProps) {
+export function FeatureForm({
+  initialValues,
+  isSaving = false,
+  onCancel,
+  onSubmit,
+}: FeatureFormProps) {
   const fileInputId = useId()
-  const [name, setName] = useState('')
-  const [category, setCategory] = useState<FeatureCategory | null>(null)
-  const [description, setDescription] = useState('')
+  const fileInput = useRef<HTMLInputElement>(null)
+  const [name, setName] = useState(initialValues?.name ?? '')
+  const [category, setCategory] = useState<FeatureCategory | null>(initialValues?.category ?? null)
+  const [description, setDescription] = useState(initialValues?.description ?? '')
+  const [iconPath, setIconPath] = useState<string | null>(initialValues?.iconPath ?? null)
   const [iconFile, setIconFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [fileError, setFileError] = useState<string | undefined>(undefined)
@@ -78,7 +88,8 @@ export function FeatureForm({ isSaving = false, onCancel, onSubmit }: FeatureFor
     trimmedName.length > 0 ||
     category !== null ||
     description.trim().length > 0 ||
-    iconFile !== null
+    iconFile !== null ||
+    iconPath !== (initialValues?.iconPath ?? null)
 
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0] ?? null
@@ -119,6 +130,7 @@ export function FeatureForm({ isSaving = false, onCancel, onSubmit }: FeatureFor
       name: trimmedName,
       category,
       description: description.trim() || null,
+      iconPath,
       iconFile,
     })
   }
@@ -163,16 +175,33 @@ export function FeatureForm({ isSaving = false, onCancel, onSubmit }: FeatureFor
         </label>
         <div className={styles.iconRow}>
           <span className={styles.preview}>
-            <FeatureIcon iconPath={previewUrl} />
+            <FeatureIcon iconPath={previewUrl ?? iconPath} />
           </span>
           <input
             id={fileInputId}
             className={styles.fileInput}
             type="file"
             accept=".svg,image/svg+xml"
+            ref={fileInput}
             onChange={handleFileChange}
             disabled={isSaving}
           />
+          {(iconPath !== null || iconFile !== null) && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={isSaving}
+              onClick={() => {
+                setIconPath(null)
+                setIconFile(null)
+                setFileError(undefined)
+                if (fileInput.current) fileInput.current.value = ''
+              }}
+            >
+              Fjern ikon
+            </Button>
+          )}
         </div>
         <span className={styles.helper}>Kun SVG-filer (.svg), maks 100 KB.</span>
         {fileError && <span className={styles.error}>{fileError}</span>}

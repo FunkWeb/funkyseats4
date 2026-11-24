@@ -5,23 +5,48 @@ import type { Server } from 'node:http'
 import os from 'node:os'
 import path from 'node:path'
 import express, { type RequestHandler } from 'express'
+import type { FeatureDto } from '../../../contracts/feature.js'
+import type { FeaturesRepository } from '../../src/repositories/featuresRepository.js'
 import { errorHandler } from '../../src/errors/errorHandler.js'
 import { serveUploadedIcons } from '../../src/middleware/serveUploadedIcons.js'
 import { createFeaturesRoutes } from '../../src/routes/featuresRoutes.js'
+import { createFeaturesService } from '../../src/services/featuresService.js'
 import type { FeaturesService } from '../../src/services/featuresService.js'
 
 const VALID_SVG =
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></svg>'
 
-describe('featuresRoutes /features/icons', () => {
+describe('featuresRoutes', () => {
   let server: Server
   let baseUrl: string
   let uploadsDir: string
   let currentRole: 'ADMIN' | 'CANDIDATE' = 'ADMIN'
+  const featureRecords = new Map<number, FeatureDto>()
 
-  const stubFeaturesService: Pick<FeaturesService, 'findAll' | 'create'> = {
-    findAll: async () => [],
-    create: async () => 1,
+  const featuresRepository = {
+    findAll: async () => [...featureRecords.values()],
+    findById: async (id: number) => featureRecords.get(id) ?? null,
+    create: async () => 2,
+    update: async (id: number, input: Parameters<FeaturesRepository['update']>[1]) => {
+      const feature = featureRecords.get(id)
+      if (!feature) return false
+      const updates = Object.fromEntries(
+        Object.entries(input).filter(([, value]) => value !== undefined),
+      )
+      featureRecords.set(id, { ...feature, ...updates })
+      return true
+    },
+    delete: async (id: number) => featureRecords.delete(id),
+  } satisfies Pick<FeaturesRepository, 'findAll' | 'findById' | 'create' | 'update' | 'delete'>
+  const featuresService: Pick<FeaturesService, 'findAll' | 'create' | 'update' | 'delete'> =
+    createFeaturesService({ features: featuresRepository })
+
+  const initialFeature: FeatureDto = {
+    id: 1,
+    name: 'Test feature',
+    description: 'Original description',
+    iconPath: null,
+    category: 'OTHER',
   }
 
   const fakeRequireAuth: RequestHandler = (req, _res, next) => {
@@ -47,7 +72,7 @@ describe('featuresRoutes /features/icons', () => {
     app.use(
       '/features',
       createFeaturesRoutes({
-        featuresService: stubFeaturesService,
+        featuresService,
         requireAuth: fakeRequireAuth,
         uploadsDir,
       }),
@@ -65,8 +90,11 @@ describe('featuresRoutes /features/icons', () => {
     })
   })
 
-  beforeEach(() => {
+  beforeEach(async () => {
     currentRole = 'ADMIN'
+    featureRecords.clear()
+    featureRecords.set(initialFeature.id, { ...initialFeature })
+    await fs.rm(path.join(uploadsDir, 'icons'), { recursive: true, force: true })
   })
 
   after(async () => {
@@ -264,5 +292,117 @@ describe('featuresRoutes /features/icons', () => {
 
     assert.equal(res.status, 413)
     assert.equal(body.errorMessage, 'Uploaded icon must be 100 KB or smaller')
+  })
+
+  it('updates only the supplied fields and returns 204', async () => {
+    const res = await fetch(`${baseUrl}/features/1`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ description: 'Updated description' }),
+    })
+
+    assert.equal(res.status, 204)
+    assert.deepEqual(await featuresService.findAll(), [
+      { ...initialFeature, description: 'Updated description' },
+    ])
+  })
+
+  it('returns 404 when updating an unknown feature', async () => {
+    const res = await fetch(`${baseUrl}/features/999`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'Updated' }),
+    })
+    assert.equal(res.status, 404)
+  })
+
+  it('returns 409 when updating to another feature name', async () => {
+    featureRecords.set(2, { ...initialFeature, id: 2, name: 'Another feature' })
+    const res = await fetch(`${baseUrl}/features/1`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'Another feature' }),
+    })
+    assert.equal(res.status, 409)
+  })
+
+  it('returns 403 for non-admin update and delete requests', async () => {
+    currentRole = 'CANDIDATE'
+    const updateRes = await fetch(`${baseUrl}/features/1`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'Updated' }),
+    })
+    const deleteRes = await fetch(`${baseUrl}/features/1`, { method: 'DELETE' })
+
+    assert.equal(updateRes.status, 403)
+    assert.equal(deleteRes.status, 403)
+  })
+
+  it('deletes an uploaded icon after a successful update', async () => {
+    const filename = '12345678-1234-1234-1234-123456789abc.svg'
+    featureRecords.set(1, { ...initialFeature, iconPath: `/icons/${filename}` })
+    const iconPath = path.join(uploadsDir, 'icons', filename)
+    await fs.mkdir(path.dirname(iconPath), { recursive: true })
+    await fs.writeFile(iconPath, VALID_SVG)
+
+    const res = await fetch(`${baseUrl}/features/1`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ iconPath: null }),
+    })
+
+    assert.equal(res.status, 204)
+    await assert.rejects(fs.access(iconPath))
+  })
+
+  it('deletes the previous uploaded icon when replacing it', async () => {
+    const oldFilename = '12345678-1234-1234-1234-123456789abc.svg'
+    const newFilename = '12345678-1234-1234-1234-123456789abd.svg'
+    featureRecords.set(1, { ...initialFeature, iconPath: `/icons/${oldFilename}` })
+    const oldIconPath = path.join(uploadsDir, 'icons', oldFilename)
+    await fs.mkdir(path.dirname(oldIconPath), { recursive: true })
+    await fs.writeFile(oldIconPath, VALID_SVG)
+
+    const res = await fetch(`${baseUrl}/features/1`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ iconPath: `/icons/${newFilename}` }),
+    })
+
+    assert.equal(res.status, 204)
+    await assert.rejects(fs.access(oldIconPath))
+    assert.equal((await featuresService.findAll())[0]?.iconPath, `/icons/${newFilename}`)
+  })
+
+  it('deletes an uploaded icon after deleting its feature', async () => {
+    const filename = '12345678-1234-1234-1234-123456789abc.svg'
+    featureRecords.set(1, { ...initialFeature, iconPath: `/icons/${filename}` })
+    const iconPath = path.join(uploadsDir, 'icons', filename)
+    await fs.mkdir(path.dirname(iconPath), { recursive: true })
+    await fs.writeFile(iconPath, VALID_SVG)
+
+    const res = await fetch(`${baseUrl}/features/1`, { method: 'DELETE' })
+
+    assert.equal(res.status, 204)
+    assert.deepEqual(await featuresService.findAll(), [])
+    await assert.rejects(fs.access(iconPath))
+  })
+
+  it('does not delete repository icons when a feature is removed', async () => {
+    featureRecords.set(1, { ...initialFeature, iconPath: '/icons/linux.svg' })
+    const iconPath = path.join(uploadsDir, 'icons', 'linux.svg')
+    await fs.mkdir(path.dirname(iconPath), { recursive: true })
+    await fs.writeFile(iconPath, VALID_SVG)
+
+    const res = await fetch(`${baseUrl}/features/1`, { method: 'DELETE' })
+
+    assert.equal(res.status, 204)
+    assert.equal(await fs.readFile(iconPath, 'utf8'), VALID_SVG)
+  })
+
+  it('returns 404 when deleting an unknown feature', async () => {
+    const res = await fetch(`${baseUrl}/features/999`, { method: 'DELETE' })
+    assert.equal(res.status, 404)
   })
 })
