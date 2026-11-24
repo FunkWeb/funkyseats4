@@ -39,66 +39,74 @@ export default function AdminFeaturesPage() {
 
   return (
     <>
-      <PageHeader title="Funksjoner" />
+      <PageHeader title="Admin panel" />
 
-      <div className={styles.actions}>
-        <Button variant="primary" onClick={() => setFormMode({ type: 'create' })}>
-          <PlusIcon />
-          Legg til funksjon
-        </Button>
-      </div>
-
-      {featuresQuery.isPending && <Spinner label="Laster funksjoner" />}
-
-      {featuresQuery.isError && (
-        <Notice
-          variant="danger"
-          title="Kunne ikke hente funksjoner"
-          description="Prøv igjen senere."
+      <section className={styles.section} aria-label="Funksjoner">
+        <SectionHeader
+          title="Funksjoner"
+          action={
+            <Button icon={<PlusIcon />} onClick={() => setFormMode({ type: 'create' })}>
+              Legg til funksjon
+            </Button>
+          }
         />
-      )}
 
-      {featuresQuery.isSuccess &&
-        (features.length === 0 ? (
+        {featuresQuery.isPending && <Spinner label="Laster funksjoner" />}
+
+        {featuresQuery.isError && (
           <Notice
-            title="Ingen funksjoner"
-            description="Det er ikke lagt til noen funksjoner ennå."
+            variant="danger"
+            title="Kunne ikke hente funksjoner"
+            description="Prøv igjen senere."
           />
-        ) : (
-          <div className={styles.groups}>
-            {FEATURE_CATEGORY_LIST.map((category) => {
-              const categoryFeatures = features.filter((feature) => feature.category === category)
-              if (categoryFeatures.length === 0) return null
+        )}
 
-              return (
-                <div key={category} className={styles.categorySection}>
-                  <SectionHeader title={CATEGORY_TITLES[category]} />
-                  <div className={styles.featureGrid}>
-                    {categoryFeatures.map((feature) => (
-                      <div key={feature.id} className={styles.featureItem}>
-                        <FeatureTile feature={feature} />
-                        <div className={styles.featureActions}>
-                          <IconButton
-                            icon={<EditIcon />}
-                            variant="ghost"
-                            aria-label={`Rediger funksjon ${feature.name}`}
+        {featuresQuery.isSuccess &&
+          (features.length === 0 ? (
+            <Notice
+              title="Ingen funksjoner"
+              description="Det er ikke lagt til noen funksjoner ennå."
+            />
+          ) : (
+            <div className={styles.groups}>
+              {FEATURE_CATEGORY_LIST.map((category) => {
+                const categoryFeatures = features.filter((feature) => feature.category === category)
+                if (categoryFeatures.length === 0) return null
+
+                return (
+                  <div key={category} className={styles.categorySection}>
+                    <SectionHeader as="h3" title={CATEGORY_TITLES[category]} />
+                    <ul className={styles.featureGrid}>
+                      {categoryFeatures.map((feature) => (
+                        <li key={feature.id} className={styles.featureItem}>
+                          <FeatureTile
+                            feature={feature}
+                            className={styles.featureTile}
                             onClick={() => setFormMode({ type: 'edit', feature })}
                           />
-                          <IconButton
-                            icon={<TrashIcon />}
-                            variant="danger"
-                            aria-label={`Slett funksjon ${feature.name}`}
-                            onClick={() => setDeletingFeature(feature)}
-                          />
-                        </div>
-                      </div>
-                    ))}
+                          <div className={styles.featureActions}>
+                            <IconButton
+                              icon={<EditIcon />}
+                              variant="ghost"
+                              aria-label={`Rediger funksjon ${feature.name}`}
+                              onClick={() => setFormMode({ type: 'edit', feature })}
+                            />
+                            <IconButton
+                              icon={<TrashIcon />}
+                              variant="danger"
+                              aria-label={`Slett funksjon ${feature.name}`}
+                              onClick={() => setDeletingFeature(feature)}
+                            />
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                </div>
-              )
-            })}
-          </div>
-        ))}
+                )
+              })}
+            </div>
+          ))}
+      </section>
 
       <FeatureFormModal mode={formMode} onClose={() => setFormMode(null)} />
       <DeleteFeatureModal feature={deletingFeature} onClose={() => setDeletingFeature(null)} />

@@ -1,34 +1,58 @@
-.actions {
-  margin-bottom: 1.5rem;
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin-top: var(--space-6);
+  padding-inline: var(--space-6);
 }
 
 .groups {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: var(--space-8);
 }
 
 .categorySection {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: var(--space-4);
 }
 
 .featureGrid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(7rem, 1fr));
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
 .featureItem {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 0.25rem;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.featureItem .featureTile {
+  inline-size: 100%;
+  block-size: 5rem;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.featureItem .featureTile:hover {
+  background-color: var(--color-secondary-subtle);
 }
 
 .featureActions {
   display: flex;
-  align-items: center;
-  gap: 0.25rem;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border-top: 1px solid var(--color-border);
 }
