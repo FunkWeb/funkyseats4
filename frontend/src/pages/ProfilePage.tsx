@@ -1,33 +1,27 @@
 import { useState } from 'react'
-import { Link } from 'react-router'
-import type { BookingStatus, MyBookingDto } from '../../../contracts/booking'
-import { Button } from '../components/Button'
+import type { MyBookingDto } from '../../../contracts/booking'
 import { Card } from '../components/Card'
 import { Notice } from '../components/Notice'
 import { PageHeader } from '../components/PageHeader'
+import { PaginationControls } from '../components/PaginationControls'
 import { Spinner } from '../components/Spinner'
 import { UserIdentity } from '../components/UserIdentity'
 import { useAuth } from '../features/auth/useAuth'
-import { CANCEL_ERROR_MESSAGE, PERIOD_LABELS } from '../features/bookings/bookingLabels'
+import { CANCEL_ERROR_MESSAGE } from '../features/bookings/bookingLabels'
+import { MyBookingList } from '../features/bookings/MyBookingList'
 import { useCancelBooking } from '../features/bookings/useCancelBooking'
 import { useMyBookings } from '../features/bookings/useMyBookings'
-import { formatShortDate, getTodayIsoDate } from '../utils/isoDate'
+import { getTodayIsoDate } from '../utils/isoDate'
 import styles from './ProfilePage.module.css'
-
-const STATUS_LABELS: Record<BookingStatus, string> = {
-  ACTIVE: 'Aktiv',
-  COMPLETE: 'Fullført',
-  CANCELLED: 'Avbestilt',
-}
 
 export default function ProfilePage() {
   const [page, setPage] = useState(1)
   const [cancellingId, setCancellingId] = useState<number | null>(null)
   const [cancelError, setCancelError] = useState<string | null>(null)
   const { user } = useAuth()
-  const bookingsQuery = useMyBookings(page)
-  const cancelMutation = useCancelBooking(undefined, getTodayIsoDate())
   const today = getTodayIsoDate()
+  const bookingsQuery = useMyBookings(page)
+  const cancelMutation = useCancelBooking(undefined, today)
   const bookings = bookingsQuery.data?.items ?? []
   const todayBookings = bookings.filter((booking) => booking.bookingDate === today)
   const otherBookings = bookings.filter((booking) => booking.bookingDate !== today)
@@ -41,50 +35,7 @@ export default function ProfilePage() {
     })
   }
 
-  const renderBookings = (bookings: MyBookingDto[]) => (
-    <ul className={styles.list}>
-      {bookings.map((booking) => (
-        <li key={booking.id}>
-          <Card className={styles.booking}>
-            <div className={styles.field}>
-              <span className={styles.label}>Dato</span>
-              <strong>{formatShortDate(booking.bookingDate)}</strong>
-            </div>
-            <div className={styles.field}>
-              <span className={styles.label}>Tidspunkt</span>
-              <span>{PERIOD_LABELS[booking.timePeriod]}</span>
-            </div>
-            <div className={styles.field}>
-              <span className={styles.label}>Rom</span>
-              <Link className={styles.roomLink} to={`/rooms/${booking.roomSlug}`}>
-                {booking.roomName}
-              </Link>
-            </div>
-            <div className={styles.field}>
-              <span className={styles.label}>Plass</span>
-              <span>{booking.seatNumber}</span>
-            </div>
-            <div className={styles.field}>
-              <span className={styles.label}>Status</span>
-              <span className={`${styles.status} ${styles[booking.status.toLowerCase()]}`}>
-                {STATUS_LABELS[booking.status]}
-              </span>
-            </div>
-            {booking.status === 'ACTIVE' && booking.bookingDate >= today && (
-              <Button
-                variant="danger"
-                size="sm"
-                disabled={cancellingId !== null}
-                onClick={() => cancelBooking(booking)}
-              >
-                Avbestill
-              </Button>
-            )}
-          </Card>
-        </li>
-      ))}
-    </ul>
-  )
+  const listProps = { today, cancelDisabled: cancellingId !== null, onCancel: cancelBooking }
 
   return (
     <>
@@ -120,45 +71,20 @@ export default function ProfilePage() {
         />
       )}
 
-      {bookingsQuery.isSuccess && bookingsQuery.data.items.length === 0 && (
+      {bookingsQuery.isSuccess && bookings.length === 0 && (
         <Notice title="Ingen reservasjoner" description="Du har ingen reservasjoner." />
       )}
 
-      {bookingsQuery.isSuccess && bookingsQuery.data.items.length > 0 && (
+      {bookingsQuery.isSuccess && bookings.length > 0 && (
         <>
-          {todayBookings.length > 0 && (
-            <section className={styles.section}>
-              <h2 className={styles.sectionTitle}>I dag</h2>
-              {renderBookings(todayBookings)}
-            </section>
-          )}
-          {otherBookings.length > 0 && (
-            <section className={styles.section}>
-              <h2 className={styles.sectionTitle}>Andre reservasjoner</h2>
-              {renderBookings(otherBookings)}
-            </section>
-          )}
-
-          {bookingsQuery.data.total > bookingsQuery.data.pageSize && (
-            <div className={styles.paging}>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page <= 1}
-                onClick={() => setPage((current) => Math.max(1, current - 1))}
-              >
-                Forrige
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page * bookingsQuery.data.pageSize >= bookingsQuery.data.total}
-                onClick={() => setPage((current) => current + 1)}
-              >
-                Neste
-              </Button>
-            </div>
-          )}
+          <MyBookingList title="I dag" bookings={todayBookings} {...listProps} />
+          <MyBookingList title="Andre reservasjoner" bookings={otherBookings} {...listProps} />
+          <PaginationControls
+            page={page}
+            pageSize={bookingsQuery.data.pageSize}
+            total={bookingsQuery.data.total}
+            onPageChange={setPage}
+          />
         </>
       )}
     </>
