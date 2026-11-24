@@ -28,15 +28,36 @@
   color: var(--color-text-muted);
 }
 
+.titleRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-inline-size: 0;
+}
+
 .title {
   margin: 0;
   font-size: var(--font-size-2xl);
   font-weight: var(--font-weight-bold);
-  text-align: center;
+}
+
+.os {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-inline-size: 0;
+}
+
+.osLabel {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
 }
 
 .features {
-  justify-content: center;
+  justify-content: flex-start;
   gap: var(--space-1);
 }
 

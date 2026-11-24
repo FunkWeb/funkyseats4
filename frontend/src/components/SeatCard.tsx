@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
+import type { FeatureDto } from '../../../contracts/feature'
 import type { UserDto } from '../../../contracts/user'
-import type { FeatureIconsProps } from './FeatureIcons'
 import { Card } from './Card'
 import { FeatureIcons } from './FeatureIcons'
 import { UserIdentity } from './UserIdentity'
@@ -11,7 +11,7 @@ const MAX_VISIBLE_FEATURES = 6
 
 export interface SeatCardProps {
   seatName: string
-  features: FeatureIconsProps['features']
+  features: Pick<FeatureDto, 'id' | 'name' | 'iconPath' | 'category'>[]
   occupant?: Pick<UserDto, 'name' | 'avatarPath'>
   occupantDetail?: string
   freeLabel?: string
@@ -34,6 +34,9 @@ export function SeatCard({
   actions,
   className,
 }: SeatCardProps) {
+  const osFeatures = features.filter((feature) => feature.category === 'OS')
+  const otherFeatures = features.filter((feature) => feature.category !== 'OS')
+
   return (
     <Card variant={muted ? 'muted' : 'default'} className={classNames(styles.seatCard, className)}>
       <div className={styles.header}>
@@ -51,14 +54,24 @@ export function SeatCard({
         )}
       </div>
 
-      <h3 className={styles.title}>{seatName}</h3>
+      <div className={styles.titleRow}>
+        <h3 className={styles.title}>{seatName}</h3>
+        {osFeatures.length > 0 && (
+          <div className={styles.os}>
+            <span className={styles.osLabel}>OS:</span>
+            <FeatureIcons features={osFeatures} hideLabels className={styles.features} />
+          </div>
+        )}
+      </div>
 
-      <FeatureIcons
-        features={features}
-        hideLabels
-        maxVisible={MAX_VISIBLE_FEATURES}
-        className={styles.features}
-      />
+      {otherFeatures.length > 0 && (
+        <FeatureIcons
+          features={otherFeatures}
+          hideLabels
+          maxVisible={MAX_VISIBLE_FEATURES}
+          className={styles.features}
+        />
+      )}
 
       {(periodControl || error || actions) && (
         <div className={styles.footer}>
