@@ -1,10 +1,11 @@
-import type { ButtonHTMLAttributes, ReactNode } from 'react'
+import type { ButtonHTMLAttributes, ReactNode, Ref } from 'react'
 import { classNames } from '../utils/classNames'
 import styles from './Button.module.css'
 
 export type ButtonVariant = 'primary' | 'accent' | 'outline' | 'danger' | 'success' | 'ghost'
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  ref?: Ref<HTMLButtonElement>
   variant?: ButtonVariant
   icon?: ReactNode
   iconPosition?: 'start' | 'end'
@@ -19,6 +20,7 @@ export function Button({
   size = 'md',
   children,
   className,
+  ref,
   type = 'button',
   ...buttonProps
 }: ButtonProps) {
@@ -30,7 +32,7 @@ export function Button({
   )
 
   return (
-    <button {...buttonProps} className={classes} type={type}>
+    <button {...buttonProps} ref={ref} className={classes} type={type}>
       {iconPosition === 'start' && iconElement}
       <span>{children}</span>
       {iconPosition === 'end' && iconElement}
