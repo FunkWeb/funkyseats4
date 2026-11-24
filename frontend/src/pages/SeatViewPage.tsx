@@ -17,6 +17,7 @@ import { useRooms } from '../features/rooms/useRooms'
 import {
   getActiveSeatBookings,
   getInitialPeriod,
+  getOwnPeriodBookings,
   getPeriodOccupant,
   isPeriodTaken,
 } from '../features/seats/seatPeriod'
@@ -104,9 +105,9 @@ export default function SeatViewPage() {
     createBookingMutation.mutate({ seatId, bookingDate: selectedDate, timePeriod: period })
   }
 
-  function handleCancelBooking(bookingId: number) {
+  function handleCancelBookings(bookingIds: number[]) {
     createBookingMutation.reset()
-    cancelBookingMutation.mutate(bookingId)
+    cancelBookingMutation.mutate(bookingIds)
   }
 
   const bookingError = createBookingMutation.isError
@@ -166,22 +167,28 @@ export default function SeatViewPage() {
     )
 
     if (occupant?.userId === currentUserId) {
+      const ownBookingIds = getOwnPeriodBookings(period, seatBookings, currentUserId).map(
+        (booking) => booking.id,
+      )
       const isCancelling =
-        cancelBookingMutation.isPending && cancelBookingMutation.variables === occupant.id
+        cancelBookingMutation.isPending &&
+        ownBookingIds.some((id) => cancelBookingMutation.variables?.includes(id))
 
       return (
         <SeatCard
           seatName={seat.seatNumber}
           features={seat.features}
           occupant={{ name: 'Din reservasjon', avatarPath: user?.avatarPath ?? null }}
-          occupantDetail={PERIOD_LABELS[occupant.timePeriod]}
+          occupantDetail={
+            ownBookingIds.length > 1 ? PERIOD_LABELS.ALL_DAY : PERIOD_LABELS[occupant.timePeriod]
+          }
           mine
           periodControl={periodControl}
           actions={
             <Button
               variant="outline"
               disabled={isCancelling}
-              onClick={() => handleCancelBooking(occupant.id)}
+              onClick={() => handleCancelBookings(ownBookingIds)}
             >
               Avbestill reservasjon
             </Button>

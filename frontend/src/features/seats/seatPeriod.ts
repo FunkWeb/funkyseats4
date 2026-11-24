@@ -26,6 +26,16 @@ export function getInitialPeriod(seatBookings: BookingDto[], currentUserId: numb
   )
 }
 
+export function getOwnPeriodBookings(
+  period: TimePeriod,
+  seatBookings: BookingDto[],
+  currentUserId: number,
+): BookingDto[] {
+  return seatBookings.filter(
+    (booking) => booking.userId === currentUserId && periodsOverlap(booking.timePeriod, period),
+  )
+}
+
 export function getPeriodOccupant(
   period: TimePeriod,
   seatBookings: BookingDto[],
