@@ -58,7 +58,7 @@ export default function SeatViewPage() {
   const seatsQuery = useRoomSeats(room?.id)
   const bookingsQuery = useRoomBookings(room?.id, selectedDate)
   const createBookingMutation = useCreateBooking(room?.id, selectedDate)
-  const cancelBookingMutation = useCancelBooking(room?.id, selectedDate)
+  const cancelBookingMutation = useCancelBooking()
 
   const [periodSelection, setPeriodSelection] = useState<PeriodSelection>({
     date: selectedDate,

@@ -16,26 +16,19 @@ import styles from './ProfilePage.module.css'
 
 export default function ProfilePage() {
   const [page, setPage] = useState(1)
-  const [cancellingId, setCancellingId] = useState<number | null>(null)
-  const [cancelError, setCancelError] = useState<string | null>(null)
   const { user } = useAuth()
   const today = getTodayIsoDate()
   const bookingsQuery = useMyBookings(page)
-  const cancelMutation = useCancelBooking(undefined, today)
+  const cancelMutation = useCancelBooking()
   const bookings = bookingsQuery.data?.items ?? []
   const todayBookings = bookings.filter((booking) => booking.bookingDate === today)
   const otherBookings = bookings.filter((booking) => booking.bookingDate !== today)
 
-  const cancelBooking = (booking: MyBookingDto) => {
-    setCancelError(null)
-    setCancellingId(booking.id)
-    cancelMutation.mutate([booking.id], {
-      onError: () => setCancelError(CANCEL_ERROR_MESSAGE),
-      onSettled: () => setCancellingId(null),
-    })
+  const listProps = {
+    today,
+    cancelDisabled: cancelMutation.isPending,
+    onCancel: (booking: MyBookingDto) => cancelMutation.mutate([booking.id]),
   }
-
-  const listProps = { today, cancelDisabled: cancellingId !== null, onCancel: cancelBooking }
 
   return (
     <>
@@ -62,12 +55,12 @@ export default function ProfilePage() {
         />
       )}
 
-      {cancelError && (
+      {cancelMutation.isError && (
         <Notice
           className={styles.cancelError}
           variant="danger"
           title="Avbestilling feilet"
-          description={cancelError}
+          description={CANCEL_ERROR_MESSAGE}
         />
       )}
 
