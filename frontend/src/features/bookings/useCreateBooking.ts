@@ -8,10 +8,9 @@ export function useCreateBooking(roomId: number | undefined, date: string) {
 
   return useMutation<BookingDto, Error, NewBooking>({
     mutationFn: (input) => createBooking(input),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({
+    onSettled: () =>
+      queryClient.invalidateQueries({
         queryKey: roomBookingsQueryKey(roomId, date),
-      })
-    },
+      }),
   })
 }

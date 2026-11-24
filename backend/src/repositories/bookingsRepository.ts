@@ -9,12 +9,17 @@ export interface Booking extends BookingDto {
   createdAt: Date
 }
 
+export interface RoomBooking extends Booking {
+  userName: string
+  userAvatarPath: string | null
+}
+
 export type BookingInsert = NewBooking & Pick<BookingDto, 'userId'>
 
 type BookingRow = Booking & RowDataPacket
+type RoomBookingRow = RoomBooking & RowDataPacket
 
-const SELECT_BOOKING = `
-  SELECT
+const BOOKING_COLUMNS = `
     bookings.id,
     bookings.seat_id                       AS seatId,
     bookings.user_id                       AS userId,
@@ -22,8 +27,9 @@ const SELECT_BOOKING = `
     DATE_FORMAT(bookings.booking_date, '%Y-%m-%d') AS bookingDate,
     bookings.time_period                   AS timePeriod,
     bookings.updated_at                    AS updatedAt,
-    bookings.created_at                    AS createdAt
-  FROM bookings`
+    bookings.created_at                    AS createdAt`
+
+const SELECT_BOOKING = `SELECT ${BOOKING_COLUMNS} FROM bookings`
 
 type Executor = Pick<Pool, 'execute'>
 
@@ -62,14 +68,21 @@ const createBookingQueries = (db: Executor) => {
         userId,
         date,
       }),
-    findActiveByRoomAndDate: (roomId: number, date: string): Promise<Booking[]> =>
-      selectBookings(
-        `INNER JOIN seats ON seats.id = bookings.seat_id
+    findActiveByRoomAndDate: async (roomId: number, date: string): Promise<RoomBooking[]> => {
+      const [rows] = await db.execute<RoomBookingRow[]>(
+        `SELECT ${BOOKING_COLUMNS},
+           users.name        AS userName,
+           users.avatar_path AS userAvatarPath
+         FROM bookings
+         INNER JOIN seats ON seats.id = bookings.seat_id
+         INNER JOIN users ON users.id = bookings.user_id
          WHERE seats.room_id = :roomId AND seats.deleted_at IS NULL
            AND bookings.booking_date = :date AND bookings.status = 'ACTIVE'
          ORDER BY bookings.id`,
         { roomId, date },
-      ),
+      )
+      return rows
+    },
     create: async (booking: BookingInsert): Promise<Booking> => {
       const [result] = await db.execute<ResultSetHeader>(
         `INSERT INTO bookings (seat_id, user_id, status, booking_date, time_period)

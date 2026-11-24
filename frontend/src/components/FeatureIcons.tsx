@@ -7,6 +7,7 @@ import { StarIcon } from './icons/StarIcon'
 export interface FeatureIconsProps {
   features: Pick<FeatureDto, 'id' | 'name' | 'iconPath'>[]
   hideLabels?: boolean
+  maxVisible?: number
   className?: string
 }
 
@@ -49,17 +50,27 @@ export function FeatureIcon({ iconPath }: { iconPath: string | null }) {
   )
 }
 
-export function FeatureIcons({ features, hideLabels = false, className }: FeatureIconsProps) {
+export function FeatureIcons({
+  features,
+  hideLabels = false,
+  maxVisible,
+  className,
+}: FeatureIconsProps) {
   if (features.length === 0) {
     return null
   }
+
+  const overflowing = maxVisible !== undefined && features.length > maxVisible
+  const visibleFeatures = overflowing ? features.slice(0, Math.max(maxVisible - 1, 0)) : features
+  const hiddenFeatures = overflowing ? features.slice(visibleFeatures.length) : []
+  const hiddenNames = hiddenFeatures.map((feature) => feature.name).join(', ')
 
   return (
     <ul
       className={classNames(styles.list, hideLabels && styles.hideLabels, className)}
       aria-label="Funksjoner"
     >
-      {features.map((feature) => (
+      {visibleFeatures.map((feature) => (
         <li
           className={styles.feature}
           key={`${feature.id}:${feature.iconPath ?? ''}`}
@@ -70,6 +81,18 @@ export function FeatureIcons({ features, hideLabels = false, className }: Featur
           <span className={styles.label}>{feature.name}</span>
         </li>
       ))}
+      {hiddenFeatures.length > 0 && (
+        <li
+          className={styles.feature}
+          aria-label={hiddenNames}
+          tabIndex={hideLabels ? 0 : undefined}
+        >
+          <span className={styles.overflowChip} aria-hidden>
+            +{hiddenFeatures.length}
+          </span>
+          <span className={styles.label}>{hiddenNames}</span>
+        </li>
+      )}
     </ul>
   )
 }

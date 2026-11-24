@@ -1,19 +1,23 @@
 import type { ReactNode } from 'react'
+import type { FeatureDto } from '../../../contracts/feature'
 import type { UserDto } from '../../../contracts/user'
-import type { FeatureIconsProps } from './FeatureIcons'
 import { Card } from './Card'
 import { FeatureIcons } from './FeatureIcons'
 import { UserIdentity } from './UserIdentity'
 import { classNames } from '../utils/classNames'
 import styles from './SeatCard.module.css'
 
+const MAX_VISIBLE_FEATURES = 6
+
 export interface SeatCardProps {
   seatName: string
-  features: FeatureIconsProps['features']
+  features: Pick<FeatureDto, 'id' | 'name' | 'iconPath' | 'category'>[]
   occupant?: Pick<UserDto, 'name' | 'avatarPath'>
+  occupantDetail?: string
   freeLabel?: string
   muted?: boolean
-  status?: string
+  error?: string
+  periodControl?: ReactNode
   actions?: ReactNode
   className?: string
 }
@@ -22,12 +26,17 @@ export function SeatCard({
   seatName,
   features,
   occupant,
-  freeLabel = 'Available',
+  occupantDetail,
+  freeLabel = 'Ledig',
   muted = false,
-  status,
+  error,
+  periodControl,
   actions,
   className,
 }: SeatCardProps) {
+  const osFeatures = features.filter((feature) => feature.category === 'OS')
+  const otherFeatures = features.filter((feature) => feature.category !== 'OS')
+
   return (
     <Card variant={muted ? 'muted' : 'default'} className={classNames(styles.seatCard, className)}>
       <div className={styles.header}>
@@ -35,22 +44,48 @@ export function SeatCard({
           <UserIdentity
             size="sm"
             name={occupant.name}
+            subtitle={occupantDetail}
             avatarSrc={occupant.avatarPath ?? undefined}
           />
         ) : (
-          <span className={styles.freeLabel}>{freeLabel}</span>
+          <span className={classNames(styles.freeLabel, muted && styles.freeLabelMuted)}>
+            {freeLabel}
+          </span>
         )}
-        <FeatureIcons features={features} hideLabels className={styles.features} />
       </div>
 
-      <h3 className={styles.title}>{seatName}</h3>
+      <div className={styles.titleRow}>
+        <h3 className={styles.title}>{seatName}</h3>
+        {osFeatures.length > 0 && (
+          <div className={styles.os}>
+            <span className={styles.osLabel}>OS:</span>
+            <FeatureIcons features={osFeatures} hideLabels className={styles.features} />
+          </div>
+        )}
+      </div>
 
-      {(status || actions) && (
+      {otherFeatures.length > 0 && (
+        <FeatureIcons
+          features={otherFeatures}
+          hideLabels
+          maxVisible={MAX_VISIBLE_FEATURES}
+          className={styles.features}
+        />
+      )}
+
+      {(periodControl || error || actions) && (
         <div className={styles.footer}>
-          {status && (
-            <p className={classNames(styles.status, muted && styles.unavailable)}>{status}</p>
+          {periodControl}
+          {error && (
+            <p className={styles.error} role="alert">
+              {error}
+            </p>
           )}
-          {actions}
+          {actions && (
+            <div className={classNames(styles.actions, muted && styles.mutedActions)}>
+              {actions}
+            </div>
+          )}
         </div>
       )}
     </Card>

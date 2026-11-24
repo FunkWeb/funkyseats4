@@ -1,0 +1,39 @@
+.track {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.4fr;
+  padding: 2px;
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface-muted);
+}
+
+.segment {
+  block-size: 24px;
+  min-inline-size: 0;
+  padding: 0 var(--space-1);
+  border: 0;
+  border-radius: calc(var(--radius-md) - 2px);
+  color: var(--color-text);
+  background-color: transparent;
+  font-family: inherit;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  white-space: nowrap;
+  cursor: pointer;
+  transition-property: background-color, box-shadow, color;
+  transition-duration: var(--duration-fast);
+}
+
+.selected {
+  background-color: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.taken {
+  color: var(--color-text-muted);
+  text-decoration: line-through;
+}
+
+.segment:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 0;
+}
