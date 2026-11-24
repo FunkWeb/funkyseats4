@@ -33,6 +33,9 @@ export default function ProfilePage() {
   const bookingsQuery = useMyBookings(page)
   const cancelMutation = useCancelBooking(undefined, getTodayIsoDate())
   const today = getTodayIsoDate()
+  const bookings = bookingsQuery.data?.items ?? []
+  const todayBookings = bookings.filter((booking) => booking.bookingDate === today)
+  const otherBookings = bookings.filter((booking) => booking.bookingDate !== today)
 
   const cancelBooking = (booking: MyBookingDto) => {
     setCancelError(null)
@@ -42,6 +45,51 @@ export default function ProfilePage() {
       onSettled: () => setCancellingId(null),
     })
   }
+
+  const renderBookings = (bookings: MyBookingDto[]) => (
+    <ul className={styles.list}>
+      {bookings.map((booking) => (
+        <li key={booking.id}>
+          <Card className={styles.booking}>
+            <div className={styles.field}>
+              <span className={styles.label}>Dato</span>
+              <strong>{formatShortDate(booking.bookingDate)}</strong>
+            </div>
+            <div className={styles.field}>
+              <span className={styles.label}>Tidspunkt</span>
+              <span>{PERIOD_LABELS[booking.timePeriod]}</span>
+            </div>
+            <div className={styles.field}>
+              <span className={styles.label}>Rom</span>
+              <Link className={styles.roomLink} to={`/rooms/${booking.roomSlug}`}>
+                {booking.roomName}
+              </Link>
+            </div>
+            <div className={styles.field}>
+              <span className={styles.label}>Plass</span>
+              <span>{booking.seatNumber}</span>
+            </div>
+            <div className={styles.field}>
+              <span className={styles.label}>Status</span>
+              <span className={`${styles.status} ${styles[booking.status.toLowerCase()]}`}>
+                {STATUS_LABELS[booking.status]}
+              </span>
+            </div>
+            {booking.status === 'ACTIVE' && booking.bookingDate >= today && (
+              <Button
+                variant="danger"
+                size="sm"
+                disabled={cancellingId !== null}
+                onClick={() => cancelBooking(booking)}
+              >
+                Avbestill
+              </Button>
+            )}
+          </Card>
+        </li>
+      ))}
+    </ul>
+  )
 
   return (
     <>
@@ -83,48 +131,18 @@ export default function ProfilePage() {
 
       {bookingsQuery.isSuccess && bookingsQuery.data.items.length > 0 && (
         <>
-          <ul className={styles.list}>
-            {bookingsQuery.data.items.map((booking) => (
-              <li key={booking.id}>
-                <Card className={styles.booking}>
-                  <div className={styles.field}>
-                    <span className={styles.label}>Dato</span>
-                    <strong>{formatShortDate(booking.bookingDate)}</strong>
-                  </div>
-                  <div className={styles.field}>
-                    <span className={styles.label}>Tidspunkt</span>
-                    <span>{PERIOD_LABELS[booking.timePeriod]}</span>
-                  </div>
-                  <div className={styles.field}>
-                    <span className={styles.label}>Rom</span>
-                    <Link className={styles.roomLink} to={`/rooms/${booking.roomSlug}`}>
-                      {booking.roomName}
-                    </Link>
-                  </div>
-                  <div className={styles.field}>
-                    <span className={styles.label}>Plass</span>
-                    <span>{booking.seatNumber}</span>
-                  </div>
-                  <div className={styles.field}>
-                    <span className={styles.label}>Status</span>
-                    <span className={`${styles.status} ${styles[booking.status.toLowerCase()]}`}>
-                      {STATUS_LABELS[booking.status]}
-                    </span>
-                  </div>
-                  {booking.status === 'ACTIVE' && booking.bookingDate >= today && (
-                    <Button
-                      variant="danger"
-                      size="sm"
-                      disabled={cancellingId !== null}
-                      onClick={() => cancelBooking(booking)}
-                    >
-                      Avbestill
-                    </Button>
-                  )}
-                </Card>
-              </li>
-            ))}
-          </ul>
+          {todayBookings.length > 0 && (
+            <section className={styles.section}>
+              <h2 className={styles.sectionTitle}>I dag</h2>
+              {renderBookings(todayBookings)}
+            </section>
+          )}
+          {otherBookings.length > 0 && (
+            <section className={styles.section}>
+              <h2 className={styles.sectionTitle}>Andre reservasjoner</h2>
+              {renderBookings(otherBookings)}
+            </section>
+          )}
 
           {bookingsQuery.data.total > bookingsQuery.data.pageSize && (
             <div className={styles.paging}>
