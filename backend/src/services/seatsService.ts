@@ -29,6 +29,31 @@ export interface SeatsServiceDeps {
   >
 }
 
+interface SeatTransaction {
+  seats: Pick<SeatsRepository, 'lockById' | 'create' | 'update'>
+  features: Pick<FeaturesRepository, 'attachToSeat' | 'detachAllFromSeat'>
+}
+
+const hasErrorCode = (error: unknown, code: string) =>
+  typeof error === 'object' && error !== null && 'code' in error && error.code === code
+
+const rethrowAs =
+  (code: string, toError: () => Error) =>
+  (error: unknown): never => {
+    throw hasErrorCode(error, code) ? toError() : error
+  }
+
+const seatNumberTaken = (seatNumber: string) =>
+  new ConflictError(`Seat ${seatNumber} already exists in this room`)
+
+const attachFeatures = async (tx: SeatTransaction, seatId: number, featureIds: number[]) => {
+  for (const featureId of featureIds) {
+    await tx.features
+      .attachToSeat(seatId, featureId)
+      .catch(rethrowAs('ER_NO_REFERENCED_ROW_2', () => new NotFoundError('Feature')))
+  }
+}
+
 export const createSeatsService = ({ db, seats, rooms, features }: SeatsServiceDeps) => {
   const findSeat = (seatId: number) => findOrThrow(seats.findById(seatId), 'Seat')
   const findRoom = (roomId: number) => findOrThrow(rooms.findById(roomId), 'Room')
@@ -38,12 +63,7 @@ export const createSeatsService = ({ db, seats, rooms, features }: SeatsServiceD
     await Promise.all(featureIds.map((featureId) => findFeature(featureId)))
   }
 
-  const withTransaction = async <T>(
-    run: (tx: {
-      seats: Pick<SeatsRepository, 'create' | 'update'>
-      features: Pick<FeaturesRepository, 'attachToSeat' | 'detachAllFromSeat'>
-    }) => Promise<T>,
-  ): Promise<T> => {
+  const withTransaction = async <T>(run: (tx: SeatTransaction) => Promise<T>): Promise<T> => {
     const connection: PoolConnection = await db.getConnection()
     try {
       await connection.beginTransaction()
@@ -68,7 +88,7 @@ export const createSeatsService = ({ db, seats, rooms, features }: SeatsServiceD
   ) => {
     const roomSeats = await seats.findByRoomId(roomId)
     if (roomSeats.some((seat) => seat.seatNumber === seatNumber && seat.id !== exceptSeatId)) {
-      throw new ConflictError(`Seat ${seatNumber} already exists in this room`)
+      throw seatNumberTaken(seatNumber)
     }
   }
 
@@ -95,10 +115,10 @@ export const createSeatsService = ({ db, seats, rooms, features }: SeatsServiceD
     await assertFeaturesExist(input.featureIds)
 
     return withTransaction(async (tx) => {
-      const seatId = await tx.seats.create(input)
-      for (const featureId of input.featureIds) {
-        await tx.features.attachToSeat(seatId, featureId)
-      }
+      const seatId = await tx.seats
+        .create(input)
+        .catch(rethrowAs('ER_DUP_ENTRY', () => seatNumberTaken(input.seatNumber)))
+      await attachFeatures(tx, seatId, input.featureIds)
       return seatId
     })
   }
@@ -117,12 +137,13 @@ export const createSeatsService = ({ db, seats, rooms, features }: SeatsServiceD
     }
 
     await withTransaction(async (tx) => {
-      await tx.seats.update(seatId, input)
+      if (!(await tx.seats.lockById(seatId))) throw new NotFoundError('Seat')
+      await tx.seats
+        .update(seatId, input)
+        .catch(rethrowAs('ER_DUP_ENTRY', () => seatNumberTaken(seatNumber)))
       if (input.featureIds !== undefined) {
         await tx.features.detachAllFromSeat(seatId)
-        for (const featureId of input.featureIds) {
-          await tx.features.attachToSeat(seatId, featureId)
-        }
+        await attachFeatures(tx, seatId, input.featureIds)
       }
     })
   }

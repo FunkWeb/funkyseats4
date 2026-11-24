@@ -1,6 +1,6 @@
 import { before, beforeEach, describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import { NotFoundError } from '../../src/errors/appErrors.js'
+import { ConflictError, NotFoundError } from '../../src/errors/appErrors.js'
 import {
   createFeaturesRepository,
   type FeaturesRepository,
@@ -10,7 +10,11 @@ import {
   createSeatsRepository,
   type SeatsRepository,
 } from '../../src/repositories/seatsRepository.js'
-import { createSeatsService, type SeatsService } from '../../src/services/seatsService.js'
+import {
+  createSeatsService,
+  type SeatsService,
+  type SeatsServiceDeps,
+} from '../../src/services/seatsService.js'
 import { useMigratedTestDatabase } from '../testDatabase.js'
 import { createFixtures, dock, linux, type Fixtures } from '../testFixtures.js'
 
@@ -26,6 +30,15 @@ describe('seatsService', () => {
   let roomId: number
 
   const storeSeat = (seatNumber: string) => fixtures.storeSeat(roomId, seatNumber)
+
+  const serviceWith = (deps: Partial<Pick<SeatsServiceDeps, 'seats' | 'features'>>) =>
+    createSeatsService({
+      db: db(),
+      seats,
+      rooms: createRoomsRepository(db()),
+      features,
+      ...deps,
+    })
 
   before(() => {
     fixtures = createFixtures(db())
@@ -259,5 +272,66 @@ describe('seatsService', () => {
     const unchanged = await seats.findById(seatId)
     assert.equal(unchanged?.seatNumber, 'A1')
     assert.deepEqual(await features.findBySeatId(seatId), [storedDock])
+  })
+
+  it('update rejects a seat deleted after the pre-check without touching its features', async () => {
+    const storedDock = await fixtures.storeFeature(dock)
+    const seatId = await storeSeat('A1')
+    await features.attachToSeat(seatId, storedDock.id)
+    const snapshot = await seats.findById(seatId)
+    await seats.delete(seatId)
+
+    await assert.rejects(
+      serviceWith({ seats: { ...seats, findById: async () => snapshot } }).update(seatId, {
+        featureIds: [],
+      }),
+      NotFoundError,
+    )
+
+    assert.deepEqual(await features.findBySeatId(seatId), [storedDock])
+  })
+
+  it('create reports a seat number taken after the pre-check as a conflict', async () => {
+    await storeSeat('A1')
+
+    await assert.rejects(
+      serviceWith({ seats: { ...seats, findByRoomId: async () => [] } }).create({
+        roomId,
+        seatNumber: 'A1',
+        description: null,
+        featureIds: [],
+      }),
+      ConflictError,
+    )
+
+    assert.equal((await seats.findByRoomId(roomId)).length, 1)
+  })
+
+  it('update reports a seat number taken after the pre-check as a conflict', async () => {
+    await storeSeat('A1')
+    const seatId = await storeSeat('A2')
+
+    await assert.rejects(
+      serviceWith({ seats: { ...seats, findByRoomId: async () => [] } }).update(seatId, {
+        seatNumber: 'A1',
+      }),
+      ConflictError,
+    )
+
+    assert.equal((await seats.findById(seatId))?.seatNumber, 'A2')
+  })
+
+  it('create reports a feature deleted after the pre-check as not found and saves nothing', async () => {
+    await assert.rejects(
+      serviceWith({ features: { ...features, findById: async (id) => ({ ...dock, id }) } }).create({
+        roomId,
+        seatNumber: 'A1',
+        description: null,
+        featureIds: [UNKNOWN_ID],
+      }),
+      NotFoundError,
+    )
+
+    assert.deepEqual(await seats.findByRoomId(roomId), [])
   })
 })

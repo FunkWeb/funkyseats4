@@ -44,6 +44,13 @@ export const createSeatsRepository = (db: Executor) => {
     },
     findByRoomId: (roomId: number) =>
       selectSeats('AND room_id = :roomId ORDER BY seat_number', { roomId }),
+    lockById: async (id: number): Promise<boolean> => {
+      const [rows] = await db.execute<RowDataPacket[]>(
+        'SELECT id FROM seats WHERE id = :id AND deleted_at IS NULL FOR UPDATE',
+        { id },
+      )
+      return rows.length > 0
+    },
 
     create: async (seat: Omit<CreateSeatRequest, 'featureIds'>): Promise<number> => {
       const [result] = await db.execute<ResultSetHeader>(
