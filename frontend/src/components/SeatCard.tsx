@@ -7,13 +7,18 @@ import { UserIdentity } from './UserIdentity'
 import { classNames } from '../utils/classNames'
 import styles from './SeatCard.module.css'
 
+const MAX_VISIBLE_FEATURES = 6
+
 export interface SeatCardProps {
   seatName: string
   features: FeatureIconsProps['features']
   occupant?: Pick<UserDto, 'name' | 'avatarPath'>
+  occupantDetail?: string
+  mine?: boolean
   freeLabel?: string
   muted?: boolean
   status?: string
+  periodControl?: ReactNode
   actions?: ReactNode
   className?: string
 }
@@ -22,9 +27,12 @@ export function SeatCard({
   seatName,
   features,
   occupant,
-  freeLabel = 'Available',
+  occupantDetail,
+  mine = false,
+  freeLabel = 'Ledig',
   muted = false,
   status,
+  periodControl,
   actions,
   className,
 }: SeatCardProps) {
@@ -35,22 +43,33 @@ export function SeatCard({
           <UserIdentity
             size="sm"
             name={occupant.name}
+            subtitle={occupantDetail}
             avatarSrc={occupant.avatarPath ?? undefined}
+            className={classNames(mine && styles.mine)}
           />
         ) : (
-          <span className={styles.freeLabel}>{freeLabel}</span>
+          <span className={classNames(styles.freeLabel, muted && styles.freeLabelMuted)}>
+            {freeLabel}
+          </span>
         )}
-        <FeatureIcons features={features} hideLabels className={styles.features} />
       </div>
 
       <h3 className={styles.title}>{seatName}</h3>
 
-      {(status || actions) && (
+      <FeatureIcons
+        features={features}
+        hideLabels
+        maxVisible={MAX_VISIBLE_FEATURES}
+        className={styles.features}
+      />
+
+      {(periodControl || status || actions) && (
         <div className={styles.footer}>
+          {periodControl}
           {status && (
             <p className={classNames(styles.status, muted && styles.unavailable)}>{status}</p>
           )}
-          {actions}
+          {actions && <div className={styles.actions}>{actions}</div>}
         </div>
       )}
     </Card>
