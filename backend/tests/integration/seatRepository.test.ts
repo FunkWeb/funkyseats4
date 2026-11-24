@@ -8,7 +8,7 @@ import type { CreateSeatRequest, UpdateSeatRequest } from '../../../contracts/se
 import { useMigratedTestDatabase } from '../testDatabase.js'
 import { createFixtures, type Fixtures } from '../testFixtures.js'
 
-type StoredSeat = CreateSeatRequest & { id: number }
+type StoredSeat = Omit<CreateSeatRequest, 'featureIds'> & { id: number }
 
 describe('seatsRepository', () => {
   const db = useMigratedTestDatabase()
@@ -21,11 +21,14 @@ describe('seatsRepository', () => {
     roomId,
     seatNumber: 'A1',
     description: null,
+    featureIds: [],
     ...overrides,
   })
 
   const store = async (seat: CreateSeatRequest): Promise<StoredSeat> => ({
-    ...seat,
+    roomId: seat.roomId,
+    seatNumber: seat.seatNumber,
+    description: seat.description,
     id: await seats.create(seat),
   })
 

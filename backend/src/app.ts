@@ -60,7 +60,7 @@ const bookingsService = createBookingsService({
   rooms,
 })
 const roomsService = createRoomsService({ rooms })
-const seatsService = createSeatsService({ seats, rooms, features })
+const seatsService = createSeatsService({ db: pool, seats, rooms, features })
 const featuresService = createFeaturesService({ features })
 const usersService = createUsersService({ users })
 

@@ -8,21 +8,22 @@ import { pickColumns } from '../database/columns.js'
 import type { QueryParams } from '../database/queryParams.js'
 
 type FeatureRow = FeatureDto & RowDataPacket
+type Executor = Pick<Pool, 'execute'>
 
 export type SeatFeatureDto = FeatureDto & { seatId: number }
 type SeatFeatureRow = SeatFeatureDto & RowDataPacket
 
 const FEATURE_COLUMNS = `
-    features.id,
-    features.name,
-    features.description,
-    features.icon_path AS iconPath,
-    features.category`
+  features.id,
+  features.name,
+  features.description,
+  features.icon_path AS iconPath,
+  features.category`
 
 const SELECT_FEATURE = `SELECT ${FEATURE_COLUMNS} FROM features`
 const WRITABLE_FIELDS = ['name', 'description', 'iconPath', 'category'] as const
 
-export const createFeaturesRepository = (db: Pool) => {
+export const createFeaturesRepository = (db: Executor) => {
   const selectFeatures = async (
     clause: string,
     params: QueryParams = {},
@@ -98,6 +99,9 @@ export const createFeaturesRepository = (db: Pool) => {
         { seatId, featureId },
       )
       return result.affectedRows === 1
+    },
+    detachAllFromSeat: async (seatId: number) => {
+      await db.execute('DELETE FROM seat_features WHERE seat_id = :seatId', { seatId })
     },
   }
 }
