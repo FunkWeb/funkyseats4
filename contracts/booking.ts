@@ -13,4 +13,10 @@ export interface BookingDto {
   timePeriod: TimePeriod
 }
 
+export type MyBookingDto = BookingDto & {
+  roomName: string
+  roomSlug: string
+  seatNumber: string
+}
+
 export type NewBooking = Pick<BookingDto, 'seatId' | 'bookingDate' | 'timePeriod'>

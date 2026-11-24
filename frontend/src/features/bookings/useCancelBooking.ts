@@ -11,6 +11,9 @@ export function useCancelBooking(roomId: number | undefined, date: string) {
       void queryClient.invalidateQueries({
         queryKey: roomBookingsQueryKey(roomId, date),
       })
+      void queryClient.invalidateQueries({
+        queryKey: ['bookings', 'me'],
+      })
     },
   })
 }

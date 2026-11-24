@@ -1,7 +1,12 @@
-import type { BookingDto, NewBooking, TimePeriod } from '../../../contracts/booking.js'
+import type {
+  BookingDto,
+  MyBookingDto,
+  NewBooking,
+  TimePeriod,
+} from '../../../contracts/booking.js'
 import type { PaginatedResponse, Pagination } from '../../../contracts/pagination.js'
 import { ConflictError, ForbiddenError, ValidationError } from '../errors/appErrors.js'
-import type { Booking, BookingsRepository } from '../repositories/bookingsRepository.js'
+import type { Booking, MyBooking, BookingsRepository } from '../repositories/bookingsRepository.js'
 import type { RoomsRepository } from '../repositories/roomsRepository.js'
 import type { SeatsRepository } from '../repositories/seatsRepository.js'
 import { addDays, findOrThrow, todayInOffice } from './common.js'
@@ -30,6 +35,28 @@ const toBookingDto = ({
   status,
   bookingDate,
   timePeriod,
+})
+
+const toMyBookingDto = ({
+  id,
+  seatId,
+  userId,
+  status,
+  bookingDate,
+  timePeriod,
+  roomName,
+  roomSlug,
+  seatNumber,
+}: MyBooking): MyBookingDto => ({
+  id,
+  seatId,
+  userId,
+  status,
+  bookingDate,
+  timePeriod,
+  roomName,
+  roomSlug,
+  seatNumber,
 })
 
 const isActive = (booking: BookingDto) => booking.status === 'ACTIVE'
@@ -92,9 +119,9 @@ export const createBookingsService = ({
   const findForUser = async (
     userId: number,
     pagination: Pagination,
-  ): Promise<PaginatedResponse<BookingDto>> => {
+  ): Promise<PaginatedResponse<MyBookingDto>> => {
     const { items, total } = await bookings.findByUserId(userId, pagination)
-    return { ...pagination, items: items.map(toBookingDto), total }
+    return { ...pagination, items: items.map(toMyBookingDto), total }
   }
 
   const findForRoomOnDate = async (roomId: number, date: string): Promise<BookingDto[]> => {

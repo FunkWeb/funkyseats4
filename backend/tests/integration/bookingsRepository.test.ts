@@ -72,15 +72,26 @@ describe('bookingsRepository', () => {
     assert.equal(await bookings.findById(UNKNOWN_ID), null)
   })
 
-  it('findByUserId returns only that user’s bookings, ordered by id', async () => {
+  it('findByUserId returns only that user’s bookings with room details, ordered newest first', async () => {
     const first = await book()
     await book({ userId: bob, timePeriod: 'AFTER_LUNCH' })
     const second = await book({ seatId: seatB })
 
-    assert.deepEqual((await bookings.findByUserId(alice, { page: 1, pageSize: 20 })).items, [
-      first,
-      second,
-    ])
+    const items = (await bookings.findByUserId(alice, { page: 1, pageSize: 20 })).items
+    assert.deepEqual(
+      items.map(({ id }) => id),
+      [second.id, first.id],
+    )
+    assert.partialDeepStrictEqual(items[0], {
+      roomName: 'room-a',
+      roomSlug: 'room-a',
+      seatNumber: 'A2',
+    })
+    assert.partialDeepStrictEqual(items[1], {
+      roomName: 'room-a',
+      roomSlug: 'room-a',
+      seatNumber: 'A1',
+    })
   })
 
   it('findByUserId returns an empty list when the user has no bookings', async () => {
@@ -94,14 +105,19 @@ describe('bookingsRepository', () => {
     await book({ userId: bob, seatId: seatB })
     const third = await book({ bookingDate: OTHER_DATE })
 
-    assert.deepEqual(await bookings.findByUserId(alice, { page: 1, pageSize: 2 }), {
-      items: [first, second],
-      total: 3,
-    })
-    assert.deepEqual(await bookings.findByUserId(alice, { page: 2, pageSize: 2 }), {
-      items: [third],
-      total: 3,
-    })
+    const firstPage = await bookings.findByUserId(alice, { page: 1, pageSize: 2 })
+    assert.deepEqual(
+      firstPage.items.map(({ id }) => id),
+      [third.id, second.id],
+    )
+    assert.equal(firstPage.total, 3)
+
+    const secondPage = await bookings.findByUserId(alice, { page: 2, pageSize: 2 })
+    assert.deepEqual(
+      secondPage.items.map(({ id }) => id),
+      [first.id],
+    )
+    assert.equal(secondPage.total, 3)
   })
 
   it('findByUserId returns no items for a page past the last one', async () => {
