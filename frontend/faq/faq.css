@@ -1,9 +1,13 @@
 /* GENERAL */
 
+/* Page colors and light/dark mode */
+
 body {
-  background-color: var(--yellow-100);
-  color: var(--indigo-700);
+  background-color: light-dark(var(--yellow-100), var(--indigo-700));
+  color: light-dark(var(--indigo-700), var(--gray-0));
 }
+
+/* Main page layout */
 
 .faq {
   display: grid;
@@ -17,12 +21,17 @@ body {
 }
 
 .sidenav {
-  background-color: var(--yellow-500);
+  background-color: var(--color-primary);
   min-height: 100vh;
   padding: var(--space-4);
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
+}
+
+.sidenav a:focus-visible {
+    outline: 2px solid var(--color-text-on-primary);
+    outline-offset: var(--space-1);
 }
 
 .question-card-container {
@@ -32,31 +41,32 @@ body {
 }
 
 .sidenav a {
-  color: var(--indigo-700);
+  color: var(--color-text-on-primary);
   text-decoration: none;
 }
 
 #sidenav a:hover {
-  color: var(--indigo-800);
-  background-color: var(--yellow-600);
+  color: var(--color-text-on-primary);
+  background-color: var(--color-primary-hover);
   transition: var(--duration-fast);
   border-radius: var(--radius-sm);
 }
 
 .top-header {
-  background-color: var(--yellow-500);
+  background-color: var(--color-primary);
 }
 
 /* QUESTION BOXES and content */
 
 .question-card {
-  background-color: var(--yellow-500);
+  background-color: var(--color-primary);
+  color: var(--color-text-on-primary);
   padding: var(--space-4);
   margin: var(--space-4);
 }
 
 .question:hover {
-  color: var(--indigo-700);
+  color: var(--color-text-on-primary);
   cursor: pointer;
   transition: var(--duration-fast);
 }
@@ -69,4 +79,46 @@ body {
 
 .answer {
   font-size: var(--font-size-md);
+}
+
+/* RESPONSIVE LAYOUT */
+
+/* Mobile */
+
+@media (max-width: 767px) {
+    .faq {
+        grid-template-columns: minmax(0, 1fr);
+        gap: var(--space-4);
+    }
+
+    .sidenav {
+        min-height: auto;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: var(--space-3);
+    }
+
+    .question-card-container {
+        padding: var(--space-4);
+    }
+
+    .question-card {
+        margin: var(--space-2) 0;
+    }
+}
+
+/* Tablet */
+
+@media (min-width: 768px) and (max-width: 1024px) {
+    .faq {
+        gap: var(--space-4);
+    }
+
+    .question-card-container {
+        padding-right: var(--space-4);
+    }
+
+    .question-card {
+        margin: var(--space-2);
+    }
 }
