@@ -1,10 +1,6 @@
-import type { BookingDto, TimePeriod } from '../../../../contracts/booking'
+import { periodsOverlap, type BookingDto, type TimePeriod } from '../../../../contracts/booking'
 
 const INITIAL_PERIOD_ORDER: TimePeriod[] = ['ALL_DAY', 'BEFORE_LUNCH', 'AFTER_LUNCH']
-
-export function periodsOverlap(a: TimePeriod, b: TimePeriod): boolean {
-  return a === b || a === 'ALL_DAY' || b === 'ALL_DAY'
-}
 
 export function getActiveSeatBookings(seatId: number, bookings: BookingDto[]): BookingDto[] {
   return bookings.filter((booking) => booking.seatId === seatId && booking.status === 'ACTIVE')

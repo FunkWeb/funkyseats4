@@ -4,6 +4,10 @@ export const TIME_PERIODS = ['BEFORE_LUNCH', 'AFTER_LUNCH', 'ALL_DAY'] as const
 
 export type TimePeriod = (typeof TIME_PERIODS)[number]
 
+export function periodsOverlap(a: TimePeriod, b: TimePeriod): boolean {
+  return a === b || a === 'ALL_DAY' || b === 'ALL_DAY'
+}
+
 export interface BookingDto {
   id: number
   seatId: number

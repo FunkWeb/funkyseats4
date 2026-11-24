@@ -1,4 +1,9 @@
-import type { BookingDto, NewBooking, TimePeriod } from '../../../contracts/booking.js'
+import {
+  periodsOverlap,
+  type BookingDto,
+  type NewBooking,
+  type TimePeriod,
+} from '../../../contracts/booking.js'
 import type { PaginatedResponse, Pagination } from '../../../contracts/pagination.js'
 import { ConflictError, ForbiddenError, ValidationError } from '../errors/appErrors.js'
 import type { Booking, BookingsRepository } from '../repositories/bookingsRepository.js'
@@ -35,13 +40,7 @@ const toBookingDto = ({
 const isActive = (booking: BookingDto) => booking.status === 'ACTIVE'
 
 const hasActiveOverlap = (existing: BookingDto[], requested: TimePeriod) =>
-  existing.some(
-    (booking) =>
-      isActive(booking) &&
-      (booking.timePeriod === requested ||
-        booking.timePeriod === 'ALL_DAY' ||
-        requested === 'ALL_DAY'),
-  )
+  existing.some((booking) => isActive(booking) && periodsOverlap(booking.timePeriod, requested))
 
 const assertWithinBookingWindow = (bookingDate: string, today: string, maxDaysAhead: number) => {
   const lastBookableDate = addDays(today, maxDaysAhead)
