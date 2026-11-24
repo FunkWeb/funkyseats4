@@ -10,7 +10,9 @@ export interface SeatDto {
   createdAt: string
 }
 
-export type CreateSeatRequest = Omit<SeatDto, 'id' | 'deletedAt' | 'updatedAt' | 'createdAt'>
+export type CreateSeatRequest = Omit<SeatDto, 'id' | 'deletedAt' | 'updatedAt' | 'createdAt'> & {
+  featureIds: number[]
+}
 export type UpdateSeatRequest = Partial<CreateSeatRequest>
 
 export type SeatWithFeaturesDto = SeatDto & { features: FeatureDto[] }

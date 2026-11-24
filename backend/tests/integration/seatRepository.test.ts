@@ -21,6 +21,7 @@ describe('seatsRepository', () => {
     roomId,
     seatNumber: 'A1',
     description: null,
+    featureIds: [],
     ...overrides,
   })
 
