@@ -2,6 +2,7 @@ import { Link, useParams, useSearchParams } from 'react-router'
 import { useCallback, useEffect, useState } from 'react'
 import type { SeatWithFeaturesDto } from '../../../contracts/seat'
 import { TIME_PERIODS, type TimePeriod } from '../../../contracts/booking'
+import { isValidSeatMapPath } from '../../../contracts/room'
 import { Button } from '../components/Button'
 import { DateNavigator } from '../components/DateNavigator'
 import { Notice } from '../components/Notice'
@@ -244,7 +245,7 @@ export default function SeatViewPage() {
     <>
       <PageHeader title={room.name} />
       {room.description && <p className={styles.description}>{room.description}</p>}
-      {room.seatMapPath && (
+      {room.seatMapPath && isValidSeatMapPath(room.seatMapPath) && (
         <img src={room.seatMapPath} alt={`Romkart for ${room.name}`} className={styles.seatMap} />
       )}
       <DateNavigator

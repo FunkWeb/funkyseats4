@@ -1,5 +1,9 @@
 import { useEffect, useId, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
-import type { CreateRoomRequest, RoomDto } from '../../../../contracts/room'
+import {
+  isValidSeatMapPath,
+  type CreateRoomRequest,
+  type RoomDto,
+} from '../../../../contracts/room'
 import { Button } from '../../components/Button'
 import { TextArea } from '../../components/TextArea'
 import { TextField } from '../../components/TextField'
@@ -119,7 +123,8 @@ export function RoomForm({ id, room, disabled = false, onSubmit }: RoomFormProps
     })
   }
 
-  const displayedPreview = previewUrl ?? seatMapPath
+  const displayedPreview =
+    previewUrl ?? (seatMapPath && isValidSeatMapPath(seatMapPath) ? seatMapPath : null)
 
   return (
     <form id={id} className={styles.form} onSubmit={handleSubmit} noValidate>
