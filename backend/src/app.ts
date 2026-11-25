@@ -30,7 +30,7 @@ import { authLimiter, createApiLimiter } from './middleware/rateLimit.js'
 import { createRequireSameOrigin } from './middleware/requireSameOrigin.js'
 import { securityHeaders } from './middleware/securityHeaders.js'
 import { serveUploadedIcons } from './middleware/serveUploadedIcons.js'
-import { serveUploadedSeatMaps } from './middleware/serverUploadedSeatMaps.js'
+import { serveUploadedSeatMaps } from './middleware/serveUploadedSeatMaps.js'
 
 export const app = express()
 
