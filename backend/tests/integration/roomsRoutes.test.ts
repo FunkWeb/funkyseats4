@@ -1,6 +1,8 @@
 import { after, before, describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import type { Server } from 'node:http'
+import os from 'node:os'
+import path from 'node:path'
 import express, { type RequestHandler } from 'express'
 import type { RoomBookingDto } from '../../../contracts/booking.js'
 import type { RoomDto } from '../../../contracts/room.js'
@@ -36,21 +38,24 @@ describe('roomsRoutes /rooms/:id/bookings', () => {
       return [booking]
     },
   }
-  const roomsService: Pick<RoomsService, 'findAll' | 'findById' | 'create' | 'update' | 'delete'> =
-    {
-      findAll: async () => [],
-      findById: async (): Promise<RoomDto> => ({
-        id: ROOM_ID,
-        slug: 'room-a',
-        name: 'Room A',
-        description: null,
-        seatMapPath: null,
-        maxDaysAhead: 3,
-      }),
-      create: async () => ROOM_ID,
-      update: async () => {},
-      delete: async () => {},
-    }
+  const roomsService: Pick<
+    RoomsService,
+    'findAll' | 'findById' | 'create' | 'update' | 'delete' | 'isSeatMapInUse'
+  > = {
+    findAll: async () => [],
+    findById: async (): Promise<RoomDto> => ({
+      id: ROOM_ID,
+      slug: 'room-a',
+      name: 'Room A',
+      description: null,
+      seatMapPath: null,
+      maxDaysAhead: 3,
+    }),
+    create: async () => ROOM_ID,
+    update: async () => null,
+    delete: async () => null,
+    isSeatMapInUse: async () => false,
+  }
   const seatsService: Pick<SeatsService, 'findByRoom'> = {
     findByRoom: async () => [],
   }
@@ -66,7 +71,13 @@ describe('roomsRoutes /rooms/:id/bookings', () => {
     const app = express()
     app.use(
       '/rooms',
-      createRoomsRoutes({ bookingsService, roomsService, seatsService, requireAuth }),
+      createRoomsRoutes({
+        bookingsService,
+        roomsService,
+        seatsService,
+        requireAuth,
+        uploadsDir: path.join(os.tmpdir(), 'funkyseats-rooms-routes-test'),
+      }),
     )
     app.use(errorHandler)
     await new Promise<void>((resolve) => {

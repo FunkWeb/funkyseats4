@@ -30,6 +30,7 @@ import { authLimiter, createApiLimiter } from './middleware/rateLimit.js'
 import { createRequireSameOrigin } from './middleware/requireSameOrigin.js'
 import { securityHeaders } from './middleware/securityHeaders.js'
 import { serveUploadedIcons } from './middleware/serveUploadedIcons.js'
+import { serveUploadedSeatMaps } from './middleware/serveUploadedSeatMaps.js'
 
 export const app = express()
 
@@ -85,6 +86,7 @@ if (config.devLogin) {
 
 app.use('/icons', serveUploadedIcons(config.uploadsDir))
 app.use('/icons', serveUploadedIcons(path.resolve('backend/assets')))
+app.use('/seat-maps', serveUploadedSeatMaps(config.uploadsDir))
 
 app.use(
   '/features',
@@ -96,7 +98,13 @@ app.use('/bookings', apiLimiter, createBookingsRoutes({ bookingsService, require
 app.use(
   '/rooms',
   apiLimiter,
-  createRoomsRoutes({ bookingsService, roomsService, seatsService, requireAuth }),
+  createRoomsRoutes({
+    bookingsService,
+    roomsService,
+    seatsService,
+    requireAuth,
+    uploadsDir: config.uploadsDir,
+  }),
 )
 app.use('/users', apiLimiter, createUsersRoutes({ usersService, requireAuth }))
 app.use('/seats', apiLimiter, createSeatsRoutes({ seatsService, requireAuth, requireRole }))

@@ -15,6 +15,7 @@ export default defineConfig(({ mode }) => {
           rewrite: (path) => path.replace(/^\/api/, ''),
         },
         '/icons': `http://localhost:${PORT}`,
+        '/seat-maps': `http://localhost:${PORT}`,
       },
     },
   }

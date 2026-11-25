@@ -66,6 +66,14 @@ export const createRoomsRepository = (db: Pool) => {
     return rows.length > 0
   }
 
+  const existsBySeatMapPath = async (seatMapPath: string): Promise<boolean> => {
+    const [rows] = await db.execute<RowDataPacket[]>(
+      'SELECT 1 FROM rooms WHERE seat_map_path = :seatMapPath AND deleted_at IS NULL LIMIT 1',
+      { seatMapPath },
+    )
+    return rows.length > 0
+  }
+
   const updateOne = async (id: number, assignment: string, params: QueryParams = {}) => {
     const [result] = await db.execute<ResultSetHeader>(
       `UPDATE rooms SET ${assignment} WHERE id = :id AND deleted_at IS NULL`,
@@ -77,6 +85,7 @@ export const createRoomsRepository = (db: Pool) => {
   return {
     findAll: () => selectActiveRooms('ORDER BY name'),
     existsBySlug,
+    existsBySeatMapPath,
     findById: async (id: number): Promise<Room | null> => {
       const [room] = await selectActiveRooms('AND id = :id', { id })
       return room ?? null

@@ -3,6 +3,15 @@
   color: var(--color-text-muted);
 }
 
+.seatMap {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 0 var(--space-6);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
 .dateNavigator {
   margin: var(--space-4) 0;
 }

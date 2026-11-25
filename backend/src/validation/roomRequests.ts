@@ -1,4 +1,9 @@
-import type { CreateRoomRequest, UpdateRoomRequest } from '../../../contracts/room.js'
+import {
+  isValidSeatMapPath,
+  type CreateRoomRequest,
+  type UpdateRoomRequest,
+} from '../../../contracts/room.js'
+import { ValidationError } from '../errors/appErrors.js'
 import {
   asRecord,
   parseIfPresent,
@@ -7,13 +12,20 @@ import {
   parsePositiveInteger,
 } from './parsers.js'
 
+const parseSeatMapPath = (value: unknown): string | null => {
+  const parsed = parseOptionalString(value, 'seatMapPath')
+  if (parsed === null) return null
+  if (!isValidSeatMapPath(parsed)) {
+    throw new ValidationError('seatMapPath must be an uploaded image under /seat-maps/')
+  }
+  return parsed
+}
+
 const parseRoomDetails = (fields: Record<string, unknown>) => ({
   description: parseIfPresent(fields.description, (value) =>
     parseOptionalString(value, 'description'),
   ),
-  seatMapPath: parseIfPresent(fields.seatMapPath, (value) =>
-    parseOptionalString(value, 'seatMapPath'),
-  ),
+  seatMapPath: parseIfPresent(fields.seatMapPath, parseSeatMapPath),
   maxDaysAhead: parseIfPresent(fields.maxDaysAhead, (value) =>
     parsePositiveInteger(value, 'maxDaysAhead'),
   ),
