@@ -2,8 +2,10 @@ import crypto from 'node:crypto'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import express, { Router, type ErrorRequestHandler, type RequestHandler } from 'express'
+import { isValidSeatMapPath } from '../../../contracts/room.js'
 import { requireRole } from '../auth/requireRole.js'
 import {
+  ConflictError,
   PayloadTooLargeError,
   UnsupportedMediaTypeError,
   ValidationError,
@@ -17,17 +19,21 @@ import { parseId, parseIsoDate } from '../validation/parsers.js'
 
 export interface RoomsRoutesDeps {
   bookingsService: Pick<BookingsService, 'findForRoomOnDate'>
-  roomsService: Pick<RoomsService, 'findAll' | 'findById' | 'create' | 'update' | 'delete'>
+  roomsService: Pick<
+    RoomsService,
+    'findAll' | 'findById' | 'create' | 'update' | 'delete' | 'isSeatMapInUse'
+  >
   seatsService: Pick<SeatsService, 'findByRoom'>
   requireAuth: RequestHandler
   uploadsDir: string
 }
 
-const MAX_SEAT_MAP_BYTES = 2 * 1024 * 1024
-const UPLOADED_SEAT_MAP_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(png|jpg|webp)$/i
+type SeatMapExtension = 'png' | 'jpg' | 'webp'
 
-const ALLOWED_IMAGE_TYPES = new Map<string, 'png' | 'jpg' | 'webp'>([
+const MAX_SEAT_MAP_BYTES = 2 * 1024 * 1024
+const SEAT_MAP_URL_PREFIX = '/seat-maps/'
+
+const ALLOWED_IMAGE_TYPES = new Map<string, SeatMapExtension>([
   ['image/png', 'png'],
   ['image/jpeg', 'jpg'],
   ['image/webp', 'webp'],
@@ -36,7 +42,7 @@ const ALLOWED_IMAGE_TYPES = new Map<string, 'png' | 'jpg' | 'webp'>([
 const isMissingPath = (error: unknown) =>
   typeof error === 'object' && error !== null && 'code' in error && error.code === 'ENOENT'
 
-const hasMatchingMagicBytes = (buffer: Buffer, ext: 'png' | 'jpg' | 'webp'): boolean => {
+const hasMatchingMagicBytes = (buffer: Buffer, ext: SeatMapExtension): boolean => {
   if (ext === 'png') {
     return (
       buffer.length >= 8 &&
@@ -60,10 +66,9 @@ const hasMatchingMagicBytes = (buffer: Buffer, ext: 'png' | 'jpg' | 'webp'): boo
   )
 }
 
-const removeUploadedSeatMap = async (uploadsDir: string, seatMapPath: string | null) => {
-  if (!seatMapPath) return
+const removeUploadedSeatMap = async (uploadsDir: string, seatMapPath: string) => {
+  if (!isValidSeatMapPath(seatMapPath)) return
   const filename = path.basename(seatMapPath)
-  if (!UPLOADED_SEAT_MAP_PATTERN.test(filename)) return
 
   const seatMapsDir = path.resolve(uploadsDir, 'seat-maps')
   let realSeatMapsDir: string
@@ -77,13 +82,15 @@ const removeUploadedSeatMap = async (uploadsDir: string, seatMapPath: string | n
   await fs.rm(path.join(realSeatMapsDir, filename), { force: true })
 }
 
-const requireSeatMapContentType: RequestHandler = (req, _res, next) => {
+const requireSeatMapContentType: RequestHandler = (req, res, next) => {
   const rawContentType = req.get('content-type') ?? ''
   const mimeType = rawContentType.split(';')[0]?.trim().toLowerCase() ?? ''
-  if (!ALLOWED_IMAGE_TYPES.has(mimeType)) {
+  const ext = ALLOWED_IMAGE_TYPES.get(mimeType)
+  if (!ext) {
     next(new UnsupportedMediaTypeError('Content-Type must be image/png, image/jpeg, or image/webp'))
     return
   }
+  res.locals.seatMapExt = ext
   next()
 }
 
@@ -104,6 +111,18 @@ export const createRoomsRoutes = ({
 }: RoomsRoutesDeps) => {
   const router = Router()
   router.use(requireAuth)
+
+  // Runs after the database change has been committed, so a failure here must not fail the
+  // request: the file is left behind and logged instead.
+  const removeSeatMapIfUnused = async (seatMapPath: string | null) => {
+    if (!seatMapPath) return
+    try {
+      if (await roomsService.isSeatMapInUse(seatMapPath)) return
+      await removeUploadedSeatMap(uploadsDir, seatMapPath)
+    } catch (error) {
+      console.error(`Failed to remove seat map ${seatMapPath}`, error)
+    }
+  }
 
   router.get('/', async (_req, res) => {
     res.json(await roomsService.findAll())
@@ -133,13 +152,14 @@ export const createRoomsRoutes = ({
     const input = parseUpdateRoom(req.body)
     const oldSeatMapPath = await roomsService.update(roomId, input)
     if (input.seatMapPath !== undefined && input.seatMapPath !== oldSeatMapPath) {
-      await removeUploadedSeatMap(uploadsDir, oldSeatMapPath)
+      await removeSeatMapIfUnused(oldSeatMapPath)
     }
     res.sendStatus(204)
   })
 
   router.delete('/:id', requireRole('ADMIN'), async (req, res) => {
-    await roomsService.delete(parseId(req.params.id, 'id'))
+    const oldSeatMapPath = await roomsService.delete(parseId(req.params.id, 'id'))
+    await removeSeatMapIfUnused(oldSeatMapPath)
     res.sendStatus(204)
   })
 
@@ -153,14 +173,7 @@ export const createRoomsRoutes = ({
     }),
     seatMapTooLarge,
     (async (req, res) => {
-      const rawContentType = req.get('content-type') ?? ''
-      const mimeType = rawContentType.split(';')[0]?.trim().toLowerCase() ?? ''
-      const ext = ALLOWED_IMAGE_TYPES.get(mimeType)
-      if (!ext) {
-        throw new UnsupportedMediaTypeError(
-          'Content-Type must be image/png, image/jpeg, or image/webp',
-        )
-      }
+      const ext = res.locals.seatMapExt as SeatMapExtension
 
       if (!Buffer.isBuffer(req.body) || !hasMatchingMagicBytes(req.body, ext)) {
         throw new ValidationError('Uploaded file does not match its Content-Type')
@@ -172,9 +185,20 @@ export const createRoomsRoutes = ({
       const filename = `${crypto.randomUUID()}.${ext}`
       await fs.writeFile(path.join(seatMapsDir, filename), req.body)
 
-      res.status(201).json({ seatMapPath: `/seat-maps/${filename}` })
+      res.status(201).json({ seatMapPath: `${SEAT_MAP_URL_PREFIX}${filename}` })
     }) satisfies RequestHandler,
   )
+
+  // Lets the client discard an upload that no room ended up using (e.g. the save failed).
+  router.delete('/seat-maps/:filename', requireRole('ADMIN'), async (req, res) => {
+    const seatMapPath = `${SEAT_MAP_URL_PREFIX}${req.params.filename}`
+    if (!isValidSeatMapPath(seatMapPath)) throw new ValidationError('Invalid seat map filename')
+    if (await roomsService.isSeatMapInUse(seatMapPath)) {
+      throw new ConflictError('Seat map is in use by a room')
+    }
+    await removeUploadedSeatMap(uploadsDir, seatMapPath)
+    res.sendStatus(204)
+  })
 
   return router
 }

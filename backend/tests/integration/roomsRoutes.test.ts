@@ -38,21 +38,24 @@ describe('roomsRoutes /rooms/:id/bookings', () => {
       return [booking]
     },
   }
-  const roomsService: Pick<RoomsService, 'findAll' | 'findById' | 'create' | 'update' | 'delete'> =
-    {
-      findAll: async () => [],
-      findById: async (): Promise<RoomDto> => ({
-        id: ROOM_ID,
-        slug: 'room-a',
-        name: 'Room A',
-        description: null,
-        seatMapPath: null,
-        maxDaysAhead: 3,
-      }),
-      create: async () => ROOM_ID,
-      update: async () => null,
-      delete: async () => {},
-    }
+  const roomsService: Pick<
+    RoomsService,
+    'findAll' | 'findById' | 'create' | 'update' | 'delete' | 'isSeatMapInUse'
+  > = {
+    findAll: async () => [],
+    findById: async (): Promise<RoomDto> => ({
+      id: ROOM_ID,
+      slug: 'room-a',
+      name: 'Room A',
+      description: null,
+      seatMapPath: null,
+      maxDaysAhead: 3,
+    }),
+    create: async () => ROOM_ID,
+    update: async () => null,
+    delete: async () => null,
+    isSeatMapInUse: async () => false,
+  }
   const seatsService: Pick<SeatsService, 'findByRoom'> = {
     findByRoom: async () => [],
   }

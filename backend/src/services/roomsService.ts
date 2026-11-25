@@ -6,7 +6,7 @@ import { findOrThrow } from './common.js'
 export interface RoomsServiceDeps {
   rooms: Pick<
     RoomsRepository,
-    'findAll' | 'findById' | 'existsBySlug' | 'create' | 'update' | 'delete'
+    'findAll' | 'findById' | 'existsBySlug' | 'existsBySeatMapPath' | 'create' | 'update' | 'delete'
   >
 }
 
@@ -48,11 +48,16 @@ export const createRoomsService = ({ rooms }: RoomsServiceDeps) => {
     return room.seatMapPath
   }
 
-  const remove = async (roomId: number): Promise<void> => {
+  const remove = async (roomId: number): Promise<string | null> => {
+    const room = await findRoom(roomId)
     if (!(await rooms.delete(roomId))) throw new NotFoundError('Room')
+    return room.seatMapPath
   }
 
-  return { findAll, findById, create, update, delete: remove }
+  const isSeatMapInUse = (seatMapPath: string): Promise<boolean> =>
+    rooms.existsBySeatMapPath(seatMapPath)
+
+  return { findAll, findById, create, update, delete: remove, isSeatMapInUse }
 }
 
 export type RoomsService = ReturnType<typeof createRoomsService>
