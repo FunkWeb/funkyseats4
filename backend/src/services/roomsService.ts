@@ -26,8 +26,9 @@ export const createRoomsService = ({ rooms }: RoomsServiceDeps) => {
   const findRoom = (roomId: number) => findOrThrow(rooms.findById(roomId), 'Room')
 
   const assertSlugUsable = async (slug: string) => {
-    if (slug.length > SLUG_MAX_LENGTH || !SLUG_PATTERN.test(slug))
+    if (slug.length > SLUG_MAX_LENGTH || !SLUG_PATTERN.test(slug)) {
       throw new ValidationError(`Invalid room slug ${slug}`)
+    }
     if (await rooms.existsBySlug(slug)) throw new ConflictError(`Room slug ${slug} already exists`)
   }
 
@@ -40,10 +41,11 @@ export const createRoomsService = ({ rooms }: RoomsServiceDeps) => {
     return rooms.create(input)
   }
 
-  const update = async (roomId: number, input: UpdateRoomRequest): Promise<void> => {
+  const update = async (roomId: number, input: UpdateRoomRequest): Promise<string | null> => {
     const room = await findRoom(roomId)
     if (input.slug !== undefined && input.slug !== room.slug) await assertSlugUsable(input.slug)
     await rooms.update(roomId, input)
+    return room.seatMapPath
   }
 
   const remove = async (roomId: number): Promise<void> => {

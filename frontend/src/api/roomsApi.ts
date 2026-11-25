@@ -1,5 +1,5 @@
 import type { CreateRoomRequest, RoomDto, UpdateRoomRequest } from '../../../contracts/room'
-import { del, get, patch, post } from './httpClient'
+import { del, get, patch, post, postFile } from './httpClient'
 
 export function getRooms(): Promise<RoomDto[]> {
   return get<RoomDto[]>('/rooms')
@@ -19,4 +19,8 @@ export function updateRoom(id: number, input: UpdateRoomRequest): Promise<void> 
 
 export function deleteRoom(id: number): Promise<void> {
   return del<void>(`/rooms/${id}`)
+}
+
+export function uploadSeatMap(file: File): Promise<{ seatMapPath: string }> {
+  return postFile<{ seatMapPath: string }>('/rooms/seat-maps', file, file.type)
 }

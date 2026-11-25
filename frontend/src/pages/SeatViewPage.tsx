@@ -244,6 +244,9 @@ export default function SeatViewPage() {
     <>
       <PageHeader title={room.name} />
       {room.description && <p className={styles.description}>{room.description}</p>}
+      {room.seatMapPath && (
+        <img src={room.seatMapPath} alt={`Romkart for ${room.name}`} className={styles.seatMap} />
+      )}
       <DateNavigator
         className={styles.dateNavigator}
         value={selectedDate}

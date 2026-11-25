@@ -1,6 +1,8 @@
 import { after, before, describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import type { Server } from 'node:http'
+import os from 'node:os'
+import path from 'node:path'
 import express, { type RequestHandler } from 'express'
 import type { RoomBookingDto } from '../../../contracts/booking.js'
 import type { RoomDto } from '../../../contracts/room.js'
@@ -48,7 +50,7 @@ describe('roomsRoutes /rooms/:id/bookings', () => {
         maxDaysAhead: 3,
       }),
       create: async () => ROOM_ID,
-      update: async () => {},
+      update: async () => null,
       delete: async () => {},
     }
   const seatsService: Pick<SeatsService, 'findByRoom'> = {
@@ -66,7 +68,13 @@ describe('roomsRoutes /rooms/:id/bookings', () => {
     const app = express()
     app.use(
       '/rooms',
-      createRoomsRoutes({ bookingsService, roomsService, seatsService, requireAuth }),
+      createRoomsRoutes({
+        bookingsService,
+        roomsService,
+        seatsService,
+        requireAuth,
+        uploadsDir: path.join(os.tmpdir(), 'funkyseats-rooms-routes-test'),
+      }),
     )
     app.use(errorHandler)
     await new Promise<void>((resolve) => {
