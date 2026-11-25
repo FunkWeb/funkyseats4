@@ -42,7 +42,7 @@ Knapper/tabs for dato
 * **Interaktivt setekart (Seats-map):** En visuell modul der brukere kan se romoppsettet og trykke på setet de ønsker.
 * **Fleksibel plassbooking:** Mulighet å velge mellom 3 ulike rom, spesifisere behov for PC-tilgang eller kun ren arbeidsplass, samt velge mellom halv eller hel arbeidsdag.
 * **Google Auth-integrasjon:** Sikker autentisering, pålogging og sesjonshåndtering for alle brukerene.
-* **Admin-dashbord:** Sentralisert panel for IT-administratorer for å administrere setetilgjengelighet, rom og reservasjoner for brukere.
+* **Admin-dashbord:** Sentralisert panel for IT-administratorer for å administrere setetilgjengelighet, rom, brukerprofiler og alle reservasjoner for brukere.
 * **Integrert FAQ-seksjon:** En utfylt og fungerende hjelpeside som gir umiddelbare svar på vanlige spørsmål direkte i systemet.
 
 ### Begrunnelse

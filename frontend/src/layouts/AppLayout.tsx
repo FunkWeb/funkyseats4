@@ -19,6 +19,7 @@ const adminItem: SidebarItem = {
     { label: 'Rediger plasser i rom', href: '/admin/seats' },
     { label: 'Rediger funksjoner', href: '/admin/features' },
     { label: 'Brukerprofiler', href: '/admin/users' },
+    { label: 'Reservasjoner', href: '/admin/bookings' },
   ],
 }
 

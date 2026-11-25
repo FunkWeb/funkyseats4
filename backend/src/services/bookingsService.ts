@@ -1,5 +1,6 @@
 import {
   periodsOverlap,
+  type AdminBookingDto,
   type BookingDto,
   type MyBookingDto,
   type NewBooking,
@@ -10,6 +11,8 @@ import type { PaginatedResponse, Pagination } from '../../../contracts/paginatio
 import { ConflictError, ForbiddenError, ValidationError } from '../errors/appErrors.js'
 import type {
   Booking,
+  AdminBooking,
+  BookingFilters,
   BookingsRepository,
   MyBooking,
   RoomBooking,
@@ -21,7 +24,12 @@ import { addDays, findOrThrow, todayInOffice } from './common.js'
 export interface BookingsServiceDeps {
   bookings: Pick<
     BookingsRepository,
-    'findById' | 'findByUserId' | 'findActiveByRoomAndDate' | 'updateStatus' | 'withSeatAndUserLock'
+    | 'findById'
+    | 'findByUserId'
+    | 'findAll'
+    | 'findActiveByRoomAndDate'
+    | 'updateStatus'
+    | 'withSeatAndUserLock'
   >
   seats: Pick<SeatsRepository, 'findById'>
   rooms: Pick<RoomsRepository, 'findById'>
@@ -54,6 +62,21 @@ const toMyBookingDto = ({
   roomName,
   roomSlug,
   seatNumber,
+})
+
+const toAdminBookingDto = ({
+  userName,
+  userEmail,
+  userAvatarPath,
+  ...booking
+}: AdminBooking): AdminBookingDto => ({
+  ...toMyBookingDto(booking),
+  user: {
+    id: booking.userId,
+    name: userName,
+    email: userEmail,
+    avatarPath: userAvatarPath,
+  },
 })
 
 const toRoomBookingDto = ({
@@ -105,11 +128,12 @@ export const createBookingsService = ({
     })
   }
 
-  const cancel = async (userId: number, bookingId: number): Promise<void> => {
+  const cancel = async (userId: number, bookingId: number, isAdmin = false): Promise<void> => {
     const booking = await findOrThrow(bookings.findById(bookingId), 'Booking')
 
-    //Rule: Users can only cancel their own bookings
-    if (booking.userId !== userId) throw new ForbiddenError('You can only cancel your own bookings')
+    //Rule: Non-admin users can only cancel their own bookings
+    if (!isAdmin && booking.userId !== userId)
+      throw new ForbiddenError('You can only cancel your own bookings')
 
     //Rule: Only bookings with "ACTIVE" status can be cancelled
     if (!isActive(booking)) throw new ConflictError('Only active bookings can be cancelled')
@@ -124,13 +148,21 @@ export const createBookingsService = ({
     return { ...pagination, items: items.map(toMyBookingDto), total }
   }
 
+  const findAll = async (
+    filters: BookingFilters,
+    pagination: Pagination,
+  ): Promise<PaginatedResponse<AdminBookingDto>> => {
+    const { items, total } = await bookings.findAll(filters, pagination)
+    return { ...pagination, items: items.map(toAdminBookingDto), total }
+  }
+
   const findForRoomOnDate = async (roomId: number, date: string): Promise<RoomBookingDto[]> => {
     await findRoom(roomId)
     const roomBookings = await bookings.findActiveByRoomAndDate(roomId, date)
     return roomBookings.map(toRoomBookingDto)
   }
 
-  return { create, cancel, findForUser, findForRoomOnDate }
+  return { create, cancel, findForUser, findAll, findForRoomOnDate }
 }
 
 export type BookingsService = ReturnType<typeof createBookingsService>

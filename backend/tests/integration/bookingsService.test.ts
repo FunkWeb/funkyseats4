@@ -215,12 +215,21 @@ describe('bookingsService', () => {
     assert.deepEqual(await statusesOf(alice), ['ACTIVE'])
   })
 
+  it("cancel lets an admin cancel another user's active booking", async () => {
+    const booking = await book(alice)
+    await service.cancel(bob, booking.id, true)
+
+    assert.deepEqual(await statusesOf(alice), ['CANCELLED'])
+    assert.partialDeepStrictEqual(await book(bob), { status: 'ACTIVE' })
+  })
+
   for (const status of unbookableStatuses) {
     it(`cancel rejects a booking that is already ${status}`, async () => {
       const booking = await book(alice)
       await bookings.updateStatus(booking.id, status)
 
       await assert.rejects(service.cancel(alice, booking.id), ConflictError)
+      await assert.rejects(service.cancel(bob, booking.id, true), ConflictError)
       assert.deepEqual(await statusesOf(alice), [status])
     })
   }
@@ -277,6 +286,35 @@ describe('bookingsService', () => {
           seatNumber: 'A1',
         },
       ],
+    })
+
+    it('findAll returns paginated bookings with user details', async () => {
+      await book(alice)
+      await book(bob, { seatId: seatB, timePeriod: 'AFTER_LUNCH' })
+
+      assert.partialDeepStrictEqual(await service.findAll({}, { page: 1, pageSize: 20 }), {
+        page: 1,
+        pageSize: 20,
+        total: 2,
+        items: [
+          {
+            user: {
+              id: bob,
+              name: 'bob',
+              email: 'bob@example.com',
+              avatarPath: null,
+            },
+          },
+          {
+            user: {
+              id: alice,
+              name: 'alice',
+              email: 'alice@example.com',
+              avatarPath: null,
+            },
+          },
+        ],
+      })
     })
   })
 })

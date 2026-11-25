@@ -25,7 +25,7 @@ describe('paginated routes', () => {
     findAll: async (pagination) => respond(pagination),
     updateRole: async () => {},
   }
-  const bookingsService: Pick<BookingsService, 'create' | 'cancel' | 'findForUser'> = {
+  const bookingsService: Pick<BookingsService, 'create' | 'cancel' | 'findForUser' | 'findAll'> = {
     findForUser: async (userId, pagination) => {
       assert.equal(userId, USER_ID)
       return respond(pagination)
@@ -34,6 +34,7 @@ describe('paginated routes', () => {
       throw new Error('not used')
     },
     cancel: async () => {},
+    findAll: async (_filters, pagination) => respond(pagination),
   }
   const requireAuth: RequestHandler = (req, _res, next) => {
     req.user = {

@@ -24,11 +24,25 @@ export interface MyBooking extends MyBookingDto {
   createdAt: Date
 }
 
+export interface AdminBooking extends MyBooking {
+  userName: string
+  userEmail: string
+  userAvatarPath: string | null
+}
+
+export interface BookingFilters {
+  date?: string
+  roomId?: number
+  userId?: number
+  status?: BookingStatus
+}
+
 export type BookingInsert = NewBooking & Pick<BookingDto, 'userId'>
 
 type BookingRow = Booking & RowDataPacket
 type RoomBookingRow = RoomBooking & RowDataPacket
 type MyBookingRow = MyBooking & RowDataPacket
+type AdminBookingRow = AdminBooking & RowDataPacket
 
 const BOOKING_COLUMNS = `
     bookings.id,
@@ -51,6 +65,19 @@ const SELECT_MY_BOOKING = `
   INNER JOIN seats ON seats.id = bookings.seat_id
   INNER JOIN rooms ON rooms.id = seats.room_id`
 
+const SELECT_ADMIN_BOOKING = `
+  SELECT ${BOOKING_COLUMNS},
+    rooms.name                             AS roomName,
+    rooms.slug                             AS roomSlug,
+    seats.seat_number                      AS seatNumber,
+    users.name                             AS userName,
+    users.email                            AS userEmail,
+    users.avatar_path                      AS userAvatarPath
+  FROM bookings
+  INNER JOIN seats ON seats.id = bookings.seat_id
+  INNER JOIN rooms ON rooms.id = seats.room_id
+  INNER JOIN users ON users.id = bookings.user_id`
+
 type Executor = Pick<Pool, 'execute'>
 
 const createBookingQueries = (db: Executor) => {
@@ -69,8 +96,58 @@ const createBookingQueries = (db: Executor) => {
     return rows
   }
 
+  const selectAdminBookings = async (
+    clause: string,
+    params: QueryParams,
+  ): Promise<AdminBooking[]> => {
+    const [rows] = await db.execute<AdminBookingRow[]>(`${SELECT_ADMIN_BOOKING} ${clause}`, params)
+    return rows
+  }
+
+  const findAll = (
+    filters: BookingFilters,
+    pagination: Pagination,
+  ): Promise<Page<AdminBooking>> => {
+    const conditions: string[] = []
+    const params: QueryParams = {}
+
+    if (filters.date !== undefined) {
+      conditions.push('bookings.booking_date >= :date')
+      params.date = filters.date
+    }
+    if (filters.roomId !== undefined) {
+      conditions.push('rooms.id = :roomId')
+      params.roomId = filters.roomId
+    }
+    if (filters.userId !== undefined) {
+      conditions.push('bookings.user_id = :userId')
+      params.userId = filters.userId
+    }
+    if (filters.status !== undefined) {
+      conditions.push('bookings.status = :status')
+      params.status = filters.status
+    }
+
+    const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
+    return paginate(
+      db,
+      {
+        select: selectAdminBookings,
+        table: `bookings
+          INNER JOIN seats ON seats.id = bookings.seat_id
+          INNER JOIN rooms ON rooms.id = seats.room_id
+          INNER JOIN users ON users.id = bookings.user_id`,
+        where,
+        orderBy: 'bookings.booking_date DESC, bookings.id DESC',
+        params,
+      },
+      pagination,
+    )
+  }
+
   return {
     findById,
+    findAll,
     findByUserId: (userId: number, pagination: Pagination): Promise<Page<MyBooking>> =>
       paginate(
         db,

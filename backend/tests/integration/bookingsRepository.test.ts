@@ -128,6 +128,85 @@ describe('bookingsRepository', () => {
     })
   })
 
+  it('findAll returns every booking with user details, ordered by date and id descending', async () => {
+    const first = await book()
+    const otherUser = await book({ userId: bob, seatId: seatB })
+    const later = await book({ bookingDate: OTHER_DATE })
+
+    const result = await bookings.findAll({}, { page: 1, pageSize: 20 })
+
+    assert.deepEqual(
+      result.items.map(({ id }) => id),
+      [later.id, otherUser.id, first.id],
+    )
+    assert.partialDeepStrictEqual(result.items[1], {
+      userId: bob,
+      roomName: 'room-a',
+      roomSlug: 'room-a',
+      seatNumber: 'A2',
+      userName: 'bob',
+      userEmail: 'bob@example.com',
+      userAvatarPath: null,
+    })
+    assert.equal(result.total, 3)
+  })
+
+  it('findAll applies date, room, user and status filters together and paginates results', async () => {
+    await book()
+    const match = await book({
+      userId: bob,
+      seatId: seatB,
+      bookingDate: OTHER_DATE,
+      timePeriod: 'AFTER_LUNCH',
+    })
+    const wrongRoom = await book({ seatId: otherRoomSeat, bookingDate: OTHER_DATE })
+    await bookings.updateStatus(wrongRoom.id, 'CANCELLED')
+    await book({ userId: bob, seatId: seatB, bookingDate: OTHER_DATE })
+
+    const result = await bookings.findAll(
+      { date: DATE, roomId, userId: bob, status: 'ACTIVE' },
+      { page: 1, pageSize: 1 },
+    )
+
+    assert.deepEqual(
+      result.items.map(({ id }) => id),
+      [match.id],
+    )
+    assert.equal(result.total, 1)
+  })
+
+  it('findAll applies each optional filter independently', async () => {
+    const aliceBooking = await book()
+    const bobBooking = await book({
+      userId: bob,
+      seatId: seatB,
+      bookingDate: OTHER_DATE,
+      timePeriod: 'AFTER_LUNCH',
+    })
+    const otherRoomBooking = await book({
+      userId: bob,
+      seatId: otherRoomSeat,
+      bookingDate: OTHER_DATE,
+    })
+    await bookings.updateStatus(otherRoomBooking.id, 'CANCELLED')
+
+    const cases = [
+      { filters: { date: OTHER_DATE }, expected: [otherRoomBooking.id, bobBooking.id] },
+      { filters: { roomId }, expected: [bobBooking.id, aliceBooking.id] },
+      { filters: { userId: bob }, expected: [otherRoomBooking.id, bobBooking.id] },
+      { filters: { status: 'CANCELLED' as const }, expected: [otherRoomBooking.id] },
+    ]
+
+    for (const { filters, expected } of cases) {
+      const result = await bookings.findAll(filters, { page: 1, pageSize: 20 })
+      assert.deepEqual(
+        result.items.map(({ id }) => id),
+        expected,
+      )
+      assert.equal(result.total, expected.length)
+    }
+  })
+
   it('findBySeatAndDate excludes other seats and other dates, ordered by id', async () => {
     const morning = await book()
     await book({ seatId: seatB })
