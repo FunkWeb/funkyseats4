@@ -1,6 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { CreateRoomRequest } from '../../../../contracts/room'
-import { createRoom, deleteRoom, getRooms, updateRoom, uploadSeatMap } from '../../api/roomsApi'
+import {
+  createRoom,
+  deleteRoom,
+  deleteSeatMap,
+  getRooms,
+  updateRoom,
+  uploadSeatMap,
+} from '../../api/roomsApi'
 
 export const roomsQueryKey = ['rooms'] as const
 
@@ -19,22 +26,24 @@ export function useSaveRoom() {
 
   return useMutation({
     mutationFn: async ({ roomId, input, seatMapFile }: SaveRoomVariables) => {
-      let seatMapPath = input.seatMapPath
-      if (seatMapFile) {
-        const uploaded = await uploadSeatMap(seatMapFile)
-        seatMapPath = uploaded.seatMapPath
-      }
+      const uploadedPath = seatMapFile ? (await uploadSeatMap(seatMapFile)).seatMapPath : null
 
       const payload: CreateRoomRequest = {
         ...input,
-        seatMapPath: seatMapPath ?? null,
+        seatMapPath: uploadedPath ?? input.seatMapPath ?? null,
       }
 
-      if (roomId === undefined) {
-        await createRoom(payload)
-        return
+      try {
+        if (roomId === undefined) {
+          await createRoom(payload)
+        } else {
+          await updateRoom(roomId, payload)
+        }
+      } catch (error) {
+        // The room was not saved, so the new upload is unused; discard it best-effort.
+        if (uploadedPath) await deleteSeatMap(uploadedPath).catch(() => undefined)
+        throw error
       }
-      await updateRoom(roomId, payload)
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: roomsQueryKey }),
   })
