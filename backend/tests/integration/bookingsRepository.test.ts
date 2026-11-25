@@ -161,18 +161,28 @@ describe('bookingsRepository', () => {
     })
     const wrongRoom = await book({ seatId: otherRoomSeat, bookingDate: OTHER_DATE })
     await bookings.updateStatus(wrongRoom.id, 'CANCELLED')
-    await book({ userId: bob, seatId: seatB, bookingDate: OTHER_DATE })
+    const newestMatch = await book({ userId: bob, seatId: seatB, bookingDate: OTHER_DATE })
 
-    const result = await bookings.findAll(
+    const firstPage = await bookings.findAll(
       { date: DATE, roomId, userId: bob, status: 'ACTIVE' },
       { page: 1, pageSize: 1 },
     )
 
     assert.deepEqual(
-      result.items.map(({ id }) => id),
+      firstPage.items.map(({ id }) => id),
+      [newestMatch.id],
+    )
+    assert.equal(firstPage.total, 2)
+
+    const secondPage = await bookings.findAll(
+      { date: DATE, roomId, userId: bob, status: 'ACTIVE' },
+      { page: 2, pageSize: 1 },
+    )
+    assert.deepEqual(
+      secondPage.items.map(({ id }) => id),
       [match.id],
     )
-    assert.equal(result.total, 1)
+    assert.equal(secondPage.total, 2)
   })
 
   it('findAll applies each optional filter independently', async () => {
