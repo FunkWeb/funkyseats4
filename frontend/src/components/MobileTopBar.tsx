@@ -4,6 +4,8 @@ import { CloseIcon } from './icons/CloseIcon'
 import { MenuIcon } from './icons/MenuIcon'
 import styles from './MobileTopBar.module.css'
 
+const MOBILE_MEDIA_QUERY = '(max-width: 767px)'
+
 export interface MobileTopBarProps {
   isMenuOpen: boolean
   onMenuToggle: () => void
@@ -67,9 +69,16 @@ export function MobileTopBar({ isMenuOpen, onMenuToggle, menuId, children }: Mob
       }
     }
 
+    const mobileMediaQuery = window.matchMedia(MOBILE_MEDIA_QUERY)
+    const handleBreakpointChange = (event: MediaQueryListEvent) => {
+      if (!event.matches) onMenuToggleRef.current()
+    }
+
     document.addEventListener('keydown', handleKeyDown)
+    mobileMediaQuery.addEventListener('change', handleBreakpointChange)
     return () => {
       document.removeEventListener('keydown', handleKeyDown)
+      mobileMediaQuery.removeEventListener('change', handleBreakpointChange)
       document.body.style.overflow = previousOverflow
     }
   }, [isMenuOpen])
