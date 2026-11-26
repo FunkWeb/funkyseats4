@@ -248,8 +248,8 @@ describe('bookingsRepository', () => {
     await createSeatsRepository(db()).delete(deletedSeat)
 
     assert.deepEqual(await bookings.findActiveByRoomAndDate(roomId, DATE), [
-      { ...active, username: 'alice', userAvatarPath: null },
-      { ...anotherActive, username: 'bob', userAvatarPath: null },
+      { ...active, userName: 'alice', userAvatarPath: null },
+      { ...anotherActive, userName: 'bob', userAvatarPath: null },
     ])
   })
 
