@@ -19,7 +19,7 @@ export function getAllBookings(
 ): Promise<PaginatedResponse<AdminBookingDto>> {
   const params = new URLSearchParams({ page: String(page) })
   for (const [key, value] of Object.entries(filters)) {
-    if (value !== undefined && value !== '') params.set(key, String(value))
+    if (value !== undefined) params.set(key, String(value))
   }
   return get<PaginatedResponse<AdminBookingDto>>(`/bookings?${params}`)
 }

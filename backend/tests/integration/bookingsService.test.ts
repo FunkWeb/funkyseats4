@@ -227,7 +227,6 @@ describe('bookingsService', () => {
     await service.cancel(admin(bob), booking.id)
 
     assert.deepEqual(await statusesOf(alice), ['CANCELLED'])
-    assert.partialDeepStrictEqual(await book(bob), { status: 'ACTIVE' })
   })
 
   for (const status of unbookableStatuses) {

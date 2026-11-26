@@ -2,7 +2,7 @@ import { after, before, beforeEach, describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import type { Server } from 'node:http'
 import express, { type RequestHandler } from 'express'
-import type { BookingFilters, BookingStatus } from '../../../contracts/booking.js'
+import type { BookingFilters } from '../../../contracts/booking.js'
 import type { Pagination } from '../../../contracts/pagination.js'
 import { UnauthorizedError } from '../../src/errors/appErrors.js'
 import { errorHandler } from '../../src/errors/errorHandler.js'
@@ -82,12 +82,7 @@ describe('bookingsRoutes admin bookings', () => {
     assert.deepEqual(await response.json(), { page: 3, pageSize: 10, total: 0, items: [] })
     assert.deepEqual(requests, [
       {
-        filters: {
-          fromDate: '2030-01-02',
-          roomId: 2,
-          userId: 9,
-          status: 'ACTIVE' as BookingStatus,
-        },
+        filters: { fromDate: '2030-01-02', roomId: 2, userId: 9, status: 'ACTIVE' },
         pagination: { page: 3, pageSize: 10 },
       },
     ])

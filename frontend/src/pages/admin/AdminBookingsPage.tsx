@@ -29,9 +29,6 @@ const STATUS_OPTIONS = [
   ...BOOKING_STATUSES.map((value) => ({ label: STATUS_LABELS[value], value })),
 ]
 
-const isBookingStatus = (value: string): value is BookingStatus =>
-  BOOKING_STATUSES.some((status) => status === value)
-
 export default function AdminBookingsPage() {
   const [fromDate, setFromDate] = useState(getTodayIsoDate)
   const [roomId, setRoomId] = useState('')
@@ -94,7 +91,6 @@ export default function AdminBookingsPage() {
               cancelBooking.reset()
               setBookingToCancel(booking)
             }}
-            disabled={cancelBooking.isPending}
           >
             Avbestill
           </Button>
@@ -102,16 +98,11 @@ export default function AdminBookingsPage() {
     },
   ]
 
-  const closeCancelModal = () => {
-    setBookingToCancel(null)
-    cancelBooking.reset()
-  }
+  const closeCancelModal = () => setBookingToCancel(null)
 
   const confirmCancellation = () => {
     if (!bookingToCancel) return
-    cancelBooking.mutate([bookingToCancel.id], {
-      onSuccess: () => setBookingToCancel(null),
-    })
+    cancelBooking.mutate([bookingToCancel.id], { onSuccess: closeCancelModal })
   }
 
   return (
@@ -158,7 +149,7 @@ export default function AdminBookingsPage() {
               options={STATUS_OPTIONS}
               value={status}
               onChange={(value) => {
-                if (value === '' || isBookingStatus(value)) setStatus(value)
+                setStatus(value as BookingStatus | '')
                 setPage(1)
               }}
             />
