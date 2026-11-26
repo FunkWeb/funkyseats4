@@ -266,20 +266,33 @@ describe('bookingsRepository', () => {
   })
 
   it('getStatsByUserId returns zero and null defaults when user has no bookings', async () => {
-    assert.deepEqual(await bookings.getStatsByUserId(alice, DATE), {
-      totalBookings: 0,
-      upcomingBookings: 0,
-      completedBookings: 0,
-      cancelledBookings: 0,
-      favouriteRoom: null,
-      favouriteSeat: null,
-      byPeriod: {
-        BEFORE_LUNCH: 0,
-        AFTER_LUNCH: 0,
-        ALL_DAY: 0,
+    const result = await bookings.getStatsByUserId(alice, DATE)
+    assert.deepEqual(
+      {
+        upcoming: result.upcoming,
+        completed: result.completed,
+        cancelled: result.cancelled,
+        thisMonth: result.thisMonth,
+        favouriteRoom: result.favouriteRoom,
+        favouriteSeat: result.favouriteSeat,
+        byPeriod: result.byPeriod,
       },
-      perMonth: [],
-    })
+      {
+        upcoming: 0,
+        completed: 0,
+        cancelled: 0,
+        thisMonth: 0,
+        favouriteRoom: null,
+        favouriteSeat: null,
+        byPeriod: {
+          BEFORE_LUNCH: 0,
+          AFTER_LUNCH: 0,
+          ALL_DAY: 0,
+        },
+      },
+    )
+    assert.equal(result.perMonth.length, 6)
+    assert.ok(result.perMonth.every((m) => m.count === 0))
   })
 
   it('getStatsByUserId aggregates counts, favourites, periods and monthly trends while excluding cancelled bookings', async () => {
@@ -296,31 +309,43 @@ describe('bookingsRepository', () => {
 
     await book({ userId: bob, seatId: otherRoomSeat })
 
-    assert.deepEqual(await bookings.getStatsByUserId(alice, DATE), {
-      totalBookings: 5,
-      upcomingBookings: 2,
-      completedBookings: 1,
-      cancelledBookings: 2,
-      favouriteRoom: {
-        roomName: 'room-a',
-        count: 3,
+    const result = await bookings.getStatsByUserId(alice, DATE)
+    assert.deepEqual(
+      {
+        upcoming: result.upcoming,
+        completed: result.completed,
+        cancelled: result.cancelled,
+        thisMonth: result.thisMonth,
+        favouriteRoom: result.favouriteRoom,
+        favouriteSeat: result.favouriteSeat,
+        byPeriod: result.byPeriod,
       },
-      favouriteSeat: {
-        seatNumber: 'A1',
-        roomName: 'room-a',
-        count: 2,
-      },
-      byPeriod: {
-        BEFORE_LUNCH: 1,
-        AFTER_LUNCH: 1,
-        ALL_DAY: 1,
-      },
-      perMonth: [
-        {
-          month: DATE.slice(0, 7),
+      {
+        upcoming: 2,
+        completed: 0,
+        cancelled: 2,
+        thisMonth: 3,
+        favouriteRoom: {
+          name: 'room-a',
+          slug: 'room-a',
           count: 3,
         },
-      ],
+        favouriteSeat: {
+          seatNumber: 'A1',
+          roomName: 'room-a',
+          count: 2,
+        },
+        byPeriod: {
+          BEFORE_LUNCH: 1,
+          AFTER_LUNCH: 1,
+          ALL_DAY: 1,
+        },
+      },
+    )
+    assert.equal(result.perMonth.length, 6)
+    assert.deepEqual(result.perMonth.at(-1), {
+      month: DATE.slice(0, 7),
+      count: 3,
     })
   })
 })
