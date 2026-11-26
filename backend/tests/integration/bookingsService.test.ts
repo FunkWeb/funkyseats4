@@ -287,34 +287,34 @@ describe('bookingsService', () => {
         },
       ],
     })
+  })
 
-    it('findAll returns paginated bookings with user details', async () => {
-      await book(alice)
-      await book(bob, { seatId: seatB, timePeriod: 'AFTER_LUNCH' })
+  it('findAll returns paginated bookings with user details', async () => {
+    await book(alice)
+    await book(bob, { seatId: seatB, timePeriod: 'AFTER_LUNCH' })
 
-      assert.partialDeepStrictEqual(await service.findAll({}, { page: 1, pageSize: 20 }), {
-        page: 1,
-        pageSize: 20,
-        total: 2,
-        items: [
-          {
-            user: {
-              id: bob,
-              name: 'bob',
-              email: 'bob@example.com',
-              avatarPath: null,
-            },
+    assert.partialDeepStrictEqual(await service.findAll({}, { page: 1, pageSize: 20 }), {
+      page: 1,
+      pageSize: 20,
+      total: 2,
+      items: [
+        {
+          user: {
+            id: bob,
+            name: 'bob',
+            email: 'bob@example.com',
+            avatarPath: null,
           },
-          {
-            user: {
-              id: alice,
-              name: 'alice',
-              email: 'alice@example.com',
-              avatarPath: null,
-            },
+        },
+        {
+          user: {
+            id: alice,
+            name: 'alice',
+            email: 'alice@example.com',
+            avatarPath: null,
           },
-        ],
-      })
+        },
+      ],
     })
   })
 })

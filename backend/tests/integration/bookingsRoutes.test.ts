@@ -2,23 +2,21 @@ import { after, before, beforeEach, describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import type { Server } from 'node:http'
 import express, { type RequestHandler } from 'express'
-import type { BookingStatus } from '../../../contracts/booking.js'
+import type { BookingFilters, BookingStatus } from '../../../contracts/booking.js'
 import type { Pagination } from '../../../contracts/pagination.js'
 import { UnauthorizedError } from '../../src/errors/appErrors.js'
 import { errorHandler } from '../../src/errors/errorHandler.js'
-import { createBookingsRoutes } from '../../src/routes/bookingsRoutes.js'
-import type { BookingsService } from '../../src/services/bookingsService.js'
-import type { AdminBookingFilters } from '../../src/validation/bookingRequests.js'
+import { createBookingsRoutes, type BookingsRoutesDeps } from '../../src/routes/bookingsRoutes.js'
 
 describe('bookingsRoutes admin bookings', () => {
   let server: Server
   let baseUrl: string
   let loggedIn = true
   let currentRole: 'ADMIN' | 'CANDIDATE' | 'SUPERVISOR' = 'ADMIN'
-  const requests: { filters: AdminBookingFilters; pagination: Pagination }[] = []
+  const requests: { filters: BookingFilters; pagination: Pagination }[] = []
   const cancellations: { userId: number; bookingId: number; isAdmin: boolean }[] = []
 
-  const bookingsService: Pick<BookingsService, 'create' | 'cancel' | 'findForUser' | 'findAll'> = {
+  const bookingsService: BookingsRoutesDeps['bookingsService'] = {
     create: async () => {
       throw new Error('not used')
     },

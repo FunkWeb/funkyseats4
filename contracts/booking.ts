@@ -36,3 +36,10 @@ export type AdminBookingDto = MyBookingDto & {
 }
 
 export type NewBooking = Pick<BookingDto, 'seatId' | 'bookingDate' | 'timePeriod'>
+
+export interface BookingFilters {
+  date?: string
+  roomId?: number
+  userId?: number
+  status?: BookingStatus
+}

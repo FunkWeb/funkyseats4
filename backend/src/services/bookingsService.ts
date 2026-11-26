@@ -2,6 +2,7 @@ import {
   periodsOverlap,
   type AdminBookingDto,
   type BookingDto,
+  type BookingFilters,
   type MyBookingDto,
   type NewBooking,
   type RoomBookingDto,
@@ -12,14 +13,13 @@ import { ConflictError, ForbiddenError, ValidationError } from '../errors/appErr
 import type {
   Booking,
   AdminBooking,
-  BookingFilters,
   BookingsRepository,
   MyBooking,
   RoomBooking,
 } from '../repositories/bookingsRepository.js'
 import type { RoomsRepository } from '../repositories/roomsRepository.js'
 import type { SeatsRepository } from '../repositories/seatsRepository.js'
-import { addDays, findOrThrow, todayInOffice } from './common.js'
+import { addDays, findOrThrow, todayInOffice, toPaginatedResponse } from './common.js'
 
 export interface BookingsServiceDeps {
   bookings: Pick<
@@ -140,21 +140,17 @@ export const createBookingsService = ({
     await bookings.updateStatus(bookingId, 'CANCELLED')
   }
 
-  const findForUser = async (
+  const findForUser = (
     userId: number,
     pagination: Pagination,
-  ): Promise<PaginatedResponse<MyBookingDto>> => {
-    const { items, total } = await bookings.findByUserId(userId, pagination)
-    return { ...pagination, items: items.map(toMyBookingDto), total }
-  }
+  ): Promise<PaginatedResponse<MyBookingDto>> =>
+    toPaginatedResponse(bookings.findByUserId(userId, pagination), pagination, toMyBookingDto)
 
-  const findAll = async (
+  const findAll = (
     filters: BookingFilters,
     pagination: Pagination,
-  ): Promise<PaginatedResponse<AdminBookingDto>> => {
-    const { items, total } = await bookings.findAll(filters, pagination)
-    return { ...pagination, items: items.map(toAdminBookingDto), total }
-  }
+  ): Promise<PaginatedResponse<AdminBookingDto>> =>
+    toPaginatedResponse(bookings.findAll(filters, pagination), pagination, toAdminBookingDto)
 
   const findForRoomOnDate = async (roomId: number, date: string): Promise<RoomBookingDto[]> => {
     await findRoom(roomId)

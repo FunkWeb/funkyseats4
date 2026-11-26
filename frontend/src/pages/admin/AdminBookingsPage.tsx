@@ -14,17 +14,15 @@ import { Select } from '../../components/Select'
 import { TextField } from '../../components/TextField'
 import { UserIdentity } from '../../components/UserIdentity'
 import { useCancelBooking } from '../../features/bookings/useCancelBooking'
-import { PERIOD_LABELS } from '../../features/bookings/bookingLabels'
+import {
+  CANCEL_ERROR_MESSAGE,
+  PERIOD_LABELS,
+  STATUS_LABELS,
+} from '../../features/bookings/bookingLabels'
 import { useAllBookings } from '../../features/bookings/useAllBookings'
 import { useRooms } from '../../features/rooms/useRooms'
 import { formatShortDate, getTodayIsoDate } from '../../utils/isoDate'
 import styles from './AdminBookingsPage.module.css'
-
-const STATUS_LABELS: Record<BookingStatus, string> = {
-  ACTIVE: 'Aktiv',
-  COMPLETE: 'Fullført',
-  CANCELLED: 'Avbestilt',
-}
 
 const STATUS_OPTIONS = [
   { label: 'Alle statuser', value: '' },
@@ -103,6 +101,11 @@ export default function AdminBookingsPage() {
         ) : null,
     },
   ]
+
+  const closeCancelModal = () => {
+    setBookingToCancel(null)
+    cancelBooking.reset()
+  }
 
   const confirmCancellation = () => {
     if (!bookingToCancel) return
@@ -201,21 +204,11 @@ export default function AdminBookingsPage() {
         open={bookingToCancel !== null}
         title="Avbestill reservasjon"
         onClose={() => {
-          if (!cancelBooking.isPending) {
-            setBookingToCancel(null)
-            cancelBooking.reset()
-          }
+          if (!cancelBooking.isPending) closeCancelModal()
         }}
         footer={
           <>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setBookingToCancel(null)
-                cancelBooking.reset()
-              }}
-              disabled={cancelBooking.isPending}
-            >
+            <Button variant="outline" onClick={closeCancelModal} disabled={cancelBooking.isPending}>
               Behold reservasjon
             </Button>
             <Button
@@ -235,11 +228,7 @@ export default function AdminBookingsPage() {
           </p>
         )}
         {cancelBooking.isError && (
-          <Notice
-            variant="danger"
-            title="Kunne ikke avbestille reservasjonen"
-            description="Prøv igjen senere."
-          />
+          <Notice variant="danger" title="Avbestilling feilet" description={CANCEL_ERROR_MESSAGE} />
         )}
       </Modal>
     </>

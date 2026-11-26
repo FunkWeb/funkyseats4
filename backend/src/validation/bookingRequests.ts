@@ -1,17 +1,10 @@
 import {
   BOOKING_STATUSES,
   TIME_PERIODS,
-  type BookingStatus,
+  type BookingFilters,
   type NewBooking,
 } from '../../../contracts/booking.js'
 import { asRecord, parseId, parseIsoDate, parseOneOf, parseIfPresent } from './parsers.js'
-
-export interface AdminBookingFilters {
-  date?: string
-  roomId?: number
-  userId?: number
-  status?: BookingStatus
-}
 
 export const parseNewBooking = (body: unknown): NewBooking => {
   const { seatId, bookingDate, timePeriod } = asRecord(body)
@@ -22,7 +15,7 @@ export const parseNewBooking = (body: unknown): NewBooking => {
   }
 }
 
-export const parseAdminBookingFilters = (query: Record<string, unknown>): AdminBookingFilters => ({
+export const parseAdminBookingFilters = (query: Record<string, unknown>): BookingFilters => ({
   date: parseIfPresent(query.date, (value) => parseIsoDate(value, 'date')),
   roomId: parseIfPresent(query.roomId, (value) => parseId(value, 'roomId')),
   userId: parseIfPresent(query.userId, (value) => parseId(value, 'userId')),

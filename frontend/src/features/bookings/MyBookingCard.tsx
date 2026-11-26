@@ -1,17 +1,11 @@
 import { Link } from 'react-router'
-import type { BookingStatus, MyBookingDto } from '../../../../contracts/booking'
+import type { MyBookingDto } from '../../../../contracts/booking'
 import { Button } from '../../components/Button'
 import { Card } from '../../components/Card'
 import { classNames } from '../../utils/classNames'
 import { formatShortDate } from '../../utils/isoDate'
-import { PERIOD_LABELS } from './bookingLabels'
+import { PERIOD_LABELS, STATUS_LABELS } from './bookingLabels'
 import styles from './MyBookingCard.module.css'
-
-const STATUS_LABELS: Record<BookingStatus, string> = {
-  ACTIVE: 'Aktiv',
-  COMPLETE: 'Fullført',
-  CANCELLED: 'Avbestilt',
-}
 
 export interface MyBookingCardProps {
   booking: MyBookingDto

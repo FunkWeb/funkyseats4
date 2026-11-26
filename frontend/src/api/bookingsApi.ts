@@ -1,7 +1,7 @@
 import type {
   AdminBookingDto,
   BookingDto,
-  BookingStatus,
+  BookingFilters,
   MyBookingDto,
   NewBooking,
   RoomBookingDto,
@@ -9,19 +9,12 @@ import type {
 import type { PaginatedResponse } from '../../../contracts/pagination'
 import { get, post } from './httpClient'
 
-export interface AdminBookingFilters {
-  date?: string
-  roomId?: number
-  userId?: number
-  status?: BookingStatus
-}
-
 export function getMyBookings(page: number): Promise<PaginatedResponse<MyBookingDto>> {
   return get<PaginatedResponse<MyBookingDto>>(`/bookings/me?page=${page}`)
 }
 
 export function getAllBookings(
-  filters: AdminBookingFilters,
+  filters: BookingFilters,
   page: number,
 ): Promise<PaginatedResponse<AdminBookingDto>> {
   const params = new URLSearchParams({ page: String(page) })
