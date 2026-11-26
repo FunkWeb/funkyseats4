@@ -1,6 +1,8 @@
 import type {
+  AdminBookingDto,
   BookingDto,
   BookingStatsDto,
+  BookingFilters,
   MyBookingDto,
   NewBooking,
   RoomBookingDto,
@@ -14,6 +16,17 @@ export function getMyBookingStats(): Promise<BookingStatsDto> {
 
 export function getMyBookings(page: number): Promise<PaginatedResponse<MyBookingDto>> {
   return get<PaginatedResponse<MyBookingDto>>(`/bookings/me?page=${page}`)
+}
+
+export function getAllBookings(
+  filters: BookingFilters,
+  page: number,
+): Promise<PaginatedResponse<AdminBookingDto>> {
+  const params = new URLSearchParams({ page: String(page) })
+  for (const [key, value] of Object.entries(filters)) {
+    if (value !== undefined) params.set(key, String(value))
+  }
+  return get<PaginatedResponse<AdminBookingDto>>(`/bookings?${params}`)
 }
 
 export function getRoomBookings(roomId: number, date: string): Promise<RoomBookingDto[]> {

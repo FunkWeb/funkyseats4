@@ -1,6 +1,8 @@
 import type { UserDto } from './user.js'
 
-export type BookingStatus = 'ACTIVE' | 'COMPLETE' | 'CANCELLED'
+export const BOOKING_STATUSES = ['ACTIVE', 'COMPLETE', 'CANCELLED'] as const
+
+export type BookingStatus = (typeof BOOKING_STATUSES)[number]
 
 export const TIME_PERIODS = ['BEFORE_LUNCH', 'AFTER_LUNCH', 'ALL_DAY'] as const
 
@@ -29,6 +31,10 @@ export type MyBookingDto = BookingDto & {
   seatNumber: string
 }
 
+export type AdminBookingDto = MyBookingDto & {
+  user: Pick<UserDto, 'id' | 'name' | 'email' | 'avatarPath'>
+}
+
 export type NewBooking = Pick<BookingDto, 'seatId' | 'bookingDate' | 'timePeriod'>
 
 export interface BookingStatsDto {
@@ -40,4 +46,10 @@ export interface BookingStatsDto {
   favouriteSeat: { seatNumber: string; roomName: string; count: number } | null
   byPeriod: Record<TimePeriod, number>
   perMonth: { month: string; count: number }[]
+}
+export interface BookingFilters {
+  fromDate?: string
+  roomId?: number
+  userId?: number
+  status?: BookingStatus
 }
