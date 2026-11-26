@@ -1,6 +1,7 @@
 import type { Pool, ResultSetHeader, RowDataPacket } from 'mysql2/promise'
 import type {
   BookingDto,
+  BookingFilters,
   BookingStatus,
   MyBookingDto,
   NewBooking,
@@ -24,11 +25,15 @@ export interface MyBooking extends MyBookingDto {
   createdAt: Date
 }
 
+export interface AdminBooking extends MyBooking {
+  userName: string
+  userEmail: string
+  userAvatarPath: string | null
+}
+
 export type BookingInsert = NewBooking & Pick<BookingDto, 'userId'>
 
-type BookingRow = Booking & RowDataPacket
 type RoomBookingRow = RoomBooking & RowDataPacket
-type MyBookingRow = MyBooking & RowDataPacket
 
 const BOOKING_COLUMNS = `
     bookings.id,
@@ -42,35 +47,85 @@ const BOOKING_COLUMNS = `
 
 const SELECT_BOOKING = `SELECT ${BOOKING_COLUMNS} FROM bookings`
 
-const SELECT_MY_BOOKING = `
-  SELECT ${BOOKING_COLUMNS},
+const MY_BOOKING_COLUMNS = `${BOOKING_COLUMNS},
     rooms.name                             AS roomName,
     rooms.slug                             AS roomSlug,
-    seats.seat_number                      AS seatNumber
-  FROM bookings
+    seats.seat_number                      AS seatNumber`
+
+const MY_BOOKING_FROM = `bookings
   INNER JOIN seats ON seats.id = bookings.seat_id
   INNER JOIN rooms ON rooms.id = seats.room_id`
+
+const ADMIN_BOOKING_FROM = `${MY_BOOKING_FROM}
+  INNER JOIN users ON users.id = bookings.user_id`
+
+const SELECT_MY_BOOKING = `SELECT ${MY_BOOKING_COLUMNS} FROM ${MY_BOOKING_FROM}`
+
+const SELECT_ADMIN_BOOKING = `
+  SELECT ${MY_BOOKING_COLUMNS},
+    users.name                             AS userName,
+    users.email                            AS userEmail,
+    users.avatar_path                      AS userAvatarPath
+  FROM ${ADMIN_BOOKING_FROM}`
+
+const FILTER_CONDITIONS: Record<keyof BookingFilters, string> = {
+  fromDate: 'bookings.booking_date >= :fromDate',
+  roomId: 'rooms.id = :roomId',
+  userId: 'bookings.user_id = :userId',
+  status: 'bookings.status = :status',
+}
+
+const FILTER_KEYS = Object.keys(FILTER_CONDITIONS) as (keyof BookingFilters)[]
 
 type Executor = Pick<Pool, 'execute'>
 
 const createBookingQueries = (db: Executor) => {
-  const selectBookings = async (clause: string, params: QueryParams): Promise<Booking[]> => {
-    const [rows] = await db.execute<BookingRow[]>(`${SELECT_BOOKING} ${clause}`, params)
-    return rows
-  }
+  const selectFrom =
+    <T>(sql: string) =>
+    async (clause: string, params: QueryParams): Promise<T[]> => {
+      const [rows] = await db.execute<(T & RowDataPacket)[]>(`${sql} ${clause}`, params)
+      return rows
+    }
+
+  const selectBookings = selectFrom<Booking>(SELECT_BOOKING)
+  const selectMyBookings = selectFrom<MyBooking>(SELECT_MY_BOOKING)
+  const selectAdminBookings = selectFrom<AdminBooking>(SELECT_ADMIN_BOOKING)
 
   const findById = async (id: number): Promise<Booking | null> => {
     const [booking] = await selectBookings('WHERE id = :id', { id })
     return booking ?? null
   }
 
-  const selectMyBookings = async (clause: string, params: QueryParams): Promise<MyBooking[]> => {
-    const [rows] = await db.execute<MyBookingRow[]>(`${SELECT_MY_BOOKING} ${clause}`, params)
-    return rows
+  const findAll = (
+    filters: BookingFilters,
+    pagination: Pagination,
+  ): Promise<Page<AdminBooking>> => {
+    const conditions: string[] = []
+    const params: QueryParams = {}
+    for (const key of FILTER_KEYS) {
+      const value = filters[key]
+      if (value === undefined) continue
+      conditions.push(FILTER_CONDITIONS[key])
+      params[key] = value
+    }
+
+    const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
+    return paginate(
+      db,
+      {
+        select: selectAdminBookings,
+        table: ADMIN_BOOKING_FROM,
+        where,
+        orderBy: 'bookings.booking_date DESC, bookings.id DESC',
+        params,
+      },
+      pagination,
+    )
   }
 
   return {
     findById,
+    findAll,
     findByUserId: (userId: number, pagination: Pagination): Promise<Page<MyBooking>> =>
       paginate(
         db,

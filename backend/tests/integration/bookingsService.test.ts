@@ -14,7 +14,11 @@ import {
 } from '../../src/repositories/bookingsRepository.js'
 import { createRoomsRepository } from '../../src/repositories/roomsRepository.js'
 import { createSeatsRepository } from '../../src/repositories/seatsRepository.js'
-import { createBookingsService, type BookingsService } from '../../src/services/bookingsService.js'
+import {
+  createBookingsService,
+  type BookingActor,
+  type BookingsService,
+} from '../../src/services/bookingsService.js'
 import { addDays } from '../../src/services/common.js'
 import { useMigratedTestDatabase } from '../testDatabase.js'
 import { createFixtures, type Fixtures } from '../testFixtures.js'
@@ -71,6 +75,9 @@ describe('bookingsService', () => {
     (await bookings.findByUserId(userId, { page: 1, pageSize: 100 })).items.map(
       ({ status }) => status,
     )
+
+  const candidate = (id: number): BookingActor => ({ id, role: 'CANDIDATE' })
+  const admin = (id: number): BookingActor => ({ id, role: 'ADMIN' })
 
   const assertBookingRejected = async (
     userId: number,
@@ -202,7 +209,7 @@ describe('bookingsService', () => {
 
   it('cancel lets the owner cancel an active booking and frees the slot', async () => {
     const booking = await book(alice)
-    await service.cancel(alice, booking.id)
+    await service.cancel(candidate(alice), booking.id)
 
     assert.deepEqual(await statusesOf(alice), ['CANCELLED'])
     assert.partialDeepStrictEqual(await book(bob), { status: 'ACTIVE' })
@@ -211,8 +218,15 @@ describe('bookingsService', () => {
   it("cancel rejects cancelling another user's booking", async () => {
     const booking = await book(alice)
 
-    await assert.rejects(service.cancel(bob, booking.id), ForbiddenError)
+    await assert.rejects(service.cancel(candidate(bob), booking.id), ForbiddenError)
     assert.deepEqual(await statusesOf(alice), ['ACTIVE'])
+  })
+
+  it("cancel lets an admin cancel another user's active booking", async () => {
+    const booking = await book(alice)
+    await service.cancel(admin(bob), booking.id)
+
+    assert.deepEqual(await statusesOf(alice), ['CANCELLED'])
   })
 
   for (const status of unbookableStatuses) {
@@ -220,18 +234,19 @@ describe('bookingsService', () => {
       const booking = await book(alice)
       await bookings.updateStatus(booking.id, status)
 
-      await assert.rejects(service.cancel(alice, booking.id), ConflictError)
+      await assert.rejects(service.cancel(candidate(alice), booking.id), ConflictError)
+      await assert.rejects(service.cancel(admin(bob), booking.id), ConflictError)
       assert.deepEqual(await statusesOf(alice), [status])
     })
   }
 
   it('cancel rejects an unknown booking', async () => {
-    await assert.rejects(service.cancel(alice, UNKNOWN_ID), NotFoundError)
+    await assert.rejects(service.cancel(candidate(alice), UNKNOWN_ID), NotFoundError)
   })
 
   it('findForRoomOnDate returns only active bookings on active seats in the requested room and date', async () => {
     const cancelled = await book(alice)
-    await service.cancel(alice, cancelled.id)
+    await service.cancel(candidate(alice), cancelled.id)
     const active = await book(bob)
     const completed = await book(alice, { seatId: seatB, timePeriod: 'AFTER_LUNCH' })
     await bookings.updateStatus(completed.id, 'COMPLETE')
@@ -275,6 +290,35 @@ describe('bookingsService', () => {
           roomName: 'room-a',
           roomSlug: 'room-a',
           seatNumber: 'A1',
+        },
+      ],
+    })
+  })
+
+  it('findAll returns paginated bookings with user details', async () => {
+    await book(alice)
+    await book(bob, { seatId: seatB, timePeriod: 'AFTER_LUNCH' })
+
+    assert.partialDeepStrictEqual(await service.findAll({}, { page: 1, pageSize: 20 }), {
+      page: 1,
+      pageSize: 20,
+      total: 2,
+      items: [
+        {
+          user: {
+            id: bob,
+            name: 'bob',
+            email: 'bob@example.com',
+            avatarPath: null,
+          },
+        },
+        {
+          user: {
+            id: alice,
+            name: 'alice',
+            email: 'alice@example.com',
+            avatarPath: null,
+          },
         },
       ],
     })

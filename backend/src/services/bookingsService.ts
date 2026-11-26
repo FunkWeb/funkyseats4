@@ -1,27 +1,38 @@
 import {
   periodsOverlap,
+  type AdminBookingDto,
   type BookingDto,
+  type BookingFilters,
   type MyBookingDto,
   type NewBooking,
   type RoomBookingDto,
   type TimePeriod,
 } from '../../../contracts/booking.js'
 import type { PaginatedResponse, Pagination } from '../../../contracts/pagination.js'
+import type { UserDto } from '../../../contracts/user.js'
 import { ConflictError, ForbiddenError, ValidationError } from '../errors/appErrors.js'
 import type {
   Booking,
+  AdminBooking,
   BookingsRepository,
   MyBooking,
   RoomBooking,
 } from '../repositories/bookingsRepository.js'
 import type { RoomsRepository } from '../repositories/roomsRepository.js'
 import type { SeatsRepository } from '../repositories/seatsRepository.js'
-import { addDays, findOrThrow, todayInOffice } from './common.js'
+import { addDays, findOrThrow, todayInOffice, toPaginatedResponse } from './common.js'
+
+export type BookingActor = Pick<UserDto, 'id' | 'role'>
 
 export interface BookingsServiceDeps {
   bookings: Pick<
     BookingsRepository,
-    'findById' | 'findByUserId' | 'findActiveByRoomAndDate' | 'updateStatus' | 'withSeatAndUserLock'
+    | 'findById'
+    | 'findByUserId'
+    | 'findAll'
+    | 'findActiveByRoomAndDate'
+    | 'updateStatus'
+    | 'withSeatAndUserLock'
   >
   seats: Pick<SeatsRepository, 'findById'>
   rooms: Pick<RoomsRepository, 'findById'>
@@ -54,6 +65,21 @@ const toMyBookingDto = ({
   roomName,
   roomSlug,
   seatNumber,
+})
+
+const toAdminBookingDto = ({
+  userName,
+  userEmail,
+  userAvatarPath,
+  ...booking
+}: AdminBooking): AdminBookingDto => ({
+  ...toMyBookingDto(booking),
+  user: {
+    id: booking.userId,
+    name: userName,
+    email: userEmail,
+    avatarPath: userAvatarPath,
+  },
 })
 
 const toRoomBookingDto = ({
@@ -105,24 +131,29 @@ export const createBookingsService = ({
     })
   }
 
-  const cancel = async (userId: number, bookingId: number): Promise<void> => {
+  const cancel = async (actor: BookingActor, bookingId: number): Promise<void> => {
     const booking = await findOrThrow(bookings.findById(bookingId), 'Booking')
 
-    //Rule: Users can only cancel their own bookings
-    if (booking.userId !== userId) throw new ForbiddenError('You can only cancel your own bookings')
+    //Rule: Non-admin users can only cancel their own bookings
+    if (actor.role !== 'ADMIN' && booking.userId !== actor.id)
+      throw new ForbiddenError('You can only cancel your own bookings')
 
     //Rule: Only bookings with "ACTIVE" status can be cancelled
     if (!isActive(booking)) throw new ConflictError('Only active bookings can be cancelled')
     await bookings.updateStatus(bookingId, 'CANCELLED')
   }
 
-  const findForUser = async (
+  const findForUser = (
     userId: number,
     pagination: Pagination,
-  ): Promise<PaginatedResponse<MyBookingDto>> => {
-    const { items, total } = await bookings.findByUserId(userId, pagination)
-    return { ...pagination, items: items.map(toMyBookingDto), total }
-  }
+  ): Promise<PaginatedResponse<MyBookingDto>> =>
+    toPaginatedResponse(bookings.findByUserId(userId, pagination), pagination, toMyBookingDto)
+
+  const findAll = (
+    filters: BookingFilters,
+    pagination: Pagination,
+  ): Promise<PaginatedResponse<AdminBookingDto>> =>
+    toPaginatedResponse(bookings.findAll(filters, pagination), pagination, toAdminBookingDto)
 
   const findForRoomOnDate = async (roomId: number, date: string): Promise<RoomBookingDto[]> => {
     await findRoom(roomId)
@@ -130,7 +161,7 @@ export const createBookingsService = ({
     return roomBookings.map(toRoomBookingDto)
   }
 
-  return { create, cancel, findForUser, findForRoomOnDate }
+  return { create, cancel, findForUser, findAll, findForRoomOnDate }
 }
 
 export type BookingsService = ReturnType<typeof createBookingsService>

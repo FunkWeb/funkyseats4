@@ -1,5 +1,7 @@
 import type {
+  AdminBookingDto,
   BookingDto,
+  BookingFilters,
   MyBookingDto,
   NewBooking,
   RoomBookingDto,
@@ -9,6 +11,17 @@ import { get, post } from './httpClient'
 
 export function getMyBookings(page: number): Promise<PaginatedResponse<MyBookingDto>> {
   return get<PaginatedResponse<MyBookingDto>>(`/bookings/me?page=${page}`)
+}
+
+export function getAllBookings(
+  filters: BookingFilters,
+  page: number,
+): Promise<PaginatedResponse<AdminBookingDto>> {
+  const params = new URLSearchParams({ page: String(page) })
+  for (const [key, value] of Object.entries(filters)) {
+    if (value !== undefined) params.set(key, String(value))
+  }
+  return get<PaginatedResponse<AdminBookingDto>>(`/bookings?${params}`)
 }
 
 export function getRoomBookings(roomId: number, date: string): Promise<RoomBookingDto[]> {
