@@ -279,4 +279,36 @@ describe('bookingsService', () => {
       ],
     })
   })
+
+  it('getStatsForUser returns booking statistics for the requested user', async () => {
+    await book(alice)
+    await book(bob, { seatId: seatB, timePeriod: 'AFTER_LUNCH' })
+
+    assert.deepEqual(await service.getStatsForUser(alice), {
+      totalBookings: 1,
+      upcomingBookings: 1,
+      completedBookings: 0,
+      cancelledBookings: 0,
+      favouriteRoom: {
+        roomName: 'room-a',
+        count: 1,
+      },
+      favouriteSeat: {
+        seatNumber: 'A1',
+        roomName: 'room-a',
+        count: 1,
+      },
+      byPeriod: {
+        BEFORE_LUNCH: 1,
+        AFTER_LUNCH: 0,
+        ALL_DAY: 0,
+      },
+      perMonth: [
+        {
+          month: TODAY.slice(0, 7),
+          count: 1,
+        },
+      ],
+    })
+  })
 })

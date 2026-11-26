@@ -1,6 +1,7 @@
 import {
   periodsOverlap,
   type BookingDto,
+  type BookingStatsDto,
   type MyBookingDto,
   type NewBooking,
   type RoomBookingDto,
@@ -21,7 +22,12 @@ import { addDays, findOrThrow, todayInOffice } from './common.js'
 export interface BookingsServiceDeps {
   bookings: Pick<
     BookingsRepository,
-    'findById' | 'findByUserId' | 'findActiveByRoomAndDate' | 'updateStatus' | 'withSeatAndUserLock'
+    | 'findById'
+    | 'findByUserId'
+    | 'findActiveByRoomAndDate'
+    | 'updateStatus'
+    | 'withSeatAndUserLock'
+    | 'getStatsByUserId'
   >
   seats: Pick<SeatsRepository, 'findById'>
   rooms: Pick<RoomsRepository, 'findById'>
@@ -130,7 +136,10 @@ export const createBookingsService = ({
     return roomBookings.map(toRoomBookingDto)
   }
 
-  return { create, cancel, findForUser, findForRoomOnDate }
+  const getStatsForUser = (userId: number): Promise<BookingStatsDto> =>
+    bookings.getStatsByUserId(userId, today())
+
+  return { create, cancel, findForUser, findForRoomOnDate, getStatsForUser }
 }
 
 export type BookingsService = ReturnType<typeof createBookingsService>
