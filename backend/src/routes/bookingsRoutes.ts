@@ -6,13 +6,20 @@ import { parseAdminBookingFilters, parseNewBooking } from '../validation/booking
 import { parseId, parsePagination } from '../validation/parsers.js'
 
 export interface BookingsRoutesDeps {
-  bookingsService: Pick<BookingsService, 'create' | 'cancel' | 'findForUser' | 'findAll'>
+  bookingsService: Pick<
+    BookingsService,
+    'create' | 'cancel' | 'findForUser' | 'getStatsForUser' | 'findAll' | 'getStatsForUser'
+  >
   requireAuth: RequestHandler
 }
 
 export const createBookingsRoutes = ({ bookingsService, requireAuth }: BookingsRoutesDeps) => {
   const router = Router()
   router.use(requireAuth)
+
+  router.get('/me/stats', async (req, res) => {
+    res.json(await bookingsService.getStatsForUser(currentUser(req).id))
+  })
 
   router.get('/me', async (req, res) => {
     res.json(await bookingsService.findForUser(currentUser(req).id, parsePagination(req.query)))

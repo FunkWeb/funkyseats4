@@ -2,6 +2,7 @@ import {
   periodsOverlap,
   type AdminBookingDto,
   type BookingDto,
+  type BookingStatsDto,
   type BookingFilters,
   type MyBookingDto,
   type NewBooking,
@@ -27,12 +28,13 @@ export type BookingActor = Pick<UserDto, 'id' | 'role'>
 export interface BookingsServiceDeps {
   bookings: Pick<
     BookingsRepository,
+    | 'findAll'
     | 'findById'
     | 'findByUserId'
-    | 'findAll'
     | 'findActiveByRoomAndDate'
     | 'updateStatus'
     | 'withSeatAndUserLock'
+    | 'getStatsByUserId'
   >
   seats: Pick<SeatsRepository, 'findById'>
   rooms: Pick<RoomsRepository, 'findById'>
@@ -161,7 +163,10 @@ export const createBookingsService = ({
     return roomBookings.map(toRoomBookingDto)
   }
 
-  return { create, cancel, findForUser, findAll, findForRoomOnDate }
+  const getStatsForUser = (userId: number): Promise<BookingStatsDto> =>
+    bookings.getStatsByUserId(userId, today())
+
+  return { create, cancel, findForUser, findAll, findForRoomOnDate, getStatsForUser }
 }
 
 export type BookingsService = ReturnType<typeof createBookingsService>

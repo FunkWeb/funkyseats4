@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import type { BookingDto, NewBooking } from '../../../../contracts/booking'
 import { createBooking } from '../../api/bookingsApi'
+import { myBookingsBaseQueryKey } from './useMyBookings'
 import { roomBookingsQueryKey } from './useRoomBookings'
 
 export function useCreateBooking(roomId: number | undefined, date: string) {
@@ -9,8 +10,13 @@ export function useCreateBooking(roomId: number | undefined, date: string) {
   return useMutation<BookingDto, Error, NewBooking>({
     mutationFn: (input) => createBooking(input),
     onSettled: () =>
-      queryClient.invalidateQueries({
-        queryKey: roomBookingsQueryKey(roomId, date),
-      }),
+      Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: roomBookingsQueryKey(roomId, date),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: myBookingsBaseQueryKey,
+        }),
+      ]),
   })
 }

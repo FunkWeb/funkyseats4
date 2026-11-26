@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { MyBookingDto } from '../../../contracts/booking'
 import { Card } from '../components/Card'
+import { BookingStats } from '../features/bookings/BookingStats'
 import { Notice } from '../components/Notice'
 import { PageHeader } from '../components/PageHeader'
 import { PaginationControls } from '../components/PaginationControls'
@@ -44,6 +45,8 @@ export default function ProfilePage() {
           />
         </Card>
       )}
+
+      <BookingStats />
 
       {bookingsQuery.isPending && <Spinner label="Laster reservasjoner" />}
 

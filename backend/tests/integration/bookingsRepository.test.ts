@@ -72,7 +72,7 @@ describe('bookingsRepository', () => {
     assert.equal(await bookings.findById(UNKNOWN_ID), null)
   })
 
-  it('findByUserId returns only that user’s bookings with room details, ordered newest first', async () => {
+  it("findByUserId returns only that user's bookings with room details, ordered newest first", async () => {
     const first = await book()
     await book({ userId: bob, timePeriod: 'AFTER_LUNCH' })
     const second = await book({ seatId: seatB })
@@ -99,7 +99,7 @@ describe('bookingsRepository', () => {
     assert.deepEqual((await bookings.findByUserId(bob, { page: 1, pageSize: 20 })).items, [])
   })
 
-  it('findByUserId splits bookings into pages and counts only that user’s bookings', async () => {
+  it("findByUserId splits bookings into pages and counts only that user's bookings", async () => {
     const first = await book()
     const second = await book({ timePeriod: 'AFTER_LUNCH' })
     await book({ userId: bob, seatId: seatB })
@@ -263,5 +263,89 @@ describe('bookingsRepository', () => {
 
   it('updateStatus returns null when nothing matches', async () => {
     assert.equal(await bookings.updateStatus(UNKNOWN_ID, 'CANCELLED'), null)
+  })
+
+  it('getStatsByUserId returns zero and null defaults when user has no bookings', async () => {
+    const result = await bookings.getStatsByUserId(alice, DATE)
+    assert.deepEqual(
+      {
+        upcoming: result.upcoming,
+        completed: result.completed,
+        cancelled: result.cancelled,
+        thisMonth: result.thisMonth,
+        favouriteRoom: result.favouriteRoom,
+        favouriteSeat: result.favouriteSeat,
+        byPeriod: result.byPeriod,
+      },
+      {
+        upcoming: 0,
+        completed: 0,
+        cancelled: 0,
+        thisMonth: 0,
+        favouriteRoom: null,
+        favouriteSeat: null,
+        byPeriod: {
+          BEFORE_LUNCH: 0,
+          AFTER_LUNCH: 0,
+          ALL_DAY: 0,
+        },
+      },
+    )
+    assert.equal(result.perMonth.length, 6)
+    assert.ok(result.perMonth.every((m) => m.count === 0))
+  })
+
+  it('getStatsByUserId aggregates counts, favourites, periods and monthly trends while excluding cancelled bookings', async () => {
+    await book({ timePeriod: 'BEFORE_LUNCH' })
+    await book({ bookingDate: OTHER_DATE, timePeriod: 'ALL_DAY' })
+
+    const completed = await book({ seatId: seatB, timePeriod: 'AFTER_LUNCH' })
+    await bookings.updateStatus(completed.id, 'COMPLETE')
+
+    const cancelled1 = await book({ seatId: otherRoomSeat, timePeriod: 'BEFORE_LUNCH' })
+    const cancelled2 = await book({ seatId: otherRoomSeat, timePeriod: 'BEFORE_LUNCH' })
+    await bookings.updateStatus(cancelled1.id, 'CANCELLED')
+    await bookings.updateStatus(cancelled2.id, 'CANCELLED')
+
+    await book({ userId: bob, seatId: otherRoomSeat })
+
+    const result = await bookings.getStatsByUserId(alice, DATE)
+    assert.deepEqual(
+      {
+        upcoming: result.upcoming,
+        completed: result.completed,
+        cancelled: result.cancelled,
+        thisMonth: result.thisMonth,
+        favouriteRoom: result.favouriteRoom,
+        favouriteSeat: result.favouriteSeat,
+        byPeriod: result.byPeriod,
+      },
+      {
+        upcoming: 2,
+        completed: 0,
+        cancelled: 2,
+        thisMonth: 3,
+        favouriteRoom: {
+          name: 'room-a',
+          slug: 'room-a',
+          count: 3,
+        },
+        favouriteSeat: {
+          seatNumber: 'A1',
+          roomName: 'room-a',
+          count: 2,
+        },
+        byPeriod: {
+          BEFORE_LUNCH: 1,
+          AFTER_LUNCH: 1,
+          ALL_DAY: 1,
+        },
+      },
+    )
+    assert.equal(result.perMonth.length, 6)
+    assert.deepEqual(result.perMonth.at(-1), {
+      month: DATE.slice(0, 7),
+      count: 3,
+    })
   })
 })

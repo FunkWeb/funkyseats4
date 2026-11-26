@@ -26,6 +26,9 @@ describe('bookingsRoutes admin bookings', () => {
     findForUser: async () => {
       throw new Error('not used')
     },
+    getStatsForUser: async () => {
+      throw new Error('not used')
+    },
     findAll: async (filters, pagination) => {
       requests.push({ filters, pagination })
       return { ...pagination, total: 0, items: [] }

@@ -37,6 +37,16 @@ export type AdminBookingDto = MyBookingDto & {
 
 export type NewBooking = Pick<BookingDto, 'seatId' | 'bookingDate' | 'timePeriod'>
 
+export interface BookingStatsDto {
+  upcoming: number
+  completed: number
+  cancelled: number
+  thisMonth: number
+  favouriteRoom: { name: string; slug: string; count: number } | null
+  favouriteSeat: { seatNumber: string; roomName: string; count: number } | null
+  byPeriod: Record<TimePeriod, number>
+  perMonth: { month: string; count: number }[]
+}
 export interface BookingFilters {
   fromDate?: string
   roomId?: number

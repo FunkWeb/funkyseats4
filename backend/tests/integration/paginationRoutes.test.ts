@@ -19,7 +19,6 @@ describe('paginated routes', () => {
     requested.push(pagination)
     return { ...pagination, items: [], total: 0 }
   }
-
   const usersService: Pick<UsersService, 'findAll' | 'updateRole'> = {
     findAll: async (pagination) => respond(pagination),
     updateRole: async () => {},
@@ -33,6 +32,9 @@ describe('paginated routes', () => {
       throw new Error('not used')
     },
     cancel: async () => {},
+    getStatsForUser: async () => {
+      throw new Error('not used')
+    },
     findAll: async (_filters, pagination) => respond(pagination),
   }
   const requireAuth: RequestHandler = (req, _res, next) => {

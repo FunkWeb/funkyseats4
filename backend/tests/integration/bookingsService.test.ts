@@ -295,6 +295,43 @@ describe('bookingsService', () => {
     })
   })
 
+  it('getStatsForUser returns booking statistics for the requested user', async () => {
+    await book(alice)
+    await book(bob, { seatId: seatB, timePeriod: 'AFTER_LUNCH' })
+
+    const expectedMonths = Array.from({ length: 6 }, (_, i) => {
+      const [year, month] = TODAY.slice(0, 7).split('-').map(Number)
+      const d = new Date(Date.UTC(year, month - 1 - (5 - i), 1))
+      const ym = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`
+      return {
+        month: ym,
+        count: ym === TODAY.slice(0, 7) ? 1 : 0,
+      }
+    })
+
+    assert.deepEqual(await service.getStatsForUser(alice), {
+      upcoming: 1,
+      completed: 0,
+      cancelled: 0,
+      thisMonth: 1,
+      favouriteRoom: {
+        name: 'room-a',
+        slug: 'room-a',
+        count: 1,
+      },
+      favouriteSeat: {
+        seatNumber: 'A1',
+        roomName: 'room-a',
+        count: 1,
+      },
+      byPeriod: {
+        BEFORE_LUNCH: 1,
+        AFTER_LUNCH: 0,
+        ALL_DAY: 0,
+      },
+      perMonth: expectedMonths,
+    })
+  })
   it('findAll returns paginated bookings with user details', async () => {
     await book(alice)
     await book(bob, { seatId: seatB, timePeriod: 'AFTER_LUNCH' })
