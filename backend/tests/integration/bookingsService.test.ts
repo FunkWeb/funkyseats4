@@ -284,13 +284,24 @@ describe('bookingsService', () => {
     await book(alice)
     await book(bob, { seatId: seatB, timePeriod: 'AFTER_LUNCH' })
 
+    const expectedMonths = Array.from({ length: 6 }, (_, i) => {
+      const [year, month] = TODAY.slice(0, 7).split('-').map(Number)
+      const d = new Date(Date.UTC(year, month - 1 - (5 - i), 1))
+      const ym = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`
+      return {
+        month: ym,
+        count: ym === TODAY.slice(0, 7) ? 1 : 0,
+      }
+    })
+
     assert.deepEqual(await service.getStatsForUser(alice), {
-      totalBookings: 1,
-      upcomingBookings: 1,
-      completedBookings: 0,
-      cancelledBookings: 0,
+      upcoming: 1,
+      completed: 0,
+      cancelled: 0,
+      thisMonth: 1,
       favouriteRoom: {
-        roomName: 'room-a',
+        name: 'room-a',
+        slug: 'room-a',
         count: 1,
       },
       favouriteSeat: {
@@ -303,12 +314,7 @@ describe('bookingsService', () => {
         AFTER_LUNCH: 0,
         ALL_DAY: 0,
       },
-      perMonth: [
-        {
-          month: TODAY.slice(0, 7),
-          count: 1,
-        },
-      ],
+      perMonth: expectedMonths,
     })
   })
 })
