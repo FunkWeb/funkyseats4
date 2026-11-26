@@ -330,8 +330,8 @@ describe('bookingsService', () => {
         ALL_DAY: 0,
       },
       perMonth: expectedMonths,
-   })
-})
+    })
+  })
   it('findAll returns paginated bookings with user details', async () => {
     await book(alice)
     await book(bob, { seatId: seatB, timePeriod: 'AFTER_LUNCH' })

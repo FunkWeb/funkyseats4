@@ -19,7 +19,6 @@ describe('paginated routes', () => {
     requested.push(pagination)
     return { ...pagination, items: [], total: 0 }
   }
-https://github.com/FunkWeb/funkyseats4/pull/279/conflict?name=backend%252Ftests%252Fintegration%252FpaginationRoutes.test.ts&ancestor_oid=9ceac464ecf4659139ac3242d56bc091a5f60ce0&base_oid=f60e6be16cf3b7566c6dcc90eb87e9aa3988dae8&head_oid=da040bd9ee46fe714544f559411dbb89d4028714
   const usersService: Pick<UsersService, 'findAll' | 'updateRole'> = {
     findAll: async (pagination) => respond(pagination),
     updateRole: async () => {},

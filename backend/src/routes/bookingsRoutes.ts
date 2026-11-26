@@ -6,7 +6,10 @@ import { parseAdminBookingFilters, parseNewBooking } from '../validation/booking
 import { parseId, parsePagination } from '../validation/parsers.js'
 
 export interface BookingsRoutesDeps {
-  bookingsService: Pick<BookingsService, 'create' | 'cancel' | 'findForUser' | 'getStatsForUser' | 'findAll' | 'getStatsForUser'>
+  bookingsService: Pick<
+    BookingsService,
+    'create' | 'cancel' | 'findForUser' | 'getStatsForUser' | 'findAll' | 'getStatsForUser'
+  >
   requireAuth: RequestHandler
 }
 
