@@ -14,14 +14,14 @@ describe('bookingsRoutes admin bookings', () => {
   let loggedIn = true
   let currentRole: 'ADMIN' | 'CANDIDATE' | 'SUPERVISOR' = 'ADMIN'
   const requests: { filters: BookingFilters; pagination: Pagination }[] = []
-  const cancellations: { userId: number; bookingId: number; isAdmin: boolean }[] = []
+  const cancellations: { actorId: number; role: string; bookingId: number }[] = []
 
   const bookingsService: BookingsRoutesDeps['bookingsService'] = {
     create: async () => {
       throw new Error('not used')
     },
-    cancel: async (userId, bookingId, isAdmin = false) => {
-      cancellations.push({ userId, bookingId, isAdmin })
+    cancel: async (actor, bookingId) => {
+      cancellations.push({ actorId: actor.id, role: actor.role, bookingId })
     },
     findForUser: async () => {
       throw new Error('not used')
@@ -75,14 +75,19 @@ describe('bookingsRoutes admin bookings', () => {
 
   it('lists bookings for admins and parses pagination and all filters', async () => {
     const response = await fetch(
-      `${baseUrl}/bookings?date=2030-01-02&roomId=2&userId=9&status=ACTIVE&page=3&pageSize=10`,
+      `${baseUrl}/bookings?fromDate=2030-01-02&roomId=2&userId=9&status=ACTIVE&page=3&pageSize=10`,
     )
 
     assert.equal(response.status, 200)
     assert.deepEqual(await response.json(), { page: 3, pageSize: 10, total: 0, items: [] })
     assert.deepEqual(requests, [
       {
-        filters: { date: '2030-01-02', roomId: 2, userId: 9, status: 'ACTIVE' as BookingStatus },
+        filters: {
+          fromDate: '2030-01-02',
+          roomId: 2,
+          userId: 9,
+          status: 'ACTIVE' as BookingStatus,
+        },
         pagination: { page: 3, pageSize: 10 },
       },
     ])
@@ -105,8 +110,8 @@ describe('bookingsRoutes admin bookings', () => {
   })
 
   for (const query of [
-    'date=2030-02-30',
-    'date=2030-99-99',
+    'fromDate=2030-02-30',
+    'fromDate=2030-99-99',
     'roomId=0',
     'roomId=abc',
     'userId=-1',
@@ -119,9 +124,9 @@ describe('bookingsRoutes admin bookings', () => {
     })
   }
 
-  it('passes the authenticated admin status to cancellation', async () => {
+  it('passes the authenticated user to cancellation', async () => {
     const response = await fetch(`${baseUrl}/bookings/17/cancel`, { method: 'POST' })
     assert.equal(response.status, 204)
-    assert.deepEqual(cancellations, [{ userId: 9, bookingId: 17, isAdmin: true }])
+    assert.deepEqual(cancellations, [{ actorId: 9, role: 'ADMIN', bookingId: 17 }])
   })
 })

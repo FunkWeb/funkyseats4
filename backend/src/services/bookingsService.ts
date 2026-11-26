@@ -9,6 +9,7 @@ import {
   type TimePeriod,
 } from '../../../contracts/booking.js'
 import type { PaginatedResponse, Pagination } from '../../../contracts/pagination.js'
+import type { UserDto } from '../../../contracts/user.js'
 import { ConflictError, ForbiddenError, ValidationError } from '../errors/appErrors.js'
 import type {
   Booking,
@@ -20,6 +21,8 @@ import type {
 import type { RoomsRepository } from '../repositories/roomsRepository.js'
 import type { SeatsRepository } from '../repositories/seatsRepository.js'
 import { addDays, findOrThrow, todayInOffice, toPaginatedResponse } from './common.js'
+
+export type BookingActor = Pick<UserDto, 'id' | 'role'>
 
 export interface BookingsServiceDeps {
   bookings: Pick<
@@ -128,11 +131,11 @@ export const createBookingsService = ({
     })
   }
 
-  const cancel = async (userId: number, bookingId: number, isAdmin = false): Promise<void> => {
+  const cancel = async (actor: BookingActor, bookingId: number): Promise<void> => {
     const booking = await findOrThrow(bookings.findById(bookingId), 'Booking')
 
     //Rule: Non-admin users can only cancel their own bookings
-    if (!isAdmin && booking.userId !== userId)
+    if (actor.role !== 'ADMIN' && booking.userId !== actor.id)
       throw new ForbiddenError('You can only cancel your own bookings')
 
     //Rule: Only bookings with "ACTIVE" status can be cancelled

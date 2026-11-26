@@ -33,7 +33,7 @@ const isBookingStatus = (value: string): value is BookingStatus =>
   BOOKING_STATUSES.some((status) => status === value)
 
 export default function AdminBookingsPage() {
-  const [date, setDate] = useState(getTodayIsoDate)
+  const [fromDate, setFromDate] = useState(getTodayIsoDate)
   const [roomId, setRoomId] = useState('')
   const [status, setStatus] = useState<BookingStatus | ''>('ACTIVE')
   const [page, setPage] = useState(1)
@@ -41,7 +41,7 @@ export default function AdminBookingsPage() {
   const rooms = useRooms()
   const bookings = useAllBookings(
     {
-      date: date || undefined,
+      fromDate: fromDate || undefined,
       roomId: roomId ? Number(roomId) : undefined,
       status: status || undefined,
     },
@@ -134,9 +134,9 @@ export default function AdminBookingsPage() {
             <TextField
               label="Fra dato"
               type="date"
-              value={date}
+              value={fromDate}
               onChange={(event) => {
-                setDate(event.target.value)
+                setFromDate(event.target.value)
                 setPage(1)
               }}
             />

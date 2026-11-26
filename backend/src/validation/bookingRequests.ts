@@ -16,7 +16,7 @@ export const parseNewBooking = (body: unknown): NewBooking => {
 }
 
 export const parseAdminBookingFilters = (query: Record<string, unknown>): BookingFilters => ({
-  date: parseIfPresent(query.date, (value) => parseIsoDate(value, 'date')),
+  fromDate: parseIfPresent(query.fromDate, (value) => parseIsoDate(value, 'fromDate')),
   roomId: parseIfPresent(query.roomId, (value) => parseId(value, 'roomId')),
   userId: parseIfPresent(query.userId, (value) => parseId(value, 'userId')),
   status: parseIfPresent(query.status, (value) => parseOneOf(BOOKING_STATUSES, value, 'status')),

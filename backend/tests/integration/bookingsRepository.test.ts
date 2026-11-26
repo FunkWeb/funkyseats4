@@ -164,7 +164,7 @@ describe('bookingsRepository', () => {
     const newestMatch = await book({ userId: bob, seatId: seatB, bookingDate: OTHER_DATE })
 
     const firstPage = await bookings.findAll(
-      { date: DATE, roomId, userId: bob, status: 'ACTIVE' },
+      { fromDate: DATE, roomId, userId: bob, status: 'ACTIVE' },
       { page: 1, pageSize: 1 },
     )
 
@@ -175,7 +175,7 @@ describe('bookingsRepository', () => {
     assert.equal(firstPage.total, 2)
 
     const secondPage = await bookings.findAll(
-      { date: DATE, roomId, userId: bob, status: 'ACTIVE' },
+      { fromDate: DATE, roomId, userId: bob, status: 'ACTIVE' },
       { page: 2, pageSize: 1 },
     )
     assert.deepEqual(
@@ -201,7 +201,7 @@ describe('bookingsRepository', () => {
     await bookings.updateStatus(otherRoomBooking.id, 'CANCELLED')
 
     const cases = [
-      { filters: { date: OTHER_DATE }, expected: [otherRoomBooking.id, bobBooking.id] },
+      { filters: { fromDate: OTHER_DATE }, expected: [otherRoomBooking.id, bobBooking.id] },
       { filters: { roomId }, expected: [bobBooking.id, aliceBooking.id] },
       { filters: { userId: bob }, expected: [otherRoomBooking.id, bobBooking.id] },
       { filters: { status: 'CANCELLED' as const }, expected: [otherRoomBooking.id] },

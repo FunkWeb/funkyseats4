@@ -69,7 +69,7 @@ const SELECT_ADMIN_BOOKING = `
   FROM ${ADMIN_BOOKING_FROM}`
 
 const FILTER_CONDITIONS: Record<keyof BookingFilters, string> = {
-  date: 'bookings.booking_date >= :date',
+  fromDate: 'bookings.booking_date >= :fromDate',
   roomId: 'rooms.id = :roomId',
   userId: 'bookings.user_id = :userId',
   status: 'bookings.status = :status',

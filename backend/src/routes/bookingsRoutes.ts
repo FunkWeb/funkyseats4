@@ -33,8 +33,7 @@ export const createBookingsRoutes = ({ bookingsService, requireAuth }: BookingsR
   })
 
   router.post('/:id/cancel', async (req, res) => {
-    const user = currentUser(req)
-    await bookingsService.cancel(user.id, parseId(req.params.id, 'id'), user.role === 'ADMIN')
+    await bookingsService.cancel(currentUser(req), parseId(req.params.id, 'id'))
     res.sendStatus(204)
   })
 
