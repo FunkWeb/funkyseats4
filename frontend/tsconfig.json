@@ -11,5 +11,5 @@
     "skipLibCheck": true,
     "types": ["vite/client"]
   },
-  "include": ["src", "../contracts"]
+  "include": ["src", "tests", "../contracts"]
 }
