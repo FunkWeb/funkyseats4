@@ -1,7 +1,8 @@
 node_modules/
 
 dist/
-frontend/public/
+frontend/public/uploads/*
+!frontend/public/uploads/.gitkeep
 build/
 coverage/
 *.tsbuildinfo

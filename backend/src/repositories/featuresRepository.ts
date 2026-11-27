@@ -41,6 +41,13 @@ export const createFeaturesRepository = (db: Executor) => {
       )
       return rows.length > 0
     },
+    existsByIconPath: async (iconPath: string): Promise<boolean> => {
+      const [rows] = await db.execute<RowDataPacket[]>(
+        'SELECT 1 FROM features WHERE icon_path = :iconPath LIMIT 1',
+        { iconPath },
+      )
+      return rows.length > 0
+    },
     findById: async (id: number): Promise<FeatureDto | null> => {
       const [feature] = await selectFeatures('WHERE features.id = :id', { id })
       return feature ?? null

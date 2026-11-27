@@ -2,3 +2,4 @@
 **/dist
 **/.env*
 .git
+frontend/public/uploads

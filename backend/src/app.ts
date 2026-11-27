@@ -14,6 +14,7 @@ import { createFeaturesService } from './services/featuresService.js'
 import { createRoomsService } from './services/roomsService.js'
 import { createSeatsService } from './services/seatsService.js'
 import { createUsersService } from './services/usersService.js'
+import { createIconStorage, createSeatMapStorage } from './storage/uploadStorage.js'
 import { buildGoogleAuthUrl, fetchGoogleProfile } from './auth/googleOAuth.js'
 import { createAuthRoutes } from './routes/authRoutes.js'
 import { createDevAuthRoutes } from './routes/devAuthRoutes.js'
@@ -60,9 +61,15 @@ const bookingsService = createBookingsService({
   seats,
   rooms,
 })
-const roomsService = createRoomsService({ rooms })
+const roomsService = createRoomsService({
+  rooms,
+  seatMapStorage: createSeatMapStorage(config.uploadsDir),
+})
 const seatsService = createSeatsService({ db: pool, seats, rooms, features })
-const featuresService = createFeaturesService({ features })
+const featuresService = createFeaturesService({
+  features,
+  iconStorage: createIconStorage(config.uploadsDir),
+})
 const usersService = createUsersService({ users })
 
 app.use('/auth/google', authLimiter)
@@ -88,23 +95,13 @@ app.use('/icons', serveUploadedIcons(config.uploadsDir))
 app.use('/icons', serveUploadedIcons(path.resolve('backend/assets')))
 app.use('/seat-maps', serveUploadedSeatMaps(config.uploadsDir))
 
-app.use(
-  '/features',
-  apiLimiter,
-  createFeaturesRoutes({ featuresService, requireAuth, uploadsDir: config.uploadsDir }),
-)
+app.use('/features', apiLimiter, createFeaturesRoutes({ featuresService, requireAuth }))
 
 app.use('/bookings', apiLimiter, createBookingsRoutes({ bookingsService, requireAuth }))
 app.use(
   '/rooms',
   apiLimiter,
-  createRoomsRoutes({
-    bookingsService,
-    roomsService,
-    seatsService,
-    requireAuth,
-    uploadsDir: config.uploadsDir,
-  }),
+  createRoomsRoutes({ bookingsService, roomsService, seatsService, requireAuth }),
 )
 app.use('/users', apiLimiter, createUsersRoutes({ usersService, requireAuth }))
 app.use('/seats', apiLimiter, createSeatsRoutes({ seatsService, requireAuth, requireRole }))

@@ -1,8 +1,6 @@
 import { after, before, describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import type { Server } from 'node:http'
-import os from 'node:os'
-import path from 'node:path'
 import express, { type RequestHandler } from 'express'
 import type { RoomBookingDto } from '../../../contracts/booking.js'
 import type { RoomDto } from '../../../contracts/room.js'
@@ -40,7 +38,7 @@ describe('roomsRoutes /rooms/:id/bookings', () => {
   }
   const roomsService: Pick<
     RoomsService,
-    'findAll' | 'findById' | 'create' | 'update' | 'delete' | 'isSeatMapInUse'
+    'findAll' | 'findById' | 'create' | 'update' | 'delete' | 'saveSeatMap' | 'discardSeatMap'
   > = {
     findAll: async () => [],
     findById: async (): Promise<RoomDto> => ({
@@ -52,9 +50,10 @@ describe('roomsRoutes /rooms/:id/bookings', () => {
       maxDaysAhead: 3,
     }),
     create: async () => ROOM_ID,
-    update: async () => null,
-    delete: async () => null,
-    isSeatMapInUse: async () => false,
+    update: async () => {},
+    delete: async () => {},
+    saveSeatMap: async () => '/seat-maps/unused.png',
+    discardSeatMap: async () => {},
   }
   const seatsService: Pick<SeatsService, 'findByRoom'> = {
     findByRoom: async () => [],
@@ -71,13 +70,7 @@ describe('roomsRoutes /rooms/:id/bookings', () => {
     const app = express()
     app.use(
       '/rooms',
-      createRoomsRoutes({
-        bookingsService,
-        roomsService,
-        seatsService,
-        requireAuth,
-        uploadsDir: path.join(os.tmpdir(), 'funkyseats-rooms-routes-test'),
-      }),
+      createRoomsRoutes({ bookingsService, roomsService, seatsService, requireAuth }),
     )
     app.use(errorHandler)
     await new Promise<void>((resolve) => {
