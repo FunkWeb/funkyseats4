@@ -1,11 +1,15 @@
 import { Router, type RequestHandler } from 'express'
 import { currentUser } from '../auth/requireAuth.js'
+import { requireRole } from '../auth/requireRole.js'
 import type { BookingsService } from '../services/bookingsService.js'
-import { parseNewBooking } from '../validation/bookingRequests.js'
+import { parseAdminBookingFilters, parseNewBooking } from '../validation/bookingRequests.js'
 import { parseId, parsePagination } from '../validation/parsers.js'
 
 export interface BookingsRoutesDeps {
-  bookingsService: Pick<BookingsService, 'create' | 'cancel' | 'findForUser'>
+  bookingsService: Pick<
+    BookingsService,
+    'create' | 'cancel' | 'findForUser' | 'getStatsForUser' | 'findAll' | 'getStatsForUser'
+  >
   requireAuth: RequestHandler
 }
 
@@ -13,8 +17,21 @@ export const createBookingsRoutes = ({ bookingsService, requireAuth }: BookingsR
   const router = Router()
   router.use(requireAuth)
 
+  router.get('/me/stats', async (req, res) => {
+    res.json(await bookingsService.getStatsForUser(currentUser(req).id))
+  })
+
   router.get('/me', async (req, res) => {
     res.json(await bookingsService.findForUser(currentUser(req).id, parsePagination(req.query)))
+  })
+
+  router.get('/', requireRole('ADMIN'), async (req, res) => {
+    res.json(
+      await bookingsService.findAll(
+        parseAdminBookingFilters(req.query),
+        parsePagination(req.query),
+      ),
+    )
   })
 
   router.post('/', async (req, res) => {
@@ -23,7 +40,7 @@ export const createBookingsRoutes = ({ bookingsService, requireAuth }: BookingsR
   })
 
   router.post('/:id/cancel', async (req, res) => {
-    await bookingsService.cancel(currentUser(req).id, parseId(req.params.id, 'id'))
+    await bookingsService.cancel(currentUser(req), parseId(req.params.id, 'id'))
     res.sendStatus(204)
   })
 

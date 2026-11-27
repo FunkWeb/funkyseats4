@@ -60,10 +60,12 @@ export const createDbConfig = (source: EnvSource) => {
 
 export const createConfig = (source: EnvSource) => {
   const env = readEnv(source)
+  const isProduction = source.NODE_ENV === 'production'
   return {
     port: env.port('PORT', 3000),
     frontendUrl: env.required('FRONTEND_URL'),
-    isProduction: source.NODE_ENV === 'production',
+    isProduction,
+    devLogin: !isProduction && source.DEV_LOGIN === 'true',
     db: createDbConfig(source),
     google: {
       clientId: env.required('GOOGLE_CLIENT_ID'),
@@ -75,6 +77,6 @@ export const createConfig = (source: EnvSource) => {
       secret: env.secret('SESSION_SECRET'),
       lifetimeMinutes: env.positiveInt('SESSION_LIFETIME_MINUTES', 120),
     },
-    uploadsDir: source.UPLOADS_DIR || 'frontend/public',
+    uploadsDir: source.UPLOADS_DIR || 'frontend/public/uploads',
   } as const
 }

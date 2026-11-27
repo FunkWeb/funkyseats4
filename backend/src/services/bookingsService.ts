@@ -1,52 +1,54 @@
-import type { BookingDto, NewBooking, TimePeriod } from '../../../contracts/booking.js'
+import {
+  periodsOverlap,
+  type AdminBookingDto,
+  type BookingDto,
+  type BookingStatsDto,
+  type BookingFilters,
+  type MyBookingDto,
+  type NewBooking,
+  type RoomBookingDto,
+  type TimePeriod,
+} from '../../../contracts/booking.js'
 import type { PaginatedResponse, Pagination } from '../../../contracts/pagination.js'
+import type { BookingActor } from '../../../contracts/user.js'
 import { ConflictError, ForbiddenError, ValidationError } from '../errors/appErrors.js'
-import type { Booking, BookingsRepository } from '../repositories/bookingsRepository.js'
+import type { BookingsRepository } from '../repositories/bookingsRepository.js'
 import type { RoomsRepository } from '../repositories/roomsRepository.js'
 import type { SeatsRepository } from '../repositories/seatsRepository.js'
-import { addDays, findOrThrow, todayInOffice } from './common.js'
+import {
+  toAdminBookingDto,
+  toBookingDto,
+  toMyBookingDto,
+  toRoomBookingDto,
+} from './bookingMappers.js'
+import { addDays, findOrThrow, todayInOffice, toPaginatedResponse } from './common.js'
 
 export interface BookingsServiceDeps {
   bookings: Pick<
     BookingsRepository,
-    'findById' | 'findByUserId' | 'findActiveByRoomAndDate' | 'updateStatus' | 'withSeatAndUserLock'
+    | 'findAll'
+    | 'findById'
+    | 'findByUserId'
+    | 'findActiveByRoomAndDate'
+    | 'updateStatus'
+    | 'withSeatAndUserLock'
+    | 'getStatsByUserId'
   >
   seats: Pick<SeatsRepository, 'findById'>
   rooms: Pick<RoomsRepository, 'findById'>
   today?: () => string
 }
 
-const toBookingDto = ({
-  id,
-  seatId,
-  userId,
-  status,
-  bookingDate,
-  timePeriod,
-}: Booking): BookingDto => ({
-  id,
-  seatId,
-  userId,
-  status,
-  bookingDate,
-  timePeriod,
-})
-
 const isActive = (booking: BookingDto) => booking.status === 'ACTIVE'
 
 const hasActiveOverlap = (existing: BookingDto[], requested: TimePeriod) =>
-  existing.some(
-    (booking) =>
-      isActive(booking) &&
-      (booking.timePeriod === requested ||
-        booking.timePeriod === 'ALL_DAY' ||
-        requested === 'ALL_DAY'),
-  )
+  existing.some((booking) => isActive(booking) && periodsOverlap(booking.timePeriod, requested))
 
 const assertWithinBookingWindow = (bookingDate: string, today: string, maxDaysAhead: number) => {
   const lastBookableDate = addDays(today, maxDaysAhead)
-  if (bookingDate < today || bookingDate > lastBookableDate)
+  if (bookingDate < today || bookingDate > lastBookableDate) {
     throw new ValidationError(`Bookings must be between ${today} and ${lastBookableDate}`)
+  }
 }
 
 export const createBookingsService = ({
@@ -62,48 +64,54 @@ export const createBookingsService = ({
     const seat = await findOrThrow(seats.findById(seatId), 'Seat')
     const room = await findRoom(seat.roomId)
 
-    //Rule: Booking must be between the current date and the room's maxDaysAhead
     assertWithinBookingWindow(bookingDate, today(), room.maxDaysAhead)
 
     return bookings.withSeatAndUserLock(seatId, userId, async (locked) => {
-      //Rule: A seat can only have one active booking per time period
-      if (hasActiveOverlap(await locked.findBySeatAndDate(seatId, bookingDate), timePeriod))
+      if (hasActiveOverlap(await locked.findBySeatAndDate(seatId, bookingDate), timePeriod)) {
         throw new ConflictError('Seat is already booked for that period')
+      }
 
-      //Rule: The user can NOT have multiple bookings in the same time period
-      if (hasActiveOverlap(await locked.findByUserIdAndDate(userId, bookingDate), timePeriod))
+      if (hasActiveOverlap(await locked.findByUserIdAndDate(userId, bookingDate), timePeriod)) {
         throw new ConflictError('You already have a booking for that period')
+      }
 
       return toBookingDto(await locked.create({ ...request, userId }))
     })
   }
 
-  const cancel = async (userId: number, bookingId: number): Promise<void> => {
+  const cancel = async (actor: BookingActor, bookingId: number): Promise<void> => {
     const booking = await findOrThrow(bookings.findById(bookingId), 'Booking')
 
-    //Rule: Users can only cancel their own bookings
-    if (booking.userId !== userId) throw new ForbiddenError('You can only cancel your own bookings')
+    if (actor.role !== 'ADMIN' && booking.userId !== actor.id) {
+      throw new ForbiddenError('You can only cancel your own bookings')
+    }
 
-    //Rule: Only bookings with "ACTIVE" status can be cancelled
     if (!isActive(booking)) throw new ConflictError('Only active bookings can be cancelled')
     await bookings.updateStatus(bookingId, 'CANCELLED')
   }
 
-  const findForUser = async (
+  const findForUser = (
     userId: number,
     pagination: Pagination,
-  ): Promise<PaginatedResponse<BookingDto>> => {
-    const { items, total } = await bookings.findByUserId(userId, pagination)
-    return { ...pagination, items: items.map(toBookingDto), total }
-  }
+  ): Promise<PaginatedResponse<MyBookingDto>> =>
+    toPaginatedResponse(bookings.findByUserId(userId, pagination), pagination, toMyBookingDto)
 
-  const findForRoomOnDate = async (roomId: number, date: string): Promise<BookingDto[]> => {
+  const findAll = (
+    filters: BookingFilters,
+    pagination: Pagination,
+  ): Promise<PaginatedResponse<AdminBookingDto>> =>
+    toPaginatedResponse(bookings.findAll(filters, pagination), pagination, toAdminBookingDto)
+
+  const findForRoomOnDate = async (roomId: number, date: string): Promise<RoomBookingDto[]> => {
     await findRoom(roomId)
     const roomBookings = await bookings.findActiveByRoomAndDate(roomId, date)
-    return roomBookings.map(toBookingDto)
+    return roomBookings.map(toRoomBookingDto)
   }
 
-  return { create, cancel, findForUser, findForRoomOnDate }
+  const getStatsForUser = (userId: number): Promise<BookingStatsDto> =>
+    bookings.getStatsByUserId(userId, today())
+
+  return { create, cancel, findForUser, findAll, findForRoomOnDate, getStatsForUser }
 }
 
 export type BookingsService = ReturnType<typeof createBookingsService>

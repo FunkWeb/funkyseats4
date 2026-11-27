@@ -14,8 +14,10 @@ import { createFeaturesService } from './services/featuresService.js'
 import { createRoomsService } from './services/roomsService.js'
 import { createSeatsService } from './services/seatsService.js'
 import { createUsersService } from './services/usersService.js'
+import { createIconStorage, createSeatMapStorage } from './storage/uploadStorage.js'
 import { buildGoogleAuthUrl, fetchGoogleProfile } from './auth/googleOAuth.js'
 import { createAuthRoutes } from './routes/authRoutes.js'
+import { createDevAuthRoutes } from './routes/devAuthRoutes.js'
 import { createBookingsRoutes } from './routes/bookingsRoutes.js'
 import { createFeaturesRoutes } from './routes/featuresRoutes.js'
 import { createRoomsRoutes } from './routes/roomsRoutes.js'
@@ -29,6 +31,7 @@ import { authLimiter, createApiLimiter } from './middleware/rateLimit.js'
 import { createRequireSameOrigin } from './middleware/requireSameOrigin.js'
 import { securityHeaders } from './middleware/securityHeaders.js'
 import { serveUploadedIcons } from './middleware/serveUploadedIcons.js'
+import { serveUploadedSeatMaps } from './middleware/serveUploadedSeatMaps.js'
 
 export const app = express()
 
@@ -58,9 +61,15 @@ const bookingsService = createBookingsService({
   seats,
   rooms,
 })
-const roomsService = createRoomsService({ rooms })
-const seatsService = createSeatsService({ seats, rooms, features })
-const featuresService = createFeaturesService({ features })
+const roomsService = createRoomsService({
+  rooms,
+  seatMapStorage: createSeatMapStorage(config.uploadsDir),
+})
+const seatsService = createSeatsService({ db: pool, seats, rooms, features })
+const featuresService = createFeaturesService({
+  features,
+  iconStorage: createIconStorage(config.uploadsDir),
+})
 const usersService = createUsersService({ users })
 
 app.use('/auth/google', authLimiter)
@@ -78,14 +87,15 @@ app.use(
   }),
 )
 
+if (config.devLogin) {
+  app.use('/auth', apiLimiter, createDevAuthRoutes({ users, session }))
+}
+
 app.use('/icons', serveUploadedIcons(config.uploadsDir))
 app.use('/icons', serveUploadedIcons(path.resolve('backend/assets')))
+app.use('/seat-maps', serveUploadedSeatMaps(config.uploadsDir))
 
-app.use(
-  '/features',
-  apiLimiter,
-  createFeaturesRoutes({ featuresService, requireAuth, uploadsDir: config.uploadsDir }),
-)
+app.use('/features', apiLimiter, createFeaturesRoutes({ featuresService, requireAuth }))
 
 app.use('/bookings', apiLimiter, createBookingsRoutes({ bookingsService, requireAuth }))
 app.use(

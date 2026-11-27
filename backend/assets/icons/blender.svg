@@ -1,3 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-  <path fill="#000" d="M3 9.2 11.6 4l1.5 2.4-6.8 4.1H21v2.8H3l6.3-3.8L3 9.2Zm2.6 6.2H21v2.8H5.6l3.7-2.8H5.6Z"/>
+  <mask id="m">
+    <circle cx="14.6" cy="13.6" r="6.9" fill="#fff"/>
+    <path fill="#fff" d="M14.2 6.7 3.4 4.9a.95.95 0 0 0-.5 1.8l6.4 4.6Z"/>
+    <path fill="#fff" d="M9.2 11 4.4 11.9a.95.95 0 0 0-.1 1.9l3.8 1.6Z"/>
+    <circle cx="14.6" cy="13.6" r="4.2" fill="#000"/>
+    <circle cx="14.7" cy="13.5" r="2.5" fill="#fff"/>
+  </mask>
+  <rect width="24" height="24" fill="#000" mask="url(#m)"/>
 </svg>

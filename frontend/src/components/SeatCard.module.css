@@ -2,6 +2,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+  block-size: 100%;
   min-inline-size: 0;
   padding: var(--space-3);
   color: var(--color-text);
@@ -12,54 +13,90 @@
 .header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: var(--space-2);
   min-inline-size: 0;
-  min-block-size: var(--space-6);
+  min-block-size: var(--space-8);
 }
 
 .freeLabel {
-  color: var(--color-text-muted);
+  color: var(--color-success);
   font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
 }
 
-.features {
-  flex: 1 1 0;
-  justify-content: flex-end;
-  gap: 0;
+.freeLabelMuted {
+  color: var(--color-text-muted);
+}
+
+.titleRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-inline-size: 0;
 }
 
 .title {
   margin: 0;
   font-size: var(--font-size-2xl);
   font-weight: var(--font-weight-bold);
-  text-align: center;
+}
+
+.os {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-inline-size: 0;
+}
+
+.osLabel {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+}
+
+.features {
+  justify-content: flex-start;
+  gap: var(--space-1);
 }
 
 .footer {
   display: flex;
+  flex-direction: column;
   gap: var(--space-2);
+  margin-block-start: auto;
   font-size: var(--font-size-sm);
 }
 
-.footer > * {
-  flex: 1 1 0;
-  min-inline-size: 0;
-}
-
-.status {
+.error {
   margin: 0;
   padding: var(--space-2);
-  color: var(--color-secondary);
-  font-weight: var(--font-weight-bold);
-  text-align: center;
-  text-transform: uppercase;
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  background-color: var(--color-danger-subtle);
+  font-size: var(--font-size-xs);
+  line-height: var(--line-height-normal);
 }
 
-.unavailable {
-  border-radius: var(--radius-sm);
-  color: light-dark(var(--gray-0), var(--gray-400));
-  background-color: light-dark(var(--gray-600), var(--gray-800));
-  font-weight: var(--font-weight-medium);
-  text-transform: none;
+.actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.actions > button {
+  flex: 1 1 0;
+  min-inline-size: 0;
+  block-size: 32px;
+  padding-block: 0;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+}
+
+.mutedActions > button:disabled {
+  --button-background: var(--seat-booked);
+  --button-text: var(--color-text-muted);
+  --button-border: transparent;
 }

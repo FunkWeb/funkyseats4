@@ -1,22 +1,29 @@
 import type { Pool, ResultSetHeader, RowDataPacket } from 'mysql2/promise'
-import type { CreateFeatureRequest, FeatureDto } from '../../../contracts/feature.js'
+import type {
+  CreateFeatureRequest,
+  FeatureDto,
+  UpdateFeatureRequest,
+} from '../../../contracts/feature.js'
+import { pickColumns } from '../database/columns.js'
 import type { QueryParams } from '../database/queryParams.js'
 
 type FeatureRow = FeatureDto & RowDataPacket
+type Executor = Pick<Pool, 'execute'>
 
 export type SeatFeatureDto = FeatureDto & { seatId: number }
 type SeatFeatureRow = SeatFeatureDto & RowDataPacket
 
 const FEATURE_COLUMNS = `
-    features.id,
-    features.name,
-    features.description,
-    features.icon_path AS iconPath,
-    features.category`
+  features.id,
+  features.name,
+  features.description,
+  features.icon_path AS iconPath,
+  features.category`
 
 const SELECT_FEATURE = `SELECT ${FEATURE_COLUMNS} FROM features`
+const WRITABLE_FIELDS = ['name', 'description', 'iconPath', 'category'] as const
 
-export const createFeaturesRepository = (db: Pool) => {
+export const createFeaturesRepository = (db: Executor) => {
   const selectFeatures = async (
     clause: string,
     params: QueryParams = {},
@@ -31,6 +38,13 @@ export const createFeaturesRepository = (db: Pool) => {
       const [rows] = await db.execute<RowDataPacket[]>(
         'SELECT 1 FROM features WHERE name = :name LIMIT 1',
         { name },
+      )
+      return rows.length > 0
+    },
+    existsByIconPath: async (iconPath: string): Promise<boolean> => {
+      const [rows] = await db.execute<RowDataPacket[]>(
+        'SELECT 1 FROM features WHERE icon_path = :iconPath LIMIT 1',
+        { iconPath },
       )
       return rows.length > 0
     },
@@ -65,6 +79,21 @@ export const createFeaturesRepository = (db: Pool) => {
       )
       return result.insertId
     },
+    update: async (id: number, input: UpdateFeatureRequest): Promise<boolean> => {
+      const { assignments, params } = pickColumns(WRITABLE_FIELDS, input)
+      if (assignments.length === 0) return false
+      const [result] = await db.execute<ResultSetHeader>(
+        `UPDATE features SET ${assignments.join(', ')} WHERE id = :id`,
+        { ...params, id },
+      )
+      return result.affectedRows === 1
+    },
+    delete: async (id: number): Promise<boolean> => {
+      const [result] = await db.execute<ResultSetHeader>('DELETE FROM features WHERE id = :id', {
+        id,
+      })
+      return result.affectedRows === 1
+    },
     attachToSeat: async (seatId: number, featureId: number) => {
       await db.execute(
         'INSERT INTO seat_features (seat_id, feature_id) VALUES (:seatId, :featureId)',
@@ -77,6 +106,9 @@ export const createFeaturesRepository = (db: Pool) => {
         { seatId, featureId },
       )
       return result.affectedRows === 1
+    },
+    detachAllFromSeat: async (seatId: number) => {
+      await db.execute('DELETE FROM seat_features WHERE seat_id = :seatId', { seatId })
     },
   }
 }

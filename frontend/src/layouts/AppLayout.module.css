@@ -6,9 +6,17 @@
 .sidebar {
   position: sticky;
   top: 0;
+  width: 250px;
   flex: 0 0 250px;
   height: 100dvh;
   overflow-y: auto;
+}
+
+.drawerSidebar {
+  width: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
+  border-inline-end: 0;
 }
 
 .main {
@@ -41,10 +49,18 @@
 
 @media (max-width: 767px) {
   .sidebar {
-    flex-basis: 200px;
+    display: none;
+  }
+
+  .layout {
+    flex-direction: column;
   }
 
   .main {
     padding: var(--space-4);
+  }
+
+  .drawerSidebar {
+    flex-basis: auto;
   }
 }

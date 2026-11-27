@@ -4,21 +4,22 @@ import { pickColumns } from '../database/columns.js'
 import type { QueryParams } from '../database/queryParams.js'
 
 type SeatRow = SeatDto & RowDataPacket
+type Executor = Pick<Pool, 'execute'>
 
 const SELECT_SEAT = `
   SELECT
     id,
-    room_id         AS roomId,
-    seat_number     AS seatNumber,
+    room_id    AS roomId,
+    seat_number AS seatNumber,
     description,
-    deleted_at      AS deletedAt,
-    updated_at      AS updatedAt,
-    created_at      AS createdAt
+    deleted_at AS deletedAt,
+    updated_at AS updatedAt,
+    created_at AS createdAt
   FROM seats`
 
 const WRITABLE_FIELDS = ['roomId', 'seatNumber', 'description'] as const
 
-export const createSeatsRepository = (db: Pool) => {
+export const createSeatsRepository = (db: Executor) => {
   const selectSeats = async (clause: string, params: QueryParams = {}): Promise<SeatDto[]> => {
     const [rows] = await db.execute<SeatRow[]>(
       `${SELECT_SEAT} WHERE deleted_at IS NULL ${clause}`,
@@ -43,12 +44,23 @@ export const createSeatsRepository = (db: Pool) => {
     },
     findByRoomId: (roomId: number) =>
       selectSeats('AND room_id = :roomId ORDER BY seat_number', { roomId }),
+    lockById: async (id: number): Promise<boolean> => {
+      const [rows] = await db.execute<RowDataPacket[]>(
+        'SELECT id FROM seats WHERE id = :id AND deleted_at IS NULL FOR UPDATE',
+        { id },
+      )
+      return rows.length > 0
+    },
 
-    create: async (seat: CreateSeatRequest): Promise<number> => {
+    create: async (seat: Omit<CreateSeatRequest, 'featureIds'>): Promise<number> => {
       const [result] = await db.execute<ResultSetHeader>(
         `INSERT INTO seats (room_id, seat_number, description)
          VALUES (:roomId, :seatNumber, :description)`,
-        seat,
+        {
+          roomId: seat.roomId,
+          seatNumber: seat.seatNumber,
+          description: seat.description,
+        },
       )
       return result.insertId
     },

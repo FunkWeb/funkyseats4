@@ -43,6 +43,20 @@
   line-height: var(--line-height-normal);
 }
 
+.overflowChip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-inline-size: var(--space-6);
+  block-size: var(--space-6);
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-full);
+  color: var(--color-text-muted);
+  background-color: var(--color-surface-muted);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+}
+
 .hideLabels .fallbackIcon {
   color: var(--color-text);
 }

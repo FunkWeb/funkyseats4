@@ -2,7 +2,7 @@ import { after, before, describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import type { Server } from 'node:http'
 import express, { type RequestHandler } from 'express'
-import type { BookingDto } from '../../../contracts/booking.js'
+import type { RoomBookingDto } from '../../../contracts/booking.js'
 import type { RoomDto } from '../../../contracts/room.js'
 import { NotFoundError } from '../../src/errors/appErrors.js'
 import { errorHandler } from '../../src/errors/errorHandler.js'
@@ -19,13 +19,14 @@ describe('roomsRoutes /rooms/:id/bookings', () => {
   let baseUrl: string
   let isAuthenticated = true
   const requested: { roomId: number; date: string }[] = []
-  const booking: BookingDto = {
+  const booking: RoomBookingDto = {
     id: 5,
     seatId: 7,
     userId: 9,
     status: 'ACTIVE',
     bookingDate: DATE,
     timePeriod: 'BEFORE_LUNCH',
+    user: { name: 'Bob', avatarPath: null },
   }
 
   const bookingsService: Pick<BookingsService, 'findForRoomOnDate'> = {
@@ -35,21 +36,25 @@ describe('roomsRoutes /rooms/:id/bookings', () => {
       return [booking]
     },
   }
-  const roomsService: Pick<RoomsService, 'findAll' | 'findById' | 'create' | 'update' | 'delete'> =
-    {
-      findAll: async () => [],
-      findById: async (): Promise<RoomDto> => ({
-        id: ROOM_ID,
-        slug: 'room-a',
-        name: 'Room A',
-        description: null,
-        seatMapPath: null,
-        maxDaysAhead: 3,
-      }),
-      create: async () => ROOM_ID,
-      update: async () => {},
-      delete: async () => {},
-    }
+  const roomsService: Pick<
+    RoomsService,
+    'findAll' | 'findById' | 'create' | 'update' | 'delete' | 'saveSeatMap' | 'discardSeatMap'
+  > = {
+    findAll: async () => [],
+    findById: async (): Promise<RoomDto> => ({
+      id: ROOM_ID,
+      slug: 'room-a',
+      name: 'Room A',
+      description: null,
+      seatMapPath: null,
+      maxDaysAhead: 3,
+    }),
+    create: async () => ROOM_ID,
+    update: async () => {},
+    delete: async () => {},
+    saveSeatMap: async () => '/seat-maps/unused.png',
+    discardSeatMap: async () => {},
+  }
   const seatsService: Pick<SeatsService, 'findByRoom'> = {
     findByRoom: async () => [],
   }

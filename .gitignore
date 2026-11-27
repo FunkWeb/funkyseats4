@@ -1,7 +1,8 @@
 node_modules/
 
 dist/
-frontend/public/
+frontend/public/uploads/*
+!frontend/public/uploads/.gitkeep
 build/
 coverage/
 *.tsbuildinfo
@@ -27,3 +28,5 @@ npm-debug.log*
 
 .DS_Store
 Thumbs.db
+
+frontend/src/DevPreview.tsx

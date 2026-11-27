@@ -3,6 +3,7 @@ import { googleLoginUrl } from '../api/authApi'
 import { Button } from '../components/Button'
 import { Card } from '../components/Card'
 import { Spinner } from '../components/Spinner'
+import { DevLoginButtons } from '../features/auth/DevLoginButtons'
 import { useAuth } from '../features/auth/useAuth'
 import styles from './LoginPage.module.css'
 
@@ -25,6 +26,7 @@ export default function LoginPage() {
             Logg inn med Google
           </Button>
         )}
+        {import.meta.env.DEV && <DevLoginButtons />}
       </Card>
     </main>
   )

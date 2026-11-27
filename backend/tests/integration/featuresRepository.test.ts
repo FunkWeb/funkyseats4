@@ -51,6 +51,37 @@ describe('featuresRepository', () => {
     })
   })
 
+  it('update changes only the supplied fields', async () => {
+    const stored = await fixtures.storeFeature(dock)
+    assert.equal(
+      await features.update(stored.id, { description: 'Updated description', iconPath: null }),
+      true,
+    )
+    assert.deepEqual(await features.findById(stored.id), {
+      ...stored,
+      description: 'Updated description',
+      iconPath: null,
+    })
+  })
+
+  it('update returns false when the feature does not exist', async () => {
+    assert.equal(await features.update(UNKNOWN_ID, { name: 'Updated' }), false)
+  })
+
+  it('delete removes the feature and its seat associations', async () => {
+    const seatId = await storeSeat('A1')
+    const stored = await fixtures.storeFeature(dock)
+    await features.attachToSeat(seatId, stored.id)
+
+    assert.equal(await features.delete(stored.id), true)
+    assert.equal(await features.findById(stored.id), null)
+    assert.deepEqual(await features.findBySeatId(seatId), [])
+  })
+
+  it('delete returns false when the feature does not exist', async () => {
+    assert.equal(await features.delete(UNKNOWN_ID), false)
+  })
+
   it('findById returns null when nothing matches', async () => {
     await fixtures.storeFeature(dock)
     assert.equal(await features.findById(UNKNOWN_ID), null)

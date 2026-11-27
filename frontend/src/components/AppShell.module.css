@@ -6,6 +6,7 @@
 .sidebar {
   position: sticky;
   top: 0;
+  width: 250px;
   flex-shrink: 0;
   height: 100dvh;
   overflow-y: auto;

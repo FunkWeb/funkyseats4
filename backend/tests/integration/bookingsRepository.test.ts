@@ -72,15 +72,26 @@ describe('bookingsRepository', () => {
     assert.equal(await bookings.findById(UNKNOWN_ID), null)
   })
 
-  it('findByUserId returns only that user’s bookings, ordered by id', async () => {
+  it("findByUserId returns only that user's bookings with room details, ordered newest first", async () => {
     const first = await book()
     await book({ userId: bob, timePeriod: 'AFTER_LUNCH' })
     const second = await book({ seatId: seatB })
 
-    assert.deepEqual((await bookings.findByUserId(alice, { page: 1, pageSize: 20 })).items, [
-      first,
-      second,
-    ])
+    const items = (await bookings.findByUserId(alice, { page: 1, pageSize: 20 })).items
+    assert.deepEqual(
+      items.map(({ id }) => id),
+      [second.id, first.id],
+    )
+    assert.partialDeepStrictEqual(items[0], {
+      roomName: 'room-a',
+      roomSlug: 'room-a',
+      seatNumber: 'A2',
+    })
+    assert.partialDeepStrictEqual(items[1], {
+      roomName: 'room-a',
+      roomSlug: 'room-a',
+      seatNumber: 'A1',
+    })
   })
 
   it('findByUserId returns an empty list when the user has no bookings', async () => {
@@ -88,20 +99,25 @@ describe('bookingsRepository', () => {
     assert.deepEqual((await bookings.findByUserId(bob, { page: 1, pageSize: 20 })).items, [])
   })
 
-  it('findByUserId splits bookings into pages and counts only that user’s bookings', async () => {
+  it("findByUserId splits bookings into pages and counts only that user's bookings", async () => {
     const first = await book()
     const second = await book({ timePeriod: 'AFTER_LUNCH' })
     await book({ userId: bob, seatId: seatB })
     const third = await book({ bookingDate: OTHER_DATE })
 
-    assert.deepEqual(await bookings.findByUserId(alice, { page: 1, pageSize: 2 }), {
-      items: [first, second],
-      total: 3,
-    })
-    assert.deepEqual(await bookings.findByUserId(alice, { page: 2, pageSize: 2 }), {
-      items: [third],
-      total: 3,
-    })
+    const firstPage = await bookings.findByUserId(alice, { page: 1, pageSize: 2 })
+    assert.deepEqual(
+      firstPage.items.map(({ id }) => id),
+      [third.id, second.id],
+    )
+    assert.equal(firstPage.total, 3)
+
+    const secondPage = await bookings.findByUserId(alice, { page: 2, pageSize: 2 })
+    assert.deepEqual(
+      secondPage.items.map(({ id }) => id),
+      [first.id],
+    )
+    assert.equal(secondPage.total, 3)
   })
 
   it('findByUserId returns no items for a page past the last one', async () => {
@@ -110,6 +126,95 @@ describe('bookingsRepository', () => {
       items: [],
       total: 1,
     })
+  })
+
+  it('findAll returns every booking with user details, ordered by date and id descending', async () => {
+    const first = await book()
+    const otherUser = await book({ userId: bob, seatId: seatB })
+    const later = await book({ bookingDate: OTHER_DATE })
+
+    const result = await bookings.findAll({}, { page: 1, pageSize: 20 })
+
+    assert.deepEqual(
+      result.items.map(({ id }) => id),
+      [later.id, otherUser.id, first.id],
+    )
+    assert.partialDeepStrictEqual(result.items[1], {
+      userId: bob,
+      roomName: 'room-a',
+      roomSlug: 'room-a',
+      seatNumber: 'A2',
+      userName: 'bob',
+      userEmail: 'bob@example.com',
+      userAvatarPath: null,
+    })
+    assert.equal(result.total, 3)
+  })
+
+  it('findAll applies date, room, user and status filters together and paginates results', async () => {
+    await book()
+    const match = await book({
+      userId: bob,
+      seatId: seatB,
+      bookingDate: OTHER_DATE,
+      timePeriod: 'AFTER_LUNCH',
+    })
+    const wrongRoom = await book({ seatId: otherRoomSeat, bookingDate: OTHER_DATE })
+    await bookings.updateStatus(wrongRoom.id, 'CANCELLED')
+    const newestMatch = await book({ userId: bob, seatId: seatB, bookingDate: OTHER_DATE })
+
+    const firstPage = await bookings.findAll(
+      { fromDate: DATE, roomId, userId: bob, status: 'ACTIVE' },
+      { page: 1, pageSize: 1 },
+    )
+
+    assert.deepEqual(
+      firstPage.items.map(({ id }) => id),
+      [newestMatch.id],
+    )
+    assert.equal(firstPage.total, 2)
+
+    const secondPage = await bookings.findAll(
+      { fromDate: DATE, roomId, userId: bob, status: 'ACTIVE' },
+      { page: 2, pageSize: 1 },
+    )
+    assert.deepEqual(
+      secondPage.items.map(({ id }) => id),
+      [match.id],
+    )
+    assert.equal(secondPage.total, 2)
+  })
+
+  it('findAll applies each optional filter independently', async () => {
+    const aliceBooking = await book()
+    const bobBooking = await book({
+      userId: bob,
+      seatId: seatB,
+      bookingDate: OTHER_DATE,
+      timePeriod: 'AFTER_LUNCH',
+    })
+    const otherRoomBooking = await book({
+      userId: bob,
+      seatId: otherRoomSeat,
+      bookingDate: OTHER_DATE,
+    })
+    await bookings.updateStatus(otherRoomBooking.id, 'CANCELLED')
+
+    const cases = [
+      { filters: { fromDate: OTHER_DATE }, expected: [otherRoomBooking.id, bobBooking.id] },
+      { filters: { roomId }, expected: [bobBooking.id, aliceBooking.id] },
+      { filters: { userId: bob }, expected: [otherRoomBooking.id, bobBooking.id] },
+      { filters: { status: 'CANCELLED' as const }, expected: [otherRoomBooking.id] },
+    ]
+
+    for (const { filters, expected } of cases) {
+      const result = await bookings.findAll(filters, { page: 1, pageSize: 20 })
+      assert.deepEqual(
+        result.items.map(({ id }) => id),
+        expected,
+      )
+      assert.equal(result.total, expected.length)
+    }
   })
 
   it('findBySeatAndDate excludes other seats and other dates, ordered by id', async () => {
@@ -142,7 +247,10 @@ describe('bookingsRepository', () => {
     await book({ seatId: deletedSeat })
     await createSeatsRepository(db()).delete(deletedSeat)
 
-    assert.deepEqual(await bookings.findActiveByRoomAndDate(roomId, DATE), [active, anotherActive])
+    assert.deepEqual(await bookings.findActiveByRoomAndDate(roomId, DATE), [
+      { ...active, userName: 'alice', userAvatarPath: null },
+      { ...anotherActive, userName: 'bob', userAvatarPath: null },
+    ])
   })
 
   it('updateStatus persists and returns the new status', async () => {
@@ -155,5 +263,89 @@ describe('bookingsRepository', () => {
 
   it('updateStatus returns null when nothing matches', async () => {
     assert.equal(await bookings.updateStatus(UNKNOWN_ID, 'CANCELLED'), null)
+  })
+
+  it('getStatsByUserId returns zero and null defaults when user has no bookings', async () => {
+    const result = await bookings.getStatsByUserId(alice, DATE)
+    assert.deepEqual(
+      {
+        upcoming: result.upcoming,
+        completed: result.completed,
+        cancelled: result.cancelled,
+        thisMonth: result.thisMonth,
+        favouriteRoom: result.favouriteRoom,
+        favouriteSeat: result.favouriteSeat,
+        byPeriod: result.byPeriod,
+      },
+      {
+        upcoming: 0,
+        completed: 0,
+        cancelled: 0,
+        thisMonth: 0,
+        favouriteRoom: null,
+        favouriteSeat: null,
+        byPeriod: {
+          BEFORE_LUNCH: 0,
+          AFTER_LUNCH: 0,
+          ALL_DAY: 0,
+        },
+      },
+    )
+    assert.equal(result.perMonth.length, 6)
+    assert.ok(result.perMonth.every((m) => m.count === 0))
+  })
+
+  it('getStatsByUserId aggregates counts, favourites, periods and monthly trends while excluding cancelled bookings', async () => {
+    await book({ timePeriod: 'BEFORE_LUNCH' })
+    await book({ bookingDate: OTHER_DATE, timePeriod: 'ALL_DAY' })
+
+    const completed = await book({ seatId: seatB, timePeriod: 'AFTER_LUNCH' })
+    await bookings.updateStatus(completed.id, 'COMPLETE')
+
+    const cancelled1 = await book({ seatId: otherRoomSeat, timePeriod: 'BEFORE_LUNCH' })
+    const cancelled2 = await book({ seatId: otherRoomSeat, timePeriod: 'BEFORE_LUNCH' })
+    await bookings.updateStatus(cancelled1.id, 'CANCELLED')
+    await bookings.updateStatus(cancelled2.id, 'CANCELLED')
+
+    await book({ userId: bob, seatId: otherRoomSeat })
+
+    const result = await bookings.getStatsByUserId(alice, DATE)
+    assert.deepEqual(
+      {
+        upcoming: result.upcoming,
+        completed: result.completed,
+        cancelled: result.cancelled,
+        thisMonth: result.thisMonth,
+        favouriteRoom: result.favouriteRoom,
+        favouriteSeat: result.favouriteSeat,
+        byPeriod: result.byPeriod,
+      },
+      {
+        upcoming: 2,
+        completed: 0,
+        cancelled: 2,
+        thisMonth: 3,
+        favouriteRoom: {
+          name: 'room-a',
+          slug: 'room-a',
+          count: 3,
+        },
+        favouriteSeat: {
+          seatNumber: 'A1',
+          roomName: 'room-a',
+          count: 2,
+        },
+        byPeriod: {
+          BEFORE_LUNCH: 1,
+          AFTER_LUNCH: 1,
+          ALL_DAY: 1,
+        },
+      },
+    )
+    assert.equal(result.perMonth.length, 6)
+    assert.deepEqual(result.perMonth.at(-1), {
+      month: DATE.slice(0, 7),
+      count: 3,
+    })
   })
 })

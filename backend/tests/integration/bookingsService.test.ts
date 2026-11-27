@@ -1,6 +1,7 @@
 import { before, beforeEach, describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import type { BookingStatus, NewBooking, TimePeriod } from '../../../contracts/booking.js'
+import type { BookingActor } from '../../../contracts/user.js'
 import {
   type AppError,
   ConflictError,
@@ -71,6 +72,9 @@ describe('bookingsService', () => {
     (await bookings.findByUserId(userId, { page: 1, pageSize: 100 })).items.map(
       ({ status }) => status,
     )
+
+  const candidate = (id: number): BookingActor => ({ id, role: 'CANDIDATE' })
+  const admin = (id: number): BookingActor => ({ id, role: 'ADMIN' })
 
   const assertBookingRejected = async (
     userId: number,
@@ -202,7 +206,7 @@ describe('bookingsService', () => {
 
   it('cancel lets the owner cancel an active booking and frees the slot', async () => {
     const booking = await book(alice)
-    await service.cancel(alice, booking.id)
+    await service.cancel(candidate(alice), booking.id)
 
     assert.deepEqual(await statusesOf(alice), ['CANCELLED'])
     assert.partialDeepStrictEqual(await book(bob), { status: 'ACTIVE' })
@@ -211,8 +215,15 @@ describe('bookingsService', () => {
   it("cancel rejects cancelling another user's booking", async () => {
     const booking = await book(alice)
 
-    await assert.rejects(service.cancel(bob, booking.id), ForbiddenError)
+    await assert.rejects(service.cancel(candidate(bob), booking.id), ForbiddenError)
     assert.deepEqual(await statusesOf(alice), ['ACTIVE'])
+  })
+
+  it("cancel lets an admin cancel another user's active booking", async () => {
+    const booking = await book(alice)
+    await service.cancel(admin(bob), booking.id)
+
+    assert.deepEqual(await statusesOf(alice), ['CANCELLED'])
   })
 
   for (const status of unbookableStatuses) {
@@ -220,18 +231,19 @@ describe('bookingsService', () => {
       const booking = await book(alice)
       await bookings.updateStatus(booking.id, status)
 
-      await assert.rejects(service.cancel(alice, booking.id), ConflictError)
+      await assert.rejects(service.cancel(candidate(alice), booking.id), ConflictError)
+      await assert.rejects(service.cancel(admin(bob), booking.id), ConflictError)
       assert.deepEqual(await statusesOf(alice), [status])
     })
   }
 
   it('cancel rejects an unknown booking', async () => {
-    await assert.rejects(service.cancel(alice, UNKNOWN_ID), NotFoundError)
+    await assert.rejects(service.cancel(candidate(alice), UNKNOWN_ID), NotFoundError)
   })
 
   it('findForRoomOnDate returns only active bookings on active seats in the requested room and date', async () => {
     const cancelled = await book(alice)
-    await service.cancel(alice, cancelled.id)
+    await service.cancel(candidate(alice), cancelled.id)
     const active = await book(bob)
     const completed = await book(alice, { seatId: seatB, timePeriod: 'AFTER_LUNCH' })
     await bookings.updateStatus(completed.id, 'COMPLETE')
@@ -248,6 +260,7 @@ describe('bookingsService', () => {
         status: 'ACTIVE',
         bookingDate: TODAY,
         timePeriod: 'BEFORE_LUNCH',
+        user: { name: 'bob', avatarPath: null },
       },
     ])
   })
@@ -258,5 +271,90 @@ describe('bookingsService', () => {
 
   it('findForRoomOnDate rejects an unknown room', async () => {
     await assert.rejects(service.findForRoomOnDate(UNKNOWN_ID, TODAY), NotFoundError)
+  })
+
+  it('findForUser returns paginated bookings with room and seat details', async () => {
+    await book(alice)
+    await book(bob, { seatId: seatB, timePeriod: 'AFTER_LUNCH' })
+
+    assert.partialDeepStrictEqual(await service.findForUser(alice, { page: 1, pageSize: 20 }), {
+      page: 1,
+      pageSize: 20,
+      total: 1,
+      items: [
+        {
+          userId: alice,
+          roomName: 'room-a',
+          roomSlug: 'room-a',
+          seatNumber: 'A1',
+        },
+      ],
+    })
+  })
+
+  it('getStatsForUser returns booking statistics for the requested user', async () => {
+    await book(alice)
+    await book(bob, { seatId: seatB, timePeriod: 'AFTER_LUNCH' })
+
+    const expectedMonths = Array.from({ length: 6 }, (_, i) => {
+      const [year, month] = TODAY.slice(0, 7).split('-').map(Number)
+      const d = new Date(Date.UTC(year, month - 1 - (5 - i), 1))
+      const ym = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`
+      return {
+        month: ym,
+        count: ym === TODAY.slice(0, 7) ? 1 : 0,
+      }
+    })
+
+    assert.deepEqual(await service.getStatsForUser(alice), {
+      upcoming: 1,
+      completed: 0,
+      cancelled: 0,
+      thisMonth: 1,
+      favouriteRoom: {
+        name: 'room-a',
+        slug: 'room-a',
+        count: 1,
+      },
+      favouriteSeat: {
+        seatNumber: 'A1',
+        roomName: 'room-a',
+        count: 1,
+      },
+      byPeriod: {
+        BEFORE_LUNCH: 1,
+        AFTER_LUNCH: 0,
+        ALL_DAY: 0,
+      },
+      perMonth: expectedMonths,
+    })
+  })
+  it('findAll returns paginated bookings with user details', async () => {
+    await book(alice)
+    await book(bob, { seatId: seatB, timePeriod: 'AFTER_LUNCH' })
+
+    assert.partialDeepStrictEqual(await service.findAll({}, { page: 1, pageSize: 20 }), {
+      page: 1,
+      pageSize: 20,
+      total: 2,
+      items: [
+        {
+          user: {
+            id: bob,
+            name: 'bob',
+            email: 'bob@example.com',
+            avatarPath: null,
+          },
+        },
+        {
+          user: {
+            id: alice,
+            name: 'alice',
+            email: 'alice@example.com',
+            avatarPath: null,
+          },
+        },
+      ],
+    })
   })
 })
