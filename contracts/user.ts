@@ -16,3 +16,5 @@ export interface UserDto {
 export interface UpdateUserRoleRequest {
   role: UserRole
 }
+
+export type BookingActor = Pick<UserDto, 'id' | 'role'>
