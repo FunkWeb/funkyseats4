@@ -77,6 +77,6 @@ export const createConfig = (source: EnvSource) => {
       secret: env.secret('SESSION_SECRET'),
       lifetimeMinutes: env.positiveInt('SESSION_LIFETIME_MINUTES', 120),
     },
-    uploadsDir: source.UPLOADS_DIR || 'frontend/public',
+    uploadsDir: source.UPLOADS_DIR || 'frontend/public/uploads',
   } as const
 }

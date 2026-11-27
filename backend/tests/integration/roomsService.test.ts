@@ -41,7 +41,10 @@ describe('roomsService', () => {
 
   before(() => {
     fixtures = createFixtures(db())
-    service = createRoomsService({ rooms: createRoomsRepository(db()) })
+    service = createRoomsService({
+      rooms: createRoomsRepository(db()),
+      seatMapStorage: { save: async () => '/seat-maps/unused.png', remove: async () => {} },
+    })
   })
 
   beforeEach(async () => {

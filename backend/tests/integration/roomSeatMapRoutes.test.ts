@@ -8,7 +8,8 @@ import express, { type RequestHandler } from 'express'
 import { errorHandler } from '../../src/errors/errorHandler.js'
 import type { Room, RoomsRepository } from '../../src/repositories/roomsRepository.js'
 import { createRoomsRoutes } from '../../src/routes/roomsRoutes.js'
-import { createRoomsService } from '../../src/services/roomsService.js'
+import { createRoomsService, type RoomsService } from '../../src/services/roomsService.js'
+import { createSeatMapStorage } from '../../src/storage/uploadStorage.js'
 
 const PNG_BYTES = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00])
 const JPEG_BYTES = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10])
@@ -42,7 +43,7 @@ describe('roomsRoutes seat maps', () => {
     'findAll' | 'findById' | 'existsBySlug' | 'existsBySeatMapPath' | 'create' | 'update' | 'delete'
   >
 
-  const roomsService = createRoomsService({ rooms: roomsRepository })
+  let roomsService: RoomsService
 
   const fakeRequireAuth: RequestHandler = (req, _res, next) => {
     req.user = {
@@ -102,6 +103,10 @@ describe('roomsRoutes seat maps', () => {
 
   before(async () => {
     uploadsDir = await fs.mkdtemp(path.join(os.tmpdir(), 'funkyseats-seat-maps-test-'))
+    roomsService = createRoomsService({
+      rooms: roomsRepository,
+      seatMapStorage: createSeatMapStorage(uploadsDir),
+    })
 
     const app = express()
     app.use(express.json())
@@ -112,7 +117,6 @@ describe('roomsRoutes seat maps', () => {
         roomsService,
         seatsService: { findByRoom: async () => [] },
         requireAuth: fakeRequireAuth,
-        uploadsDir,
       }),
     )
     app.use(errorHandler)

@@ -12,6 +12,7 @@ import { serveUploadedIcons } from '../../src/middleware/serveUploadedIcons.js'
 import { createFeaturesRoutes } from '../../src/routes/featuresRoutes.js'
 import { createFeaturesService } from '../../src/services/featuresService.js'
 import type { FeaturesService } from '../../src/services/featuresService.js'
+import { createIconStorage } from '../../src/storage/uploadStorage.js'
 
 const VALID_SVG =
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></svg>'
@@ -37,9 +38,13 @@ describe('featuresRoutes', () => {
       return true
     },
     delete: async (id: number) => featureRecords.delete(id),
-  } satisfies Pick<FeaturesRepository, 'findAll' | 'findById' | 'create' | 'update' | 'delete'>
-  const featuresService: Pick<FeaturesService, 'findAll' | 'create' | 'update' | 'delete'> =
-    createFeaturesService({ features: featuresRepository })
+    existsByIconPath: async (iconPath: string) =>
+      [...featureRecords.values()].some((feature) => feature.iconPath === iconPath),
+  } satisfies Pick<
+    FeaturesRepository,
+    'findAll' | 'findById' | 'existsByIconPath' | 'create' | 'update' | 'delete'
+  >
+  let featuresService: FeaturesService
 
   const initialFeature: FeatureDto = {
     id: 1,
@@ -65,18 +70,15 @@ describe('featuresRoutes', () => {
 
   before(async () => {
     uploadsDir = await fs.mkdtemp(path.join(os.tmpdir(), 'funkyseats-icons-test-'))
+    featuresService = createFeaturesService({
+      features: featuresRepository,
+      iconStorage: createIconStorage(uploadsDir),
+    })
 
     const app = express()
     app.use(express.json())
     app.use('/icons', serveUploadedIcons(uploadsDir))
-    app.use(
-      '/features',
-      createFeaturesRoutes({
-        featuresService,
-        requireAuth: fakeRequireAuth,
-        uploadsDir,
-      }),
-    )
+    app.use('/features', createFeaturesRoutes({ featuresService, requireAuth: fakeRequireAuth }))
     app.use(errorHandler)
 
     await new Promise<void>((resolve) => {
@@ -387,6 +389,25 @@ describe('featuresRoutes', () => {
     assert.equal(res.status, 204)
     assert.deepEqual(await featuresService.findAll(), [])
     await assert.rejects(fs.access(iconPath))
+  })
+
+  it('keeps an uploaded icon that another feature still uses', async () => {
+    const filename = '12345678-1234-1234-1234-123456789abc.svg'
+    featureRecords.set(1, { ...initialFeature, iconPath: `/icons/${filename}` })
+    featureRecords.set(2, {
+      ...initialFeature,
+      id: 2,
+      name: 'Another feature',
+      iconPath: `/icons/${filename}`,
+    })
+    const iconPath = path.join(uploadsDir, 'icons', filename)
+    await fs.mkdir(path.dirname(iconPath), { recursive: true })
+    await fs.writeFile(iconPath, VALID_SVG)
+
+    const res = await fetch(`${baseUrl}/features/1`, { method: 'DELETE' })
+
+    assert.equal(res.status, 204)
+    assert.equal(await fs.readFile(iconPath, 'utf8'), VALID_SVG)
   })
 
   it('does not delete repository icons when a feature is removed', async () => {
