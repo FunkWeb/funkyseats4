@@ -9,20 +9,18 @@ import {
   type TimePeriod,
 } from '../../../contracts/booking.js'
 import type { PaginatedResponse, Pagination } from '../../../contracts/pagination.js'
-import type { UserDto } from '../../../contracts/user.js'
+import type { BookingActor } from '../../../contracts/user.js'
 import { ConflictError, ForbiddenError, ValidationError } from '../errors/appErrors.js'
-import type {
-  Booking,
-  AdminBooking,
-  BookingsRepository,
-  MyBooking,
-  RoomBooking,
-} from '../repositories/bookingsRepository.js'
+import type { BookingsRepository } from '../repositories/bookingsRepository.js'
 import type { RoomsRepository } from '../repositories/roomsRepository.js'
 import type { SeatsRepository } from '../repositories/seatsRepository.js'
+import {
+  toAdminBookingDto,
+  toBookingDto,
+  toMyBookingDto,
+  toRoomBookingDto,
+} from './bookingMappers.js'
 import { addDays, findOrThrow, todayInOffice, toPaginatedResponse } from './common.js'
-
-export type BookingActor = Pick<UserDto, 'id' | 'role'>
 
 export interface BookingsServiceDeps {
   bookings: Pick<
@@ -39,58 +37,6 @@ export interface BookingsServiceDeps {
   today?: () => string
 }
 
-const toBookingDto = ({
-  id,
-  seatId,
-  userId,
-  status,
-  bookingDate,
-  timePeriod,
-}: Booking): BookingDto => ({
-  id,
-  seatId,
-  userId,
-  status,
-  bookingDate,
-  timePeriod,
-})
-
-const toMyBookingDto = ({
-  roomName,
-  roomSlug,
-  seatNumber,
-  ...booking
-}: MyBooking): MyBookingDto => ({
-  ...toBookingDto(booking),
-  roomName,
-  roomSlug,
-  seatNumber,
-})
-
-const toAdminBookingDto = ({
-  userName,
-  userEmail,
-  userAvatarPath,
-  ...booking
-}: AdminBooking): AdminBookingDto => ({
-  ...toMyBookingDto(booking),
-  user: {
-    id: booking.userId,
-    name: userName,
-    email: userEmail,
-    avatarPath: userAvatarPath,
-  },
-})
-
-const toRoomBookingDto = ({
-  userName,
-  userAvatarPath,
-  ...booking
-}: RoomBooking): RoomBookingDto => ({
-  ...toBookingDto(booking),
-  user: { name: userName, avatarPath: userAvatarPath },
-})
-
 const isActive = (booking: BookingDto) => booking.status === 'ACTIVE'
 
 const hasActiveOverlap = (existing: BookingDto[], requested: TimePeriod) =>
@@ -98,8 +44,9 @@ const hasActiveOverlap = (existing: BookingDto[], requested: TimePeriod) =>
 
 const assertWithinBookingWindow = (bookingDate: string, today: string, maxDaysAhead: number) => {
   const lastBookableDate = addDays(today, maxDaysAhead)
-  if (bookingDate < today || bookingDate > lastBookableDate)
+  if (bookingDate < today || bookingDate > lastBookableDate) {
     throw new ValidationError(`Bookings must be between ${today} and ${lastBookableDate}`)
+  }
 }
 
 export const createBookingsService = ({
@@ -115,17 +62,16 @@ export const createBookingsService = ({
     const seat = await findOrThrow(seats.findById(seatId), 'Seat')
     const room = await findRoom(seat.roomId)
 
-    //Rule: Booking must be between the current date and the room's maxDaysAhead
     assertWithinBookingWindow(bookingDate, today(), room.maxDaysAhead)
 
     return bookings.withSeatAndUserLock(seatId, userId, async (locked) => {
-      //Rule: A seat can only have one active booking per time period
-      if (hasActiveOverlap(await locked.findBySeatAndDate(seatId, bookingDate), timePeriod))
+      if (hasActiveOverlap(await locked.findBySeatAndDate(seatId, bookingDate), timePeriod)) {
         throw new ConflictError('Seat is already booked for that period')
+      }
 
-      //Rule: The user can NOT have multiple bookings in the same time period
-      if (hasActiveOverlap(await locked.findByUserIdAndDate(userId, bookingDate), timePeriod))
+      if (hasActiveOverlap(await locked.findByUserIdAndDate(userId, bookingDate), timePeriod)) {
         throw new ConflictError('You already have a booking for that period')
+      }
 
       return toBookingDto(await locked.create({ ...request, userId }))
     })
@@ -134,11 +80,10 @@ export const createBookingsService = ({
   const cancel = async (actor: BookingActor, bookingId: number): Promise<void> => {
     const booking = await findOrThrow(bookings.findById(bookingId), 'Booking')
 
-    //Rule: Non-admin users can only cancel their own bookings
-    if (actor.role !== 'ADMIN' && booking.userId !== actor.id)
+    if (actor.role !== 'ADMIN' && booking.userId !== actor.id) {
       throw new ForbiddenError('You can only cancel your own bookings')
+    }
 
-    //Rule: Only bookings with "ACTIVE" status can be cancelled
     if (!isActive(booking)) throw new ConflictError('Only active bookings can be cancelled')
     await bookings.updateStatus(bookingId, 'CANCELLED')
   }
