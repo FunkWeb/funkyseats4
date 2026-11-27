@@ -25,4 +25,4 @@ COPY backend/assets ./backend/assets
 RUN mkdir -p /app/uploads/icons && chown -R node:node /app/uploads
 USER node
 
-CMD ["node", "dist/backend/src/server.js"]
+CMD ["sh", "-c", "node dist/backend/src/database/migration-runner/migrationCli.js && node dist/backend/src/database/seeding/seedDefaultFeatures.js && exec node dist/backend/src/server.js"]
